@@ -23,8 +23,8 @@ else
     CC = gcc
     CFLAGS = -Wall -std=c99 -I$(INCLUDE_DIR) -mwindows
     LIBS = -L$(LIB_DIR) -lraylib -lopengl32 -lgdi32 -lwinmm
-    ICON_RC = resource.rc
-    ICON_OBJ = resource.o
+    #ICON_RC = resource.rc
+    #ICON_OBJ = resource.o
     EXE_EXT = .exe
 endif
 
