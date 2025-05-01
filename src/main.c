@@ -24,6 +24,7 @@ int main(void)
             if (CutscenesEnded())
             {
                 UnloadCutscenes();
+                InitAudioDevice();
                 InitMenu();
                 state = APP_MENU;
             }
@@ -64,6 +65,7 @@ int main(void)
     if (state == APP_MENU) UnloadMenu();
     if (state == APP_INTRO) UnloadIntro();
 
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }

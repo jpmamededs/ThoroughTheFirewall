@@ -1,15 +1,48 @@
 #include "raylib.h"
 #include "cutscenes.h"
+
 static Music music;
 static Sound welcomeSound;
-static Texture2D sprite1, sprite2, russia, whiteHouse, hacker;
-static Texture2D court, hackerGuy;
+static Texture2D sprite1, sprite2, menina, caraDeCostas, cabecaBranca;
+static Texture2D russia, whiteHouse, hacker, court, hackerGuy;
 static int screenWidth, screenHeight;
 static float time = 0.0f;
 static float startTime = 0.0f;
-static bool firstSpriteDone = false;
 static bool welcomePlayed = false;
 static bool ended = false;
+
+void animarDireitaEsquerda(Texture2D texture, float startAnimTime, float animTime, float duration, float scale, float offsetY)
+{
+    if (animTime < startAnimTime)
+        return;
+
+    float t = (animTime - startAnimTime) / duration;
+
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
+    float x = w + texture.width * scale - (w + texture.width * scale) * t;
+    Vector2 pos = {x, h / 2 - texture.height * scale / 2 + offsetY};
+
+    DrawTextureEx(texture, pos, 0.0f, scale, WHITE);
+}
+
+
+void animarEsquerdaDireita(Texture2D texture, float startAnimTime, float animTime, float duration, float scale, float offsetY)
+{
+    if (animTime < startAnimTime)
+        return;
+
+    float t = (animTime - startAnimTime) / duration;
+    if (t > 1.0f)
+        t = 1.0f;
+
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
+    float x = -texture.width * scale + (w + texture.width * scale) * t;
+    Vector2 pos = {x, h / 2 - texture.height * scale / 2 + offsetY};
+
+    DrawTextureEx(texture, pos, 0.0f, scale, WHITE);
+}
 
 void InitCutscenes(void)
 {
@@ -21,22 +54,24 @@ void InitCutscenes(void)
     welcomeSound = LoadSound("src/music/welcome-to-the-game-hacking-alert_sm4UxhuM.mp3");
     sprite1 = LoadTexture("src/sprites/cropped.png");
     sprite2 = LoadTexture("src/sprites/carinhaPdavida.png");
+    menina = LoadTexture("src/sprites/menina.png");
+    caraDeCostas = LoadTexture("src/sprites/caraDeCostas.png");
+    cabecaBranca = LoadTexture("src/sprites/cabecaBranca.png");
     russia = LoadTexture("src/sprites/russia.png");
     whiteHouse = LoadTexture("src/sprites/White_House.png");
     hacker = LoadTexture("src/sprites/hackerscenery.jpg");
     court = LoadTexture("src/sprites/courtscenery.jpeg");
     hackerGuy = LoadTexture("src/sprites/hacker.png");
-    // matrix, jogoTexture e matrixFrames foram REMOVIDOS
     time = 0.0f;
     startTime = GetTime();
-    firstSpriteDone = false;
     welcomePlayed = false;
     ended = false;
 }
 
 void UpdateCutscenes(void)
 {
-    if (ended) return;
+    if (ended)
+        return;
     UpdateMusicStream(music);
     time = GetTime() - startTime;
     if (IsKeyPressed(KEY_SPACE) && time < 26.5f)
@@ -44,12 +79,14 @@ void UpdateCutscenes(void)
         startTime = GetTime() - 26.5f;
         time = 26.5f;
     }
-    if (time > 27.0f) ended = true;
+    if (time > 27.0f)
+        ended = true;
 }
 
 void DrawCutscenes(void)
 {
-    if (ended) return;
+    if (ended)
+        return;
     int w = GetScreenWidth();
     int h = GetScreenHeight();
     BeginDrawing();
@@ -101,34 +138,18 @@ void DrawCutscenes(void)
     else if (time < 26.0f)
     {
         float animTime = time - 6.3f;
-        Vector2 scale = {2.0f, 2.0f};
-        float sprite1X = -sprite1.width * scale.x + (w + sprite1.width * scale.x) * (animTime / 10.0f);
-        if (animTime >= 10.0f && !firstSpriteDone)
-        {
-            firstSpriteDone = true;
-        }
-        float sprite2X = w + sprite2.width * 3 - (w + sprite2.width * 3) * ((animTime - 2.0f) / 10.0f);
-        Vector2 scale2 = {3.0f, 3.0f};
-        Vector2 pos2 = {
-            sprite2X,
-            h / 2 - sprite2.height * scale2.y / 2 + 30};
-        float hackerX = -hackerGuy.width * 1.5f + (w + hackerGuy.width * 1.5f) * ((animTime - 10.5f) / 10.0f);
-        Vector2 scale3 = {1.2f, 1.2f};
-        Vector2 pos3 = {
-            hackerX,
-            h / 2 - hackerGuy.height * scale3.y / 2};
-        if (animTime >= 4.5f)
-            DrawTextureEx(hackerGuy, pos3, 0.0f, scale3.x, WHITE);
-        if (animTime >= 2.0f)
-            DrawTextureEx(sprite2, pos2, 0.0f, scale2.x, WHITE);
-        if (!firstSpriteDone)
-            DrawTextureEx(sprite1, (Vector2){(int)sprite1X, (int)(h / 2 - sprite1.height / 2)}, 0.0f, scale.x, WHITE);
+        animarDireitaEsquerda(cabecaBranca, 13.5f, animTime, 10.0f, 1.0f, 30);
+        animarDireitaEsquerda(menina, 11.5f, animTime, 10.0f, 1.0f, 30);
+        animarEsquerdaDireita(caraDeCostas, 12.5f, animTime, 10.0f, 2.0f, 0);
+        animarDireitaEsquerda(sprite2, 2.0f, animTime, 10.0f, 3.0f, 30);
+        animarEsquerdaDireita(hackerGuy, 10.5f, animTime, 10.0f, 1.2f, 0);
+        animarEsquerdaDireita(sprite1, 0.0f, animTime, 10.0f, 2.0f, 240);
+
         DrawRectangle(0, 0, w, h / 4, BLACK);
         DrawRectangle(0, h - h / 4, w, h / 4, BLACK);
     }
     else if (time < 26.5f)
     {
-        // Antes era Matrix + fade. Agora, só fade para preto.
         if (!welcomePlayed)
         {
             PlaySound(welcomeSound);
@@ -141,9 +162,9 @@ void DrawCutscenes(void)
     }
     else
     {
-        // Só fundo preto
         ClearBackground(BLACK);
     }
+
     EndDrawing();
 }
 
@@ -159,6 +180,9 @@ void UnloadCutscenes(void)
     CloseAudioDevice();
     UnloadTexture(sprite1);
     UnloadTexture(sprite2);
+    UnloadTexture(menina);
+    UnloadTexture(caraDeCostas);
+    UnloadTexture(cabecaBranca);
     UnloadTexture(russia);
     UnloadTexture(whiteHouse);
     UnloadTexture(hacker);
