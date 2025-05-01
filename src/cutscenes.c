@@ -8,9 +8,41 @@ static Texture2D russia, whiteHouse, hacker, court, hackerGuy;
 static int screenWidth, screenHeight;
 static float time = 0.0f;
 static float startTime = 0.0f;
-static bool firstSpriteDone = false;
 static bool welcomePlayed = false;
 static bool ended = false;
+
+void animarDireitaEsquerda(Texture2D texture, float startAnimTime, float animTime, float duration, float scale, float offsetY)
+{
+    if (animTime < startAnimTime)
+        return;
+
+    float t = (animTime - startAnimTime) / duration;
+
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
+    float x = w + texture.width * scale - (w + texture.width * scale) * t;
+    Vector2 pos = {x, h / 2 - texture.height * scale / 2 + offsetY};
+
+    DrawTextureEx(texture, pos, 0.0f, scale, WHITE);
+}
+
+
+void animarEsquerdaDireita(Texture2D texture, float startAnimTime, float animTime, float duration, float scale, float offsetY)
+{
+    if (animTime < startAnimTime)
+        return;
+
+    float t = (animTime - startAnimTime) / duration;
+    if (t > 1.0f)
+        t = 1.0f;
+
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
+    float x = -texture.width * scale + (w + texture.width * scale) * t;
+    Vector2 pos = {x, h / 2 - texture.height * scale / 2 + offsetY};
+
+    DrawTextureEx(texture, pos, 0.0f, scale, WHITE);
+}
 
 void InitCutscenes(void)
 {
@@ -32,7 +64,6 @@ void InitCutscenes(void)
     hackerGuy = LoadTexture("src/sprites/hacker.png");
     time = 0.0f;
     startTime = GetTime();
-    firstSpriteDone = false;
     welcomePlayed = false;
     ended = false;
 }
@@ -107,55 +138,12 @@ void DrawCutscenes(void)
     else if (time < 26.0f)
     {
         float animTime = time - 6.3f;
-
-        Vector2 scale = {2.0f, 2.0f};
-        float sprite1X = -sprite1.width * scale.x + (w + sprite1.width * scale.x) * (animTime / 10.0f);
-        if (animTime >= 10.0f && !firstSpriteDone)
-        {
-            firstSpriteDone = true;
-        }
-
-        float sprite2X = w + sprite2.width * 3 - (w + sprite2.width * 3) * ((animTime - 2.0f) / 10.0f);
-        Vector2 scale2 = {3.0f, 3.0f};
-        Vector2 pos2 = {
-            sprite2X,
-            h / 2 - sprite2.height * scale2.y / 2 + 30};
-
-        float hackerX = -hackerGuy.width * 1.5f + (w + hackerGuy.width * 1.5f) * ((animTime - 10.5f) / 10.0f);
-        Vector2 scale3 = {1.2f, 1.2f};
-        Vector2 pos3 = {
-            hackerX,
-            h / 2 - hackerGuy.height * scale3.y / 2};
-
-        float meninaX = w + menina.width - (w + menina.width) * ((animTime - 11.5f) / 10.0f);
-        Vector2 scaleMenina = {1.0f, 1.0f};
-        Vector2 posMenina = {
-            meninaX,
-            h / 2 - menina.height * scaleMenina.y / 2 + 30};
-
-        float brancaX = w + cabecaBranca.width - (w + cabecaBranca.width) * ((animTime - 13.5f) / 10.0f);
-        Vector2 posBranca = {
-            brancaX,
-            h / 2 - cabecaBranca.height * 1.0f / 2 + 30};
-
-        float costasX = -caraDeCostas.width * scale.x + (w + caraDeCostas.width * scale.x) * ((animTime - 12.5f) / 10.0f);
-        Vector2 posCostas = {
-            costasX,
-            h / 2 - caraDeCostas.height * scale.y / 2};
-
-        if (animTime >= 11.5f)
-            DrawTextureEx(menina, posMenina, 0.0f, scaleMenina.x, WHITE);
-        if (animTime >= 13.5f)
-            DrawTextureEx(cabecaBranca, posBranca, 0.0f, 1.0f, WHITE);
-        if (animTime >= 12.5f)
-            DrawTextureEx(caraDeCostas, posCostas, 0.0f, scale.x, WHITE);
-        if (animTime >= 2.0f)
-            DrawTextureEx(sprite2, pos2, 0.0f, scale2.x, WHITE);
-        if (animTime >= 4.5f)
-            DrawTextureEx(hackerGuy, pos3, 0.0f, scale3.x, WHITE);
-
-        if (!firstSpriteDone)
-            DrawTextureEx(sprite1, (Vector2){(int)sprite1X, (int)(h / 2 - sprite1.height / 2)}, 0.0f, scale.x, WHITE);
+        animarDireitaEsquerda(cabecaBranca, 13.5f, animTime, 10.0f, 1.0f, 30);
+        animarDireitaEsquerda(menina, 11.5f, animTime, 10.0f, 1.0f, 30);
+        animarEsquerdaDireita(caraDeCostas, 12.5f, animTime, 10.0f, 2.0f, 0);
+        animarDireitaEsquerda(sprite2, 2.0f, animTime, 10.0f, 3.0f, 30);
+        animarEsquerdaDireita(hackerGuy, 10.5f, animTime, 10.0f, 1.2f, 0);
+        animarEsquerdaDireita(sprite1, 0.0f, animTime, 10.0f, 2.0f, 240);
 
         DrawRectangle(0, 0, w, h / 4, BLACK);
         DrawRectangle(0, h - h / 4, w, h / 4, BLACK);
