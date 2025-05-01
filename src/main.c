@@ -41,12 +41,18 @@ int main(void)
         {
             BeginDrawing();
             ClearBackground(GREEN);
+
+            // Agora mostra diretamente o nome do personagem escolhido!
+            DrawText("Personagem escolhido:", 40, 40, 28, BLACK);
+            DrawText(MenuSelectedCharacterName(), 80, 80, 40, DARKGRAY);
+
             EndDrawing();
         }
     }
 
     if (state == APP_CUTSCENES) UnloadCutscenes();
     if (state == APP_MENU) UnloadMenu();
+
     CloseWindow();
     return 0;
 }
