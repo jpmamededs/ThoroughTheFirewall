@@ -11,7 +11,7 @@ static float startTime = 0.0f;
 static bool welcomePlayed = false;
 static bool ended = false;
 
-void animarDireitaEsquerda(Texture2D texture, float startAnimTime, float animTime, float duration, float scale, float offsetY)
+void AnimateSpriteRightToLeft(Texture2D texture, float startAnimTime, float animTime, float duration, float scale, float offsetY)
 {
     if (animTime < startAnimTime)
         return;
@@ -26,8 +26,7 @@ void animarDireitaEsquerda(Texture2D texture, float startAnimTime, float animTim
     DrawTextureEx(texture, pos, 0.0f, scale, WHITE);
 }
 
-
-void animarEsquerdaDireita(Texture2D texture, float startAnimTime, float animTime, float duration, float scale, float offsetY)
+void AnimateSpriteLeftToRight(Texture2D texture, float startAnimTime, float animTime, float duration, float scale, float offsetY)
 {
     if (animTime < startAnimTime)
         return;
@@ -138,12 +137,12 @@ void DrawCutscenes(void)
     else if (time < 26.0f)
     {
         float animTime = time - 6.3f;
-        animarDireitaEsquerda(cabecaBranca, 13.5f, animTime, 10.0f, 1.0f, 30);
-        animarDireitaEsquerda(menina, 11.5f, animTime, 10.0f, 1.0f, 30);
-        animarEsquerdaDireita(caraDeCostas, 12.5f, animTime, 10.0f, 2.0f, 0);
-        animarDireitaEsquerda(sprite2, 2.0f, animTime, 10.0f, 3.0f, 30);
-        animarEsquerdaDireita(hackerGuy, 10.5f, animTime, 10.0f, 1.2f, 0);
-        animarEsquerdaDireita(sprite1, 0.0f, animTime, 10.0f, 2.0f, 240);
+        AnimateSpriteRightToLeft(cabecaBranca, 13.5f, animTime, 10.0f, 1.0f, 30);
+        AnimateSpriteRightToLeft(menina, 11.5f, animTime, 10.0f, 1.0f, 30);
+        AnimateSpriteLeftToRight(caraDeCostas, 12.5f, animTime, 10.0f, 2.0f, 0);
+        AnimateSpriteRightToLeft(sprite2, 2.0f, animTime, 10.0f, 3.0f, 30);
+        AnimateSpriteLeftToRight(hackerGuy, 10.5f, animTime, 10.0f, 1.2f, 0);
+        AnimateSpriteLeftToRight(sprite1, 0.0f, animTime, 10.0f, 2.0f, 240);
 
         DrawRectangle(0, 0, w, h / 4, BLACK);
         DrawRectangle(0, h - h / 4, w, h / 4, BLACK);
