@@ -1,21 +1,15 @@
 #include "raylib.h"
 #include "cutscenes.h"
-
-#define FRAME_COUNT 15
-
 static Music music;
 static Sound welcomeSound;
 static Texture2D sprite1, sprite2, russia, whiteHouse, hacker;
-static Texture2D court, hackerGuy, jogoTexture, matrixSprite;
-static Rectangle matrixFrames[FRAME_COUNT];
-static int currentFrame = 0;
-static float frameDuration = 0.05f;
-static float lastFrameTime = 0.0f;
+static Texture2D court, hackerGuy;
+static int screenWidth, screenHeight;
 static float time = 0.0f;
 static float startTime = 0.0f;
 static bool firstSpriteDone = false;
 static bool welcomePlayed = false;
-static int screenWidth, screenHeight;
+static bool ended = false;
 
 void InitCutscenes(void)
 {
@@ -32,46 +26,32 @@ void InitCutscenes(void)
     hacker = LoadTexture("src/sprites/hackerscenery.jpg");
     court = LoadTexture("src/sprites/courtscenery.jpeg");
     hackerGuy = LoadTexture("src/sprites/hacker.png");
-    jogoTexture = LoadTexture("src/sprites/jogo.png");
-    matrixSprite = LoadTexture("src/sprites/Matrix.png");
-    Rectangle frames[FRAME_COUNT] = {
-        {0, 512, 512, 512}, {0, 1024, 512, 512}, {0, 1536, 512, 512}, {512, 0, 512, 512}, {512, 512, 512, 512},
-        {512, 1024, 512, 512}, {512, 1536, 512, 512}, {1024, 0, 512, 512}, {1024, 512, 512, 512},
-        {1024, 1024, 512, 512}, {1024, 1536, 512, 512}, {1536, 0, 512, 512}, {1536, 512, 512, 512},
-        {1536, 1024, 512, 512}, {1536, 1536, 512, 512}};
-    for (int i = 0; i < FRAME_COUNT; i++) matrixFrames[i] = frames[i];
-    currentFrame = 0;
-    frameDuration = 0.05f;
-    lastFrameTime = 0.0f;
-    SetTargetFPS(60);
+    // matrix, jogoTexture e matrixFrames foram REMOVIDOS
     time = 0.0f;
     startTime = GetTime();
     firstSpriteDone = false;
     welcomePlayed = false;
+    ended = false;
 }
 
 void UpdateCutscenes(void)
 {
+    if (ended) return;
     UpdateMusicStream(music);
     time = GetTime() - startTime;
-    float now = GetTime();
     if (IsKeyPressed(KEY_SPACE) && time < 26.5f)
     {
         startTime = GetTime() - 26.5f;
         time = 26.5f;
     }
-    if (time >= 26.5f && now - lastFrameTime >= frameDuration)
-    {
-        currentFrame = (currentFrame + 1) % FRAME_COUNT;
-        lastFrameTime = now;
-    }
+    if (time > 27.0f) ended = true;
 }
 
 void DrawCutscenes(void)
 {
+    if (ended) return;
     int w = GetScreenWidth();
     int h = GetScreenHeight();
-
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
@@ -148,6 +128,7 @@ void DrawCutscenes(void)
     }
     else if (time < 26.5f)
     {
+        // Antes era Matrix + fade. Agora, só fade para preto.
         if (!welcomePlayed)
         {
             PlaySound(welcomeSound);
@@ -156,71 +137,19 @@ void DrawCutscenes(void)
         float alpha = (time - 26.0f) / 0.5f;
         if (alpha > 1.0f)
             alpha = 1.0f;
-        ClearBackground(BLACK);
-        float scale = 0.3f;
-        int spriteW = 512 * scale;
-        int spriteH = 512 * scale;
-        int numCols = w / spriteW + 2;
-        static float spriteY[64] = {0};
-        static bool initialized = false;
-        if (!initialized)
-        {
-            for (int i = 0; i < numCols; i++)
-                spriteY[i] = GetRandomValue(-spriteH, h);
-            initialized = true;
-        }
-        float speed = 100.0f * GetFrameTime();
-        for (int i = 0; i < numCols; i++)
-        {
-            spriteY[i] += speed;
-            if (spriteY[i] > h)
-                spriteY[i] = -spriteH;
-            float x = i * spriteW;
-            float y = spriteY[i];
-            DrawTexturePro(
-                matrixSprite,
-                matrixFrames[currentFrame],
-                (Rectangle){x, y, spriteW, spriteH},
-                (Vector2){0, 0}, 0.0f, WHITE);
-        }
-        float imgScale = 0.2f;
-        float imgWidth = jogoTexture.width * imgScale;
-        float imgHeight = jogoTexture.height * imgScale;
-        float posX = (w - imgWidth) / 2;
-        float posY = (h - imgHeight) / 2;
-        DrawTextureEx(jogoTexture, (Vector2){posX, posY}, 0.0f, imgScale, WHITE);
-        DrawRectangle(0, 0, w, h, (Color){255, 255, 255, (unsigned char)(255 * (1.0f - alpha))});
+        DrawRectangle(0, 0, w, h, (Color){0, 0, 0, (unsigned char)(255 * alpha)});
     }
     else
     {
+        // Só fundo preto
         ClearBackground(BLACK);
-        float scale = 0.3f;
-        int spriteW = 512 * scale;
-        int spriteH = 512 * scale;
-        int numCols = w / spriteW + 2;
-        static float spriteY[64] = {0};
-        float speed = 100.0f * GetFrameTime();
-        for (int i = 0; i < numCols; i++)
-        {
-            spriteY[i] += speed;
-            if (spriteY[i] > h)
-                spriteY[i] = -spriteH;
-            float x = i * spriteW;
-            float y = spriteY[i];
-            DrawTexturePro(
-                matrixSprite,
-                matrixFrames[currentFrame],
-                (Rectangle){x, y, spriteW, spriteH},
-                (Vector2){0, 0}, 0.0f, WHITE);
-        }
-        float imgScale = 0.2f;
-        float imgWidth = jogoTexture.width * imgScale;
-        float imgHeight = jogoTexture.height * imgScale;
-        float posX = (w - imgWidth) / 2;
-        float posY = (h - imgHeight) / 2;
-        DrawTextureEx(jogoTexture, (Vector2){posX, posY}, 0.0f, imgScale, WHITE);
     }
     EndDrawing();
+}
+
+bool CutscenesEnded(void)
+{
+    return ended;
 }
 
 void UnloadCutscenes(void)
@@ -235,6 +164,4 @@ void UnloadCutscenes(void)
     UnloadTexture(hacker);
     UnloadTexture(court);
     UnloadTexture(hackerGuy);
-    UnloadTexture(jogoTexture);
-    UnloadTexture(matrixSprite);
 }
