@@ -1,16 +1,15 @@
 #include "raylib.h"
 #include "cutscenes.h"
-
 // Music NÃO deve ser usado aqui
 static Sound welcomeSound;
 static Texture2D sprite1, sprite2, menina, caraDeCostas, cabecaBranca;
 static Texture2D russia, whiteHouse, hacker, court, hackerGuy;
+static Texture2D escritorio; // <--- NOVO
 static int screenWidth, screenHeight;
 static float time = 0.0f;
 static float startTime = 0.0f;
 static bool welcomePlayed = false;
 static bool ended = false;
-
 void AnimateSpriteRightToLeft(Texture2D texture, float startAnimTime, float animTime, float duration, float scale, float offsetY)
 {
     if (animTime < startAnimTime)
@@ -35,7 +34,6 @@ void AnimateSpriteLeftToRight(Texture2D texture, float startAnimTime, float anim
     Vector2 pos = {x, h / 2 - texture.height * scale / 2 + offsetY};
     DrawTextureEx(texture, pos, 0.0f, scale, WHITE);
 }
-
 void InitCutscenes(void)
 {
     screenWidth = GetMonitorWidth(0);
@@ -53,12 +51,12 @@ void InitCutscenes(void)
     hacker = LoadTexture("src/sprites/hackerscenery.jpg");
     court = LoadTexture("src/sprites/courtscenery.jpeg");
     hackerGuy = LoadTexture("src/sprites/hacker.png");
+    escritorio = LoadTexture("src/sprites/escritorio.png"); // <--- NOVO
     time = 0.0f;
     startTime = GetTime();
     welcomePlayed = false;
     ended = false;
 }
-
 void UpdateCutscenes(void)
 {
     if (ended)
@@ -73,7 +71,6 @@ void UpdateCutscenes(void)
     if (time > 27.0f)
         ended = true;
 }
-
 void DrawCutscenes(void)
 {
     if (ended)
@@ -81,7 +78,8 @@ void DrawCutscenes(void)
     int w = GetScreenWidth();
     int h = GetScreenHeight();
     BeginDrawing();
-    ClearBackground(RAYWHITE);
+    //ClearBackground(RAYWHITE); // REMOVIDO
+
     if (time < 1.2f)
     {
         DrawTexturePro(russia, (Rectangle){0, 0, russia.width, russia.height}, (Rectangle){0, 0, w, h}, (Vector2){0, 0}, 0.0f, WHITE);
@@ -125,8 +123,12 @@ void DrawCutscenes(void)
     {
         DrawTexturePro(court, (Rectangle){0, 0, court.width, court.height}, (Rectangle){0, 0, w, h}, (Vector2){0, 0}, 0.0f, WHITE);
     }
+    // Aqui trocamos o fundo:
     else if (time < 26.0f)
     {
+        // DESENHA O FUNDO DO ESCRITÓRIO ANTES DE TUDO
+        DrawTexturePro(escritorio, (Rectangle){0, 0, escritorio.width, escritorio.height}, (Rectangle){0, 0, w, h}, (Vector2){0, 0}, 0.0f, WHITE);
+
         float animTime = time - 6.3f;
         AnimateSpriteRightToLeft(cabecaBranca, 13.5f, animTime, 10.0f, 1.0f, 30);
         AnimateSpriteRightToLeft(menina, 11.5f, animTime, 10.0f, 1.0f, 30);
@@ -172,4 +174,5 @@ void UnloadCutscenes(void)
     UnloadTexture(hacker);
     UnloadTexture(court);
     UnloadTexture(hackerGuy);
+    UnloadTexture(escritorio); // <--- NOVO
 }
