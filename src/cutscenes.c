@@ -1,7 +1,7 @@
 #include "raylib.h"
 #include "cutscenes.h"
 
-static Music music;
+// Music NÃO deve ser usado aqui
 static Sound welcomeSound;
 static Texture2D sprite1, sprite2, menina, caraDeCostas, cabecaBranca;
 static Texture2D russia, whiteHouse, hacker, court, hackerGuy;
@@ -15,31 +15,24 @@ void AnimateSpriteRightToLeft(Texture2D texture, float startAnimTime, float anim
 {
     if (animTime < startAnimTime)
         return;
-
     float t = (animTime - startAnimTime) / duration;
-
     int w = GetScreenWidth();
     int h = GetScreenHeight();
     float x = w + texture.width * scale - (w + texture.width * scale) * t;
     Vector2 pos = {x, h / 2 - texture.height * scale / 2 + offsetY};
-
     DrawTextureEx(texture, pos, 0.0f, scale, WHITE);
 }
-
 void AnimateSpriteLeftToRight(Texture2D texture, float startAnimTime, float animTime, float duration, float scale, float offsetY)
 {
     if (animTime < startAnimTime)
         return;
-
     float t = (animTime - startAnimTime) / duration;
     if (t > 1.0f)
         t = 1.0f;
-
     int w = GetScreenWidth();
     int h = GetScreenHeight();
     float x = -texture.width * scale + (w + texture.width * scale) * t;
     Vector2 pos = {x, h / 2 - texture.height * scale / 2 + offsetY};
-
     DrawTextureEx(texture, pos, 0.0f, scale, WHITE);
 }
 
@@ -47,9 +40,8 @@ void InitCutscenes(void)
 {
     screenWidth = GetMonitorWidth(0);
     screenHeight = GetMonitorHeight(0);
-    InitAudioDevice();
-    music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
-    PlayMusicStream(music);
+    // NÃO chame InitAudioDevice aqui!
+    // NÃO carregue música aqui!
     welcomeSound = LoadSound("src/music/welcome-to-the-game-hacking-alert_sm4UxhuM.mp3");
     sprite1 = LoadTexture("src/sprites/cropped.png");
     sprite2 = LoadTexture("src/sprites/carinhaPdavida.png");
@@ -71,7 +63,7 @@ void UpdateCutscenes(void)
 {
     if (ended)
         return;
-    UpdateMusicStream(music);
+    // NÃO chame UpdateMusicStream aqui!
     time = GetTime() - startTime;
     if (IsKeyPressed(KEY_SPACE) && time < 26.5f)
     {
@@ -90,7 +82,6 @@ void DrawCutscenes(void)
     int h = GetScreenHeight();
     BeginDrawing();
     ClearBackground(RAYWHITE);
-
     if (time < 1.2f)
     {
         DrawTexturePro(russia, (Rectangle){0, 0, russia.width, russia.height}, (Rectangle){0, 0, w, h}, (Vector2){0, 0}, 0.0f, WHITE);
@@ -143,7 +134,6 @@ void DrawCutscenes(void)
         AnimateSpriteRightToLeft(sprite2, 2.0f, animTime, 10.0f, 3.0f, 30);
         AnimateSpriteLeftToRight(hackerGuy, 10.5f, animTime, 10.0f, 1.2f, 0);
         AnimateSpriteLeftToRight(sprite1, 0.0f, animTime, 10.0f, 2.0f, 240);
-
         DrawRectangle(0, 0, w, h / 4, BLACK);
         DrawRectangle(0, h - h / 4, w, h / 4, BLACK);
     }
@@ -163,20 +153,15 @@ void DrawCutscenes(void)
     {
         ClearBackground(BLACK);
     }
-
     EndDrawing();
 }
-
 bool CutscenesEnded(void)
 {
     return ended;
 }
-
 void UnloadCutscenes(void)
 {
-    UnloadMusicStream(music);
     UnloadSound(welcomeSound);
-    CloseAudioDevice();
     UnloadTexture(sprite1);
     UnloadTexture(sprite2);
     UnloadTexture(menina);

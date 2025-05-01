@@ -12,11 +12,22 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "Sprite andando");
     SetWindowPosition(0, 0);
 
+    // --- Música global, iniciada UMA VEZ ---
+    InitAudioDevice();
+    Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
+    PlayMusicStream(music);
+
     AppState state = APP_CUTSCENES;
     InitCutscenes();
 
+    // Inicie o menu/intro APENAS quando mudar de estado!
+    // (não aqui antes do loop)
+
     while (!WindowShouldClose())
     {
+        // MANTÉM a música tocando contínua durante TODO o jogo!
+        UpdateMusicStream(music);
+
         if (state == APP_CUTSCENES)
         {
             UpdateCutscenes();
@@ -24,8 +35,7 @@ int main(void)
             if (CutscenesEnded())
             {
                 UnloadCutscenes();
-                InitAudioDevice();
-                InitMenu();
+                InitMenu(); // Inicialize o menu AQUI!
                 state = APP_MENU;
             }
         }
@@ -36,7 +46,7 @@ int main(void)
             if (MenuStartGame())
             {
                 UnloadMenu();
-                InitIntro(MenuSelectedCharacterName()); // Passa o nome para a intro!
+                InitIntro(MenuSelectedCharacterName()); // Passa nome para intro!
                 state = APP_INTRO;
             }
         }
@@ -60,11 +70,12 @@ int main(void)
         }
     }
 
-    // Liberação segura dos recursos se fechar em estados intermediários
+    // Liberação segura dos recursos ao sair, dependendo do estado:
     if (state == APP_CUTSCENES) UnloadCutscenes();
-    if (state == APP_MENU) UnloadMenu();
-    if (state == APP_INTRO) UnloadIntro();
+    if (state == APP_MENU)      UnloadMenu();
+    if (state == APP_INTRO)     UnloadIntro();
 
+    UnloadMusicStream(music);
     CloseAudioDevice();
     CloseWindow();
     return 0;
