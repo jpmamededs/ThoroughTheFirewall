@@ -1,8 +1,9 @@
 #include "raylib.h"
 #include "cutscenes.h"
 #include "menu.h"
+#include "intro.h"
 
-typedef enum { APP_CUTSCENES, APP_MENU, APP_GAME } AppState;
+typedef enum { APP_CUTSCENES, APP_MENU, APP_INTRO, APP_GAME } AppState;
 
 int main(void)
 {
@@ -34,6 +35,17 @@ int main(void)
             if (MenuStartGame())
             {
                 UnloadMenu();
+                InitIntro(MenuSelectedCharacterName()); // Passa o nome para a intro!
+                state = APP_INTRO;
+            }
+        }
+        else if (state == APP_INTRO)
+        {
+            UpdateIntro();
+            DrawIntro();
+            if (IntroEnded())
+            {
+                UnloadIntro();
                 state = APP_GAME;
             }
         }
@@ -41,17 +53,16 @@ int main(void)
         {
             BeginDrawing();
             ClearBackground(GREEN);
-
-            // Agora mostra diretamente o nome do personagem escolhido!
             DrawText("Personagem escolhido:", 40, 40, 28, BLACK);
             DrawText(MenuSelectedCharacterName(), 80, 80, 40, DARKGRAY);
-
             EndDrawing();
         }
     }
 
+    // Liberação segura dos recursos se fechar em estados intermediários
     if (state == APP_CUTSCENES) UnloadCutscenes();
     if (state == APP_MENU) UnloadMenu();
+    if (state == APP_INTRO) UnloadIntro();
 
     CloseWindow();
     return 0;
