@@ -4,7 +4,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 #define INTRO_TEXT_SPEED 42 // Letras por segundo
+
 static char *introText = NULL; // Buffer realocável para o texto personalizado
 static TypeWriter introWriter; // Gerencia o efeito de digitação
 static Font font;
@@ -69,6 +71,7 @@ void InitIntro(const char *nomePersonagem)
         "No entanto, ao contrário dos demais colegas, seus interesses são muito mais obscuros. Seu verdadeiro objetivo não é proteger a empresa, mas sim infiltrá-la. O desafio da sua vida será roubar todos os seus dados da CyberTech, instalando um malware sofisticado nos sistemas da companhia, agindo exclusivamente em benefício próprio.\n\n"
         "Essa missão, porém, está longe de ser simples. Para alcançar seu plano, será preciso superar inúmeros desafios, enfrentar situações de extremo risco e manter sua fachada durante toda sua estadia na CyberTech.Inc. A tensão aumenta ainda mais quando o investigador cibernético mais competente do mercado, Hank Micucci, também é contratado pela empresa, determinado a descobrir qualquer sinal de traição ou vazamento interno.\n\n"
         "A cada decisão, seu disfarce pode ruir e será necessário travar uma batalha mental com Hank e os demais desenvolvedores para ganhar tempo para concluir seu objetivo.";
+
     if (introText)
         free(introText); // Libera anterior, se existir
     int tamMax = strlen(baseText) + strlen(nomePersonagem) + 64;
@@ -91,6 +94,7 @@ void DrawIntro(void)
     int h = GetScreenHeight();
     BeginDrawing();
     ClearBackground(BLACK);
+
     float boxW = w * 0.80f;
     float boxH = h * 0.66f;
     float boxX = (w - boxW) / 2;
@@ -99,9 +103,10 @@ void DrawIntro(void)
     Color boxBorder = (Color){200, 200, 200, 220}; // Borda cinza clara mais opaca
     float roundness = 0.07f;
     int segments = 32;
+    float borderThickness = 2.0f;
 
     DrawRectangleRounded((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxFill);
-    DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxBorder);
+    DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, borderThickness, boxBorder);
 
     int fontSize = 28;
     int margin = 48;
@@ -110,6 +115,7 @@ void DrawIntro(void)
     float textW = boxW - 2 * margin;
     float textH = boxH - 2 * margin;
     Rectangle rec = {textX, textY, textW, textH};
+
     if (introText && introWriter.drawnChars > 0)
     {
         char *buffer = malloc(introWriter.drawnChars + 1);

@@ -78,7 +78,7 @@ void DrawCutscenes(void)
     int w = GetScreenWidth();
     int h = GetScreenHeight();
     BeginDrawing();
-    //ClearBackground(RAYWHITE); // REMOVIDO
+    // ClearBackground(RAYWHITE); // REMOVIDO
 
     if (time < 1.2f)
     {
@@ -127,8 +127,30 @@ void DrawCutscenes(void)
     else if (time < 26.0f)
     {
         // DESENHA O FUNDO DO ESCRITÓRIO ANTES DE TUDO
-        DrawTexturePro(escritorio, (Rectangle){0, 0, escritorio.width, escritorio.height}, (Rectangle){0, 0, w, h}, (Vector2){0, 0}, 0.0f, WHITE);
+        float animStart = 6.3f;
+        float animEnd = 28.5f; // animação prolongada
+        float animDuration = animEnd - animStart;
+        float animElapsed = time - animStart;
+        float scale = 2.0f;
 
+        if (animElapsed < 0.0f)
+            animElapsed = 0.0f;
+        if (animElapsed > animDuration)
+            animElapsed = animDuration;
+
+        float t = animElapsed / animDuration;
+
+        // Largura da imagem escalada
+        float texWidthScaled = escritorio.width * scale;
+
+        // A posição inicial mostra o canto direito da imagem
+        // A posição final mostra o canto esquerdo
+        float startX = screenWidth - texWidthScaled;
+        float endX = 0.0f;
+
+        float x = startX + (endX - startX) * t;
+
+        DrawTextureEx(escritorio, (Vector2){x, 0}, 0.0f, scale, WHITE);
         float animTime = time - 6.3f;
         AnimateSpriteRightToLeft(cabecaBranca, 13.5f, animTime, 10.0f, 1.0f, 30);
         AnimateSpriteRightToLeft(menina, 11.5f, animTime, 10.0f, 1.0f, 30);

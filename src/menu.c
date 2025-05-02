@@ -104,7 +104,7 @@ void InitMenu(void)
     currentMenuState = MENU_STATE_MAIN;
     matrixSprite = LoadTexture("src/sprites/Matrix.png");
     jogoTexture = LoadTexture("src/sprites/jogo.png");
-    buttonSound = LoadSound("src/music/buttonPress.mp3");
+    buttonSound = LoadSound("src/music/buttonPress.wav");
     Rectangle frames[FRAME_COUNT] = {
         {0, 512, 512, 512}, {0, 1024, 512, 512}, {0, 1536, 512, 512}, {512, 0, 512, 512}, {512, 512, 512, 512}, {512, 1024, 512, 512}, {512, 1536, 512, 512}, {1024, 0, 512, 512}, {1024, 512, 512, 512}, {1024, 1024, 512, 512}, {1024, 1536, 512, 512}, {1536, 0, 512, 512}, {1536, 512, 512, 512}, {1536, 1024, 512, 512}, {1536, 1536, 512, 512}};
     for (int i = 0; i < FRAME_COUNT; i++)
