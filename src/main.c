@@ -2,14 +2,14 @@
 #include "cutscenes.h"
 #include "menu.h"
 #include "intro.h"
-#include "fase1.h"    // <-- Adicionado
+#include "fase1.h"
 #include "gemini.h"
 
 typedef enum {
     APP_CUTSCENES,
     APP_MENU,
     APP_INTRO,
-    APP_FASE1      // <-- Novo estado para fase1
+    APP_FASE1
 } AppState;
 
 int main(void)
@@ -27,9 +27,10 @@ int main(void)
     AppState state = APP_CUTSCENES;
     InitCutscenes();
 
+    bool showCharacterName = false; // <-- ESSA VARIÁVEL CONTROLADORA
+
     while (!WindowShouldClose())
     {
-        // MANTÉM a música tocando contínua durante TODO o jogo!
         UpdateMusicStream(music);
 
         if (state == APP_CUTSCENES)
@@ -39,7 +40,7 @@ int main(void)
             if (CutscenesEnded())
             {
                 UnloadCutscenes();
-                InitMenu(); // Inicialize o menu AQUI!
+                InitMenu();
                 state = APP_MENU;
             }
         }
@@ -50,7 +51,7 @@ int main(void)
             if (MenuStartGame())
             {
                 UnloadMenu();
-                InitIntro(MenuSelectedCharacterName()); // Passa nome para intro!
+                InitIntro(MenuSelectedCharacterName());
                 state = APP_INTRO;
             }
         }
@@ -61,31 +62,35 @@ int main(void)
             if (IntroEnded())
             {
                 UnloadIntro();
-                InitFase1();      // <-- Inicialize a Fase 1 aqui!
+                InitFase1();
                 state = APP_FASE1;
             }
         }
         else if (state == APP_FASE1)
         {
             UpdateFase1();
-            DrawFase1();
-            // Se quiser, adicione IF para avançar para próxima fase/estado aqui
-            BeginDrawing();
-            ClearBackground(GREEN);
-            DrawText("Personagem escolhido:", 40, 40, 28, BLACK);
 
-            static char resposta[1024] = "";
-            if (resposta[0] == '\0') {
-                ObterRespostaGemini("Qual a capital do Ecuador?", resposta);
+            if (!showCharacterName) {
+                DrawFase1();
+                if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER)) {
+                    showCharacterName = true;
+                }
+            } else {
+                BeginDrawing();
+                ClearBackground(GREEN);
+                DrawText("Personagem escolhido:", 40, 40, 28, BLACK);
+                DrawText(MenuSelectedCharacterName(), 80, 80, 40, DARKGRAY);
+                EndDrawing();
+
+                // se quiser voltar para a fase
+                // if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER)) {
+                //     showCharacterName = false;
+                // }
+                // se quiser mudar para próxima fase, pode mudar o "state" aqui!
             }
-            DrawText(resposta, 80, 140, 24, BLACK);
-
-            DrawText(MenuSelectedCharacterName(), 80, 80, 40, DARKGRAY);
-            EndDrawing();
         }
     }
 
-    // Liberação segura dos recursos ao sair, dependendo do estado:
     if (state == APP_CUTSCENES) UnloadCutscenes();
     if (state == APP_MENU)      UnloadMenu();
     if (state == APP_INTRO)     UnloadIntro();
@@ -94,6 +99,5 @@ int main(void)
     UnloadMusicStream(music);
     CloseAudioDevice();
     CloseWindow();
-
     return 0;
 }
