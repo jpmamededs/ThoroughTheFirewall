@@ -4,12 +4,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
 #define INTRO_TEXT_SPEED 42 // Letras por segundo
 
 static char *introText = NULL; // Buffer realocável para o texto personalizado
 static TypeWriter introWriter; // Gerencia o efeito de digitação
 static Font font;
+static Texture2D hackerBg;
+static Texture2D agentSecreto; // <- Aqui declaramos a sprite do agente
 
 // Word wrap seguro para Raylib usando DrawTextEx
 static void DrawTextBoxedSafe(Font font, const char *text, Rectangle rec, int fontSize, int spacing, Color color)
@@ -20,6 +21,7 @@ static void DrawTextBoxedSafe(Font font, const char *text, Rectangle rec, int fo
     int len = strlen(text);
     char line[1024] = {0};
     int lineLen = 0;
+
     for (int i = 0; i <= len; i++)
     {
         char c = text[i];
@@ -34,12 +36,10 @@ static void DrawTextBoxedSafe(Font font, const char *text, Rectangle rec, int fo
         }
         else
         {
-            // Verifica largura da linha
             line[lineLen] = '\0';
             int width = MeasureTextEx(font, line, fontSize, spacing).x;
             if (width > maxWidth)
             {
-                // Quebra a linha antes da última palavra
                 int breakPos = lineLen - 1;
                 while (breakPos > 0 && line[breakPos] != ' ')
                     breakPos--;
@@ -49,7 +49,6 @@ static void DrawTextBoxedSafe(Font font, const char *text, Rectangle rec, int fo
                 line[breakPos] = '\0';
                 DrawTextEx(font, line, (Vector2){x, y}, fontSize, spacing, color);
                 y += fontSize + 4;
-                // Copia a palavra restante para o início da linha
                 int j = 0;
                 if (temp == ' ')
                     breakPos++;
@@ -73,13 +72,16 @@ void InitIntro(const char *nomePersonagem)
         "A cada decisão, seu disfarce pode ruir e será necessário travar uma batalha mental com Hank e os demais desenvolvedores para ganhar tempo para concluir seu objetivo.";
 
     if (introText)
-        free(introText); // Libera anterior, se existir
+        free(introText);
     int tamMax = strlen(baseText) + strlen(nomePersonagem) + 64;
     introText = malloc(tamMax);
     snprintf(introText, tamMax, baseText, nomePersonagem);
-    // Inicializa TypeWriter
+
     InitTypeWriter(&introWriter, introText, INTRO_TEXT_SPEED);
+
     font = GetFontDefault();
+    hackerBg = LoadTexture("src/sprites/hackerBg.png");
+    agentSecreto = LoadTexture("src/sprites/agent_secreto.png"); // <- carrega a sprite agente
 }
 
 void UpdateIntro(void)
@@ -92,45 +94,76 @@ void DrawIntro(void)
 {
     int w = GetScreenWidth();
     int h = GetScreenHeight();
-    BeginDrawing();
-    ClearBackground(BLACK);
 
-    float boxW = w * 0.80f;
-    float boxH = h * 0.66f;
+    BeginDrawing();
+    DrawTexturePro(
+        hackerBg,
+        (Rectangle){0, 0, hackerBg.width, hackerBg.height},
+        (Rectangle){0, 0, w, h},
+        (Vector2){0, 0},
+        0.0f,
+        WHITE
+    );
+
+    // CALCULA POSIÇÃO E TAMANHO DA CAIXA
+    float boxW = w * 0.85f;
+    float boxH = h * 0.65f;
+    float bottomMargin = h * 0.08f;
     float boxX = (w - boxW) / 2;
-    float boxY = (h - boxH) / 2;
-    Color boxFill = (Color){255, 255, 255, 60};    // Preenchimento bem transparente
-    Color boxBorder = (Color){200, 200, 200, 220}; // Borda cinza clara mais opaca
+    float boxY = h - bottomMargin - boxH;
+
+    // DESENHA AGENTE GRUDADO NO TOPO DA CAIXA
+    float agentScale = 0.6f;
+    float agentW = agentSecreto.width * agentScale;
+    float agentH = agentSecreto.height * agentScale;
+    float agentLeftOffset = -660.0f; // ajuste este número conforme desejar
+    float agentX = w/2 - agentW/2 + agentLeftOffset;
+    float agentY = boxY - agentH;
+    DrawTextureEx(agentSecreto, (Vector2){agentX, agentY}, 0, agentScale, WHITE);
+
+    Color boxFill = (Color){0, 0, 0, 180};
+    Color boxBorder = (Color){0, 0, 0, 240};
     float roundness = 0.07f;
     int segments = 32;
-    float borderThickness = 2.0f;
 
     DrawRectangleRounded((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxFill);
-    DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, borderThickness, boxBorder);
 
-    int fontSize = 28;
-    int margin = 48;
+    // FUNÇÃO CORRIGIDA: NÃO existe parâmetro para espessura da linha!
+    DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxBorder); // <<< corrigido
+
+    int fontSize = 28; // Ajuste conforme desejar
+    int margin = 28;
     float textX = boxX + margin;
     float textY = boxY + margin;
     float textW = boxW - 2 * margin;
     float textH = boxH - 2 * margin;
     Rectangle rec = {textX, textY, textW, textH};
+    Font showFont = font;
 
     if (introText && introWriter.drawnChars > 0)
     {
         char *buffer = malloc(introWriter.drawnChars + 1);
         strncpy(buffer, introText, introWriter.drawnChars);
         buffer[introWriter.drawnChars] = '\0';
-        DrawTextBoxedSafe(font, buffer, rec, fontSize, 2, WHITE);
+        DrawTextBoxedSafe(showFont, buffer, rec, fontSize, 2, WHITE);
         free(buffer);
     }
+
     if (introWriter.done && introWriter.drawnChars >= introWriter.length)
     {
         const char *msg = "[Pressione ENTER para continuar]";
-        int pressFont = 22;
-        int msgW = MeasureText(msg, pressFont);
-        DrawText(msg, w / 2 - msgW / 2, boxY + boxH - margin - 12, pressFont, WHITE);
+        int msgFontSize = fontSize - 2;
+        Vector2 msgSize = MeasureTextEx(showFont, msg, msgFontSize, 2);
+        DrawTextEx(
+            showFont,
+            msg,
+            (Vector2){w / 2 - msgSize.x / 2, boxY + boxH - margin - msgSize.y},
+            msgFontSize,
+            2,
+            WHITE
+        );
     }
+
     EndDrawing();
 }
 
@@ -147,4 +180,6 @@ void UnloadIntro(void)
         free(introText);
         introText = NULL;
     }
+    UnloadTexture(hackerBg);
+    UnloadTexture(agentSecreto); // <- Libera a imagem do agente!
 }
