@@ -5,7 +5,8 @@
 #include "fase1.h"
 #include "gemini.h"
 
-typedef enum {
+typedef enum
+{
     APP_CUTSCENES,
     APP_MENU,
     APP_INTRO,
@@ -19,7 +20,6 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "Sprite andando");
     SetWindowPosition(0, 0);
 
-    // --- Música global, iniciada UMA VEZ ---
     InitAudioDevice();
     Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
     PlayMusicStream(music);
@@ -27,11 +27,11 @@ int main(void)
     AppState state = APP_CUTSCENES;
     InitCutscenes();
 
-    bool showCharacterName = false; // <-- ESSA VARIÁVEL CONTROLADORA
+    bool showCharacterName = false;
 
     while (!WindowShouldClose())
     {
-        UpdateMusicStream(music);
+        UpdateMusicStream(music); // Sempre atualiza, mas será pausado onde necessário
 
         if (state == APP_CUTSCENES)
         {
@@ -41,6 +41,7 @@ int main(void)
             {
                 UnloadCutscenes();
                 InitMenu();
+                ResumeMusicStream(music); // <- Música volta ao entrar no menu
                 state = APP_MENU;
             }
         }
@@ -50,6 +51,7 @@ int main(void)
             DrawMenu();
             if (MenuStartGame())
             {
+                PauseMusicStream(music); // <- Música para ao sair do menu
                 UnloadMenu();
                 InitIntro(MenuSelectedCharacterName());
                 state = APP_INTRO;
@@ -70,31 +72,34 @@ int main(void)
         {
             UpdateFase1();
 
-            if (!showCharacterName) {
+            if (!showCharacterName)
+            {
                 DrawFase1();
-                if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER)) {
+                if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER))
+                {
                     showCharacterName = true;
                 }
-            } else {
+            }
+            else
+            {
                 BeginDrawing();
                 ClearBackground(GREEN);
                 DrawText("Personagem escolhido:", 40, 40, 28, BLACK);
                 DrawText(MenuSelectedCharacterName(), 80, 80, 40, DARKGRAY);
                 EndDrawing();
-
-                // se quiser voltar para a fase
-                // if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER)) {
-                //     showCharacterName = false;
-                // }
-                // se quiser mudar para próxima fase, pode mudar o "state" aqui!
             }
         }
     }
 
-    if (state == APP_CUTSCENES) UnloadCutscenes();
-    if (state == APP_MENU)      UnloadMenu();
-    if (state == APP_INTRO)     UnloadIntro();
-    if (state == APP_FASE1)     UnloadFase1();
+    // Limpeza
+    if (state == APP_CUTSCENES)
+        UnloadCutscenes();
+    if (state == APP_MENU)
+        UnloadMenu();
+    if (state == APP_INTRO)
+        UnloadIntro();
+    if (state == APP_FASE1)
+        UnloadFase1();
 
     UnloadMusicStream(music);
     CloseAudioDevice();

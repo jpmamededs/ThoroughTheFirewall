@@ -45,7 +45,10 @@ static CharacterNode *head = NULL, *selectedChar = NULL;
 static int charCount = 0;
 
 static Sound clickSound;
+static Sound alertSound;
 static bool wasHoveredLastFrame = false;
+static bool isFadingOut = false;
+static float fadeAlpha = 0.0f;
 
 static void PlayHoverSound(Rectangle btn, bool hoveredNow)
 {
@@ -76,12 +79,7 @@ static void DrawCharacterButtonContent(CharacterNode *node, Rectangle btn, bool 
         return;
     }
 
-    Rectangle dest = {
-        btn.x,
-        btn.y,
-        SPRITE_BTN_WIDTH,
-        SPRITE_BTN_HEIGHT};
-
+    Rectangle dest = {btn.x, btn.y, SPRITE_BTN_WIDTH, SPRITE_BTN_HEIGHT};
     DrawTexturePro(texture, src, dest, (Vector2){0, 0}, 0.0f, WHITE);
 }
 
@@ -128,6 +126,7 @@ void InitMenu(void)
     deBone1 = LoadTexture("src/sprites/deBone-unselected.png");
     deBone2 = LoadTexture("src/sprites/deBone-selected.png");
     clickSound = LoadSound("src/music/buttonPress.wav");
+    alertSound = LoadSound("src/music/welcome-to-the-game-hacking-alert_sm4UxhuM.mp3");
 
     Rectangle frames[] = {
         {0, 512, 512, 512}, {0, 1024, 512, 512}, {0, 1536, 512, 512}, {512, 0, 512, 512}, {512, 512, 512, 512}, {512, 1024, 512, 512}, {512, 1536, 512, 512}, {1024, 0, 512, 512}, {1024, 512, 512, 512}, {1024, 1024, 512, 512}, {1024, 1536, 512, 512}, {1536, 0, 512, 512}, {1536, 512, 512, 512}, {1536, 1024, 512, 512}, {1536, 1536, 512, 512}};
@@ -137,6 +136,8 @@ void InitMenu(void)
     CreateCharacterList();
     matrixInitialized = false;
     wasHoveredLastFrame = false;
+    isFadingOut = false;
+    fadeAlpha = 0.0f;
 
     CharacterNode *node = head;
     do
@@ -167,6 +168,17 @@ void UpdateMenu(void)
         lastUpdate = now;
     }
 
+    if (isFadingOut)
+    {
+        fadeAlpha += GetFrameTime();
+        if (fadeAlpha >= 1.0f)
+        {
+            fadeAlpha = 1.0f;
+            currentScreen = MENU_FINISHED;
+        }
+        return;
+    }
+
     Vector2 mouse = GetMousePosition();
 
     if (currentScreen == MENU_MAIN)
@@ -194,14 +206,24 @@ void UpdateMenu(void)
             bool hovered = CheckCollisionPointRec(mouse, btn);
             if (hovered && node != selectedChar)
             {
-                PlaySound(node->sfx); 
-                PlaySound(clickSound); 
+                PlaySound(node->sfx);
+                PlaySound(clickSound);
                 selectedChar = node;
             }
             else if (hovered)
             {
                 PlayHoverSound(btn, hovered);
             }
+        }
+
+        Rectangle confirmBtn = {screenWidth / 2 - 130, y + SPRITE_BTN_HEIGHT + 40, 260, 56};
+        bool confirmHover = CheckCollisionPointRec(mouse, confirmBtn);
+        PlayHoverSound(confirmBtn, confirmHover);
+        if ((confirmHover && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER))
+        {
+            PlaySound(clickSound);
+            PlaySound(alertSound);
+            isFadingOut = true;
         }
 
         if (IsKeyPressed(KEY_RIGHT))
@@ -215,15 +237,6 @@ void UpdateMenu(void)
             selectedChar = selectedChar->prev;
             PlaySound(selectedChar->sfx);
             PlaySound(clickSound);
-        }
-
-        Rectangle confirmBtn = {screenWidth / 2 - 130, y + SPRITE_BTN_HEIGHT + 40, 260, 56};
-        bool confirmHover = CheckCollisionPointRec(mouse, confirmBtn);
-        PlayHoverSound(confirmBtn, confirmHover);
-        if ((confirmHover && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER))
-        {
-            PlaySound(clickSound);
-            currentScreen = MENU_FINISHED;
         }
     }
 }
@@ -293,6 +306,11 @@ void DrawMenu(void)
         DrawText("Confirmar", confirmBtn.x + 50, confirmBtn.y + 12, 32, WHITE);
     }
 
+    if (isFadingOut)
+    {
+        DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, (unsigned char)(fadeAlpha * 255)});
+    }
+
     EndDrawing();
 }
 
@@ -323,6 +341,7 @@ const char *MenuSelectedCharacterName(void)
 void UnloadMenu(void)
 {
     UnloadSound(clickSound);
+    UnloadSound(alertSound);
     UnloadTexture(logoTexture);
     UnloadTexture(backgroundMatrix);
     UnloadTexture(hacker1);
