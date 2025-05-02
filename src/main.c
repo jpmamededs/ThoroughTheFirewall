@@ -2,6 +2,7 @@
 #include "cutscenes.h"
 #include "menu.h"
 #include "intro.h"
+#include "gemini.h"
 
 typedef enum { APP_CUTSCENES, APP_MENU, APP_INTRO, APP_GAME } AppState;
 
@@ -65,6 +66,13 @@ int main(void)
             BeginDrawing();
             ClearBackground(GREEN);
             DrawText("Personagem escolhido:", 40, 40, 28, BLACK);
+
+            static char resposta[1024] = "";
+            if (resposta[0] == '\0') {
+                ObterRespostaGemini("Qual a capital do Ecuador?", resposta);
+            }
+            DrawText(resposta, 80, 140, 24, BLACK);
+
             DrawText(MenuSelectedCharacterName(), 80, 80, 40, DARKGRAY);
             EndDrawing();
         }

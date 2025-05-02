@@ -103,10 +103,11 @@ void DrawIntro(void)
     Color boxBorder = (Color){200, 200, 200, 220}; // Borda cinza clara mais opaca
     float roundness = 0.07f;
     int segments = 32;
-    float borderThickness = 2.0f;
+    //float borderThickness = 2.0f;
 
     DrawRectangleRounded((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxFill);
-    DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, borderThickness, boxBorder);
+    DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxBorder);
+
 
     int fontSize = 28;
     int margin = 48;
