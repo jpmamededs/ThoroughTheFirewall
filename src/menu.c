@@ -6,10 +6,17 @@
 #define FRAME_COUNT 15
 #define MAX_COLUMNS 64
 
+#define SPRITE_SRC_WIDTH 480
+#define SPRITE_SRC_HEIGHT 960
+#define SPRITE_SCALE 0.6f
+#define SPRITE_BTN_WIDTH (SPRITE_SRC_WIDTH * SPRITE_SCALE)
+#define SPRITE_BTN_HEIGHT (SPRITE_SRC_HEIGHT * SPRITE_SCALE)
+
 typedef struct CharacterNode
 {
     char name[32];
     struct CharacterNode *next, *prev;
+    Sound sfx;
 } CharacterNode;
 
 typedef enum
@@ -24,11 +31,10 @@ static MenuScreen currentScreen = MENU_MAIN;
 // Recursos
 static Texture2D backgroundMatrix;
 static Texture2D logoTexture;
-static Texture2D cabecaBranca;
-static Texture2D meninaSheet;
-static Texture2D cabeloCastanhoSheet;
-static Texture2D hacker1;
-static Texture2D hacker2;
+static Texture2D hacker1, hacker2;
+static Texture2D menina1, menina2;
+static Texture2D meninoPdavida1, meninoPdavida2;
+static Texture2D deBone1, deBone2;
 static Rectangle matrixFrames[FRAME_COUNT];
 static int currentFrame = 0;
 static float frameTime = 0.05f;
@@ -55,30 +61,17 @@ static void PlayHoverSound(Rectangle btn, bool hoveredNow)
 
 static void DrawCharacterButtonContent(CharacterNode *node, Rectangle btn, bool isHovered, bool isSelected)
 {
-    Rectangle src = {0, 0, 528, 528}; // padrão
-    Vector2 pos;
+    Rectangle src = {0, 0, SPRITE_SRC_WIDTH, SPRITE_SRC_HEIGHT};
     Texture2D texture;
 
     if (strcmp(node->name, "Mateus") == 0)
-    {
-        src = (isHovered || isSelected) ? (Rectangle){550, 7, 530, 525} : (Rectangle){7, 7, 525, 525};
-        texture = cabecaBranca;
-    }
-    else if (strcmp(node->name, "João") == 0)
-    {
-        src = (isHovered || isSelected) ? (Rectangle){550, 7, 530, 525} : (Rectangle){7, 7, 525, 525};
-        texture = meninaSheet;
-    }
-    else if (strcmp(node->name, "Mamede") == 0)
-    {
-        src = (isHovered || isSelected) ? (Rectangle){840, 4, 840, 540.4f} : (Rectangle){4, 4, 840, 540.4f};
-        texture = cabeloCastanhoSheet;
-    }
-    else if (strcmp(node->name, "Carlos") == 0)
-    {
         texture = (isHovered || isSelected) ? hacker2 : hacker1;
-        src = (Rectangle){0, 0, texture.width, texture.height};
-    }
+    else if (strcmp(node->name, "João") == 0)
+        texture = (isHovered || isSelected) ? menina2 : menina1;
+    else if (strcmp(node->name, "Mamede") == 0)
+        texture = (isHovered || isSelected) ? meninoPdavida2 : meninoPdavida1;
+    else if (strcmp(node->name, "Carlos") == 0)
+        texture = (isHovered || isSelected) ? deBone2 : deBone1;
     else
     {
         int textW = MeasureText(node->name, 36);
@@ -86,18 +79,13 @@ static void DrawCharacterButtonContent(CharacterNode *node, Rectangle btn, bool 
         return;
     }
 
-    // Escala proporcional com base na altura do botão
-    float scale = btn.height * 0.85f / src.height;
-    float spriteW = src.width * scale;
-    float spriteH = src.height * scale;
+    Rectangle dest = {
+        btn.x,
+        btn.y,
+        SPRITE_BTN_WIDTH,
+        SPRITE_BTN_HEIGHT};
 
-    pos = (Vector2){
-        btn.x + (btn.width - spriteW) / 2,
-        btn.y + (btn.height - spriteH) / 2};
-
-    DrawTexturePro(texture, src,
-                   (Rectangle){pos.x, pos.y, spriteW, spriteH},
-                   (Vector2){0, 0}, 0.0f, WHITE);
+    DrawTexturePro(texture, src, dest, (Vector2){0, 0}, 0.0f, WHITE);
 }
 
 void CreateCharacterList(void)
@@ -105,13 +93,12 @@ void CreateCharacterList(void)
     if (head)
         return;
     const char *names[] = {"João", "Mateus", "Carlos", "Mamede"};
-
     CharacterNode *last = NULL;
     for (int i = 0; i < 4; i++)
     {
         CharacterNode *node = malloc(sizeof(CharacterNode));
         strcpy(node->name, names[i]);
-
+        node->sfx = (Sound){0}; // inicializar vazio
         if (!head)
         {
             head = node;
@@ -126,7 +113,6 @@ void CreateCharacterList(void)
         }
         last = node;
     }
-
     selectedChar = head;
     charCount = 4;
 }
@@ -136,11 +122,14 @@ void InitMenu(void)
     currentScreen = MENU_MAIN;
     backgroundMatrix = LoadTexture("src/sprites/Matrix.png");
     logoTexture = LoadTexture("src/sprites/jogo.png");
-    cabecaBranca = LoadTexture("src/sprites/cabecaBrancaSheet.png");
-    meninaSheet = LoadTexture("src/sprites/meninaSheet.png");
-    cabeloCastanhoSheet = LoadTexture("src/sprites/cabeloCastanhoSheet.png");
-    hacker1 = LoadTexture("src/sprites/hacker1.png");
-    hacker2 = LoadTexture("src/sprites/hacker2.png");
+    hacker1 = LoadTexture("src/sprites/hacker1-unselected.png");
+    hacker2 = LoadTexture("src/sprites/hacker2-selected.png");
+    menina1 = LoadTexture("src/sprites/menina-unselected.png");
+    menina2 = LoadTexture("src/sprites/menina-selected.png");
+    meninoPdavida1 = LoadTexture("src/sprites/meninoPdavida-unselected.png");
+    meninoPdavida2 = LoadTexture("src/sprites/meninoPdavida-selected.png");
+    deBone1 = LoadTexture("src/sprites/deBone-unselected.png");
+    deBone2 = LoadTexture("src/sprites/deBone-selected.png");
     clickSound = LoadSound("src/music/buttonPress.wav");
 
     Rectangle frames[] = {
@@ -151,6 +140,23 @@ void InitMenu(void)
     CreateCharacterList();
     matrixInitialized = false;
     wasHoveredLastFrame = false;
+
+    // Carregar sons únicos por personagem
+    CharacterNode *node = head;
+    do
+    {
+        if (strcmp(node->name, "João") == 0)
+            node->sfx = LoadSound("src/music/menina-menu.wav");
+        else if (strcmp(node->name, "Mateus") == 0)
+            node->sfx = LoadSound("src/music/hacker-menu.wav");
+        else if (strcmp(node->name, "Carlos") == 0)
+            node->sfx = LoadSound("src/music/deBone-menu.wav");
+        else if (strcmp(node->name, "Mamede") == 0)
+            node->sfx = LoadSound("src/music/meninoPdavida-menu.wav");
+
+        TraceLog(LOG_INFO, "Som carregado para: %s", node->name);
+        node = node->next;
+    } while (node != head);
 }
 
 void UpdateMenu(void)
@@ -172,7 +178,6 @@ void UpdateMenu(void)
         Rectangle startBtn = {screenWidth / 2 - 150, screenHeight - 180, 300, 80};
         bool hovered = CheckCollisionPointRec(mouse, startBtn);
         PlayHoverSound(startBtn, hovered);
-
         if ((hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER))
         {
             PlaySound(clickSound);
@@ -181,40 +186,44 @@ void UpdateMenu(void)
     }
     else if (currentScreen == MENU_SELECT_CHAR)
     {
-        int btnW = 240, btnH = 240, spacing = 30;
-        int totalW = charCount * btnW + (charCount - 1) * spacing;
+        int spacing = 30;
+        int totalW = charCount * SPRITE_BTN_WIDTH + (charCount - 1) * spacing;
         int startX = (screenWidth - totalW) / 2;
-        int y = screenHeight / 2 - btnH / 2;
+        int y = screenHeight / 2 - SPRITE_BTN_HEIGHT / 2;
 
         CharacterNode *node = head;
         for (int i = 0; i < charCount; i++, node = node->next)
         {
-            Rectangle btn = {startX + i * (btnW + spacing), y, btnW, btnH};
+            Rectangle btn = {startX + i * (SPRITE_BTN_WIDTH + spacing), y, SPRITE_BTN_WIDTH, SPRITE_BTN_HEIGHT};
             bool hovered = CheckCollisionPointRec(mouse, btn);
-            PlayHoverSound(btn, hovered);
-
-            if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+            if (hovered && node != selectedChar)
             {
-                PlaySound(clickSound);
+                PlaySound(node->sfx);  // Toca som único do personagem
+                PlaySound(clickSound); // Mantém o som clássico de clique
                 selectedChar = node;
+            }
+            else if (hovered)
+            {
+                PlayHoverSound(btn, hovered);
             }
         }
 
         if (IsKeyPressed(KEY_RIGHT))
         {
-            PlaySound(clickSound);
             selectedChar = selectedChar->next;
+            PlaySound(selectedChar->sfx);
+            PlaySound(clickSound);
         }
         else if (IsKeyPressed(KEY_LEFT))
         {
-            PlaySound(clickSound);
             selectedChar = selectedChar->prev;
+            PlaySound(selectedChar->sfx);
+            PlaySound(clickSound);
         }
 
-        Rectangle confirmBtn = {screenWidth / 2 - 130, y + btnH + 50, 260, 56};
+        Rectangle confirmBtn = {screenWidth / 2 - 130, y + SPRITE_BTN_HEIGHT + 40, 260, 56};
         bool confirmHover = CheckCollisionPointRec(mouse, confirmBtn);
         PlayHoverSound(confirmBtn, confirmHover);
-
         if ((confirmHover && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER))
         {
             PlaySound(clickSound);
@@ -250,7 +259,6 @@ void DrawMenu(void)
         rainY[i] += speed;
         if (rainY[i] > screenHeight)
             rainY[i] = -spriteH;
-
         DrawTexturePro(backgroundMatrix, matrixFrames[currentFrame],
                        (Rectangle){i * spriteW, rainY[i], spriteW, spriteH}, (Vector2){0, 0}, 0.0f, green);
     }
@@ -269,29 +277,21 @@ void DrawMenu(void)
     }
     else if (currentScreen == MENU_SELECT_CHAR)
     {
-        int spacing = 30, btnW = 240, btnH = 240;
-        int totalW = charCount * btnW + (charCount - 1) * spacing;
+        int spacing = 30;
+        int totalW = charCount * SPRITE_BTN_WIDTH + (charCount - 1) * spacing;
         int startX = (screenWidth - totalW) / 2;
-        int y = screenHeight / 2 - btnH / 2;
+        int y = screenHeight / 2 - SPRITE_BTN_HEIGHT / 2;
 
         CharacterNode *node = head;
         for (int i = 0; i < charCount; i++, node = node->next)
         {
-            Rectangle btn = {startX + i * (btnW + spacing), y, btnW, btnH};
-            bool isHovered = CheckCollisionPointRec(GetMousePosition(), btn);
-            bool isSelected = (node == selectedChar);
-
-            Color bgColor = isSelected ? DARKGREEN : BLACK;
-            if (isHovered)
-                bgColor = isSelected ? GREEN : DARKGRAY;
-            DrawRectangleRec(btn, bgColor);
-            DrawRectangleLinesEx(btn, 3, isSelected ? RAYWHITE : DARKGRAY);
-
-            DrawCharacterButtonContent(node, btn, isHovered, isSelected);
+            Rectangle btn = {startX + i * (SPRITE_BTN_WIDTH + spacing), y, SPRITE_BTN_WIDTH, SPRITE_BTN_HEIGHT};
+            bool hovered = CheckCollisionPointRec(GetMousePosition(), btn);
+            DrawCharacterButtonContent(node, btn, hovered, node == selectedChar);
         }
 
         DrawText("Escolha seu personagem", screenWidth / 2 - 180, y - 70, 28, RAYWHITE);
-        Rectangle confirmBtn = {screenWidth / 2 - 130, y + btnH + 50, 260, 56};
+        Rectangle confirmBtn = {screenWidth / 2 - 130, y + SPRITE_BTN_HEIGHT + 40, 260, 56};
         Color confirmColor = CheckCollisionPointRec(GetMousePosition(), confirmBtn) ? DARKGREEN : GREEN;
         DrawRectangleRec(confirmBtn, confirmColor);
         DrawText("Confirmar", confirmBtn.x + 50, confirmBtn.y + 12, 32, WHITE);
@@ -329,9 +329,22 @@ void UnloadMenu(void)
     UnloadSound(clickSound);
     UnloadTexture(logoTexture);
     UnloadTexture(backgroundMatrix);
-    UnloadTexture(cabecaBranca);
-    UnloadTexture(meninaSheet);
-    UnloadTexture(cabeloCastanhoSheet);
     UnloadTexture(hacker1);
     UnloadTexture(hacker2);
+    UnloadTexture(menina1);
+    UnloadTexture(menina2);
+    UnloadTexture(meninoPdavida1);
+    UnloadTexture(meninoPdavida2);
+    UnloadTexture(deBone1);
+    UnloadTexture(deBone2);
+
+    CharacterNode *node = head;
+    if (node)
+    {
+        do
+        {
+            UnloadSound(node->sfx);
+            node = node->next;
+        } while (node != head);
+    }
 }

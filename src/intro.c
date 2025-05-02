@@ -129,7 +129,7 @@ void DrawIntro(void)
     DrawRectangleRounded((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxFill);
 
     // FUNÇÃO CORRIGIDA: NÃO existe parâmetro para espessura da linha!
-    DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxBorder); // <<< corrigido
+    //DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxBorder); // <<< corrigido
 
     int fontSize = 28; // Ajuste conforme desejar
     int margin = 28;
