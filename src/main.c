@@ -5,8 +5,7 @@
 #include "fase1.h"
 #include "gemini.h"
 
-typedef enum
-{
+typedef enum {
     APP_CUTSCENES,
     APP_MENU,
     APP_INTRO,
@@ -53,7 +52,10 @@ int main(void)
             {
                 PauseMusicStream(music); // <- Música para ao sair do menu
                 UnloadMenu();
-                InitIntro(MenuSelectedCharacterName());
+
+                float temposIntro[4] = {9.0f, 11.0f, 13.5f, 7.3f}; // segundos por página
+                InitIntro(MenuSelectedCharacterName(), temposIntro);
+
                 state = APP_INTRO;
             }
         }

@@ -4,90 +4,145 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define INTRO_TEXT_SPEED 42 // Letras por segundo
 
-static char *introText = NULL; // Buffer realocável para o texto personalizado
-static TypeWriter introWriter; // Gerencia o efeito de digitação
-static Font font;
+#define INTRO_TEXT_SPEED 42
+#define INTRO_PARTS       4
+#define BOX_WIDTH_RATIO   0.75f    // largura da caixa (75 % da tela)
+#define BOX_HEIGHT_RATIO  0.30f    // altura da caixa (50 % da tela)
+#define TYPING_SFX_PATH  "src/music/aiSpeaking.mp3"
+#define BACKGROUND_MUSIC  "src/music/soundscrate-hacker.mp3"
+#define TYPING_VOLUME      0.65f
+
+static char   *introParts[INTRO_PARTS] = {NULL};
+static float   partDurations[INTRO_PARTS] = {0}; // segundos p/ cada página
+static int     currentPart   = 0;
+static float   partTimer     = 0;                // tempo decorrido na página
+static TypeWriter partWriter;
+
+static Font      font;
 static Texture2D hackerBg;
-static Texture2D agentSecreto; // <- Aqui declaramos a sprite do agente
+static Texture2D agentSecreto;
+static Music     typingMusic;
+static Music     bgMusic;
 
-// Word wrap seguro para Raylib usando DrawTextEx
 static void DrawTextBoxedSafe(Font font, const char *text, Rectangle rec, int fontSize, int spacing, Color color)
 {
-    float x = rec.x;
-    float y = rec.y;
-    float maxWidth = rec.width;
-    int len = strlen(text);
+    float x = rec.x, y = rec.y, maxW = rec.width;
+    int len = strlen(text), lineLen = 0;
     char line[1024] = {0};
-    int lineLen = 0;
 
-    for (int i = 0; i <= len; i++)
-    {
+    for (int i = 0; i <= len; i++) {
         char c = text[i];
         line[lineLen++] = c;
-        if (c == '\n' || c == '\0')
-        {
+
+        if (c == '\n' || c == '\0') {          // quebra natural
             line[lineLen - 1] = '\0';
             DrawTextEx(font, line, (Vector2){x, y}, fontSize, spacing, color);
             y += fontSize + 4;
-            lineLen = 0;
-            line[0] = '\0';
-        }
-        else
-        {
+            lineLen = 0; line[0] = '\0';
+        } else {                               // quebra por largura
             line[lineLen] = '\0';
-            int width = MeasureTextEx(font, line, fontSize, spacing).x;
-            if (width > maxWidth)
-            {
-                int breakPos = lineLen - 1;
-                while (breakPos > 0 && line[breakPos] != ' ')
-                    breakPos--;
-                if (breakPos == 0)
-                    breakPos = lineLen - 1;
-                char temp = line[breakPos];
-                line[breakPos] = '\0';
+            int w = MeasureTextEx(font, line, fontSize, spacing).x;
+            if (w > maxW) {
+                int b = lineLen - 1;
+                while (b > 0 && line[b] != ' ') b--;
+                if (b == 0) b = lineLen - 1;
+
+                char tmp = line[b];
+                line[b] = '\0';
                 DrawTextEx(font, line, (Vector2){x, y}, fontSize, spacing, color);
                 y += fontSize + 4;
+
                 int j = 0;
-                if (temp == ' ')
-                    breakPos++;
-                while (breakPos < lineLen)
-                {
-                    line[j++] = line[breakPos++];
-                }
-                lineLen = j;
-                line[lineLen] = '\0';
+                if (tmp == ' ') b++;
+                while (b < lineLen) line[j++] = line[b++];
+                lineLen = j; line[lineLen] = '\0';
             }
         }
     }
 }
 
-void InitIntro(const char *nomePersonagem)
+static void StartTypingSfx(void)
 {
-    const char *baseText =
-        "Você, %s, foi selecionado para integrar um seleto grupo composto pelos melhores desenvolvedores da América, convidados a trabalhar na CyberTech.Inc, a empresa mais renomada do mundo em cibersegurança financeira.\n\n"
-        "No entanto, ao contrário dos demais colegas, seus interesses são muito mais obscuros. Seu verdadeiro objetivo não é proteger a empresa, mas sim infiltrá-la. O desafio da sua vida será roubar todos os seus dados da CyberTech, instalando um malware sofisticado nos sistemas da companhia, agindo exclusivamente em benefício próprio.\n\n"
-        "Essa missão, porém, está longe de ser simples. Para alcançar seu plano, será preciso superar inúmeros desafios, enfrentar situações de extremo risco e manter sua fachada durante toda sua estadia na CyberTech.Inc. A tensão aumenta ainda mais quando o investigador cibernético mais competente do mercado, Hank Micucci, também é contratado pela empresa, determinado a descobrir qualquer sinal de traição ou vazamento interno.\n\n"
-        "A cada decisão, seu disfarce pode ruir e será necessário travar uma batalha mental com Hank e os demais desenvolvedores para ganhar tempo para concluir seu objetivo.";
+    StopMusicStream(typingMusic);
+    SeekMusicStream(typingMusic, 0);
+    PlayMusicStream(typingMusic);
+}
+static void PauseTypingSfx(void) 
+{ 
+    PauseMusicStream(typingMusic); 
+}
 
-    if (introText)
-        free(introText);
-    int tamMax = strlen(baseText) + strlen(nomePersonagem) + 64;
-    introText = malloc(tamMax);
-    snprintf(introText, tamMax, baseText, nomePersonagem);
+void InitIntro(const char *nomePersonagem, const float tempos[])
+{
+    const char *templates[INTRO_PARTS] = {
+        "Você, %s, foi selecionado para integrar um seleto grupo composto pelos melhores desenvolvedores da América, convidados a trabalhar na CyberTech.Inc, a empresa mais renomada do mundo em cibersegurança financeira.\n",
+        "No entanto, ao contrário dos demais colegas, seus interesses são muito mais obscuros. Seu verdadeiro objetivo não é proteger a empresa, mas sim infiltrá-la. O desafio da sua vida será roubar todos os seus dados da CyberTech, instalando um malware sofisticado nos sistemas da companhia, agindo exclusivamente em benefício próprio.\n",
+        "Essa missão, porém, está longe de ser simples. Para alcançar seu plano, será preciso superar inúmeros desafios, enfrentar situações de extremo risco e manter sua fachada durante toda sua estadia na CyberTech.Inc. A tensão aumenta ainda mais quando o investigador cibernético mais competente do mercado, Hank Micucci, também é contratado pela empresa, determinado a descobrir qualquer sinal de traição ou vazamento interno.\n",
+        "A cada decisão, seu disfarce pode ruir e será necessário travar uma batalha mental com Hank e os demais desenvolvedores para ganhar tempo para concluir seu objetivo."
+    };
 
-    InitTypeWriter(&introWriter, introText, INTRO_TEXT_SPEED);
+    // libera strings antigas
+    for (int i = 0; i < INTRO_PARTS; i++) {
+        if (introParts[i]) { free(introParts[i]); introParts[i] = NULL; }
+    }
 
-    font = GetFontDefault();
-    hackerBg = LoadTexture("src/sprites/hackerBg.png");
-    agentSecreto = LoadTexture("src/sprites/agent_secreto.png"); // <- carrega a sprite agente
+    // copia tempos recebidos
+    for (int i = 0; i < INTRO_PARTS; i++)
+        partDurations[i] = tempos ? tempos[i] : 5.0f; // default = 5 s
+
+    // formata os textos
+    for (int i = 0; i < INTRO_PARTS; i++) {
+        size_t len = strlen(templates[i]) + strlen(nomePersonagem) + 16;
+        introParts[i] = malloc(len);
+        if (i == 0) snprintf(introParts[i], len, templates[i], nomePersonagem);
+        else        strcpy(introParts[i],    templates[i]);
+    }
+
+    currentPart = 0;
+    partTimer   = 0;
+    InitTypeWriter(&partWriter, introParts[currentPart], INTRO_TEXT_SPEED);
+
+    font        = GetFontDefault();
+    hackerBg    = LoadTexture("src/sprites/portugual.png");
+    agentSecreto= LoadTexture("src/sprites/agent_secreto.png");
+
+    // som
+    typingMusic  = LoadMusicStream(TYPING_SFX_PATH);
+    bgMusic = LoadMusicStream(BACKGROUND_MUSIC);
+
+    SetMusicVolume(typingMusic, TYPING_VOLUME);
+    SetMusicVolume(bgMusic, 0.9f);
+    StartTypingSfx();
+    PlayMusicStream(bgMusic);    
 }
 
 void UpdateIntro(void)
 {
-    bool skip = IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
-    UpdateTypeWriter(&introWriter, GetFrameTime(), skip);
+    float dt = GetFrameTime();
+    bool  skipKey = IsKeyPressed(KEY_SPACE) ||
+                    IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+
+    // apenas “pula” a digitação – não muda de página
+    UpdateMusicStream(typingMusic);
+    UpdateMusicStream(bgMusic);
+    UpdateTypeWriter(&partWriter, dt, skipKey);
+
+    // se terminou de digitar, pausa som
+    if (partWriter.done) PauseTypingSfx();
+
+    partTimer += dt;
+
+    // troca de página automaticamente
+    if (partWriter.done &&
+        partTimer >= partDurations[currentPart] &&
+        currentPart < INTRO_PARTS - 1)
+    {
+        currentPart++;
+        partTimer = 0;
+        InitTypeWriter(&partWriter, introParts[currentPart], INTRO_TEXT_SPEED);
+        StartTypingSfx(); 
+    }
 }
 
 void DrawIntro(void)
@@ -96,90 +151,63 @@ void DrawIntro(void)
     int h = GetScreenHeight();
 
     BeginDrawing();
-    DrawTexturePro(
-        hackerBg,
-        (Rectangle){0, 0, hackerBg.width, hackerBg.height},
-        (Rectangle){0, 0, w, h},
-        (Vector2){0, 0},
-        0.0f,
-        WHITE
-    );
+    DrawTexturePro(hackerBg,
+                   (Rectangle){0,0,hackerBg.width,hackerBg.height},
+                   (Rectangle){0,0,w,h}, (Vector2){0,0}, 0.0f, WHITE);
 
-    // CALCULA POSIÇÃO E TAMANHO DA CAIXA
-    float boxW = w * 0.85f;
-    float boxH = h * 0.65f;
-    float bottomMargin = h * 0.08f;
-    float boxX = (w - boxW) / 2;
-    float boxY = h - bottomMargin - boxH;
+    float boxW = w * BOX_WIDTH_RATIO;
+    float boxH = h * BOX_HEIGHT_RATIO;
+    float bottom = h * 0.02f;
+    float boxX = (w - boxW) / 2.f;
+    float boxY = h - bottom - boxH;
 
-    // DESENHA AGENTE GRUDADO NO TOPO DA CAIXA
-    float agentScale = 0.6f;
-    float agentW = agentSecreto.width * agentScale;
-    float agentH = agentSecreto.height * agentScale;
-    float agentLeftOffset = -660.0f; // ajuste este número conforme desejar
-    float agentX = w/2 - agentW/2 + agentLeftOffset;
+    DrawRectangleRounded((Rectangle){boxX,boxY,boxW,boxH}, 0.07f, 32,
+                         (Color){0,0,0,180});
+
+    float scale = 0.6f;
+    float agentH = agentSecreto.height * scale;
+    float agentX = boxX + 20;
     float agentY = boxY - agentH;
-    DrawTextureEx(agentSecreto, (Vector2){agentX, agentY}, 0, agentScale, WHITE);
+    
+    DrawTextureEx(agentSecreto, (Vector2){agentX, agentY}, 0, scale, WHITE);
 
-    Color boxFill = (Color){0, 0, 0, 180};
-    float roundness = 0.07f;
-    int segments = 32;
-    //float borderThickness = 2.0f;
+    int fontSize = 28, margin = 28;
+    Rectangle rec = { boxX + margin, boxY + margin,
+                      boxW - 2*margin, boxH - 2*margin };
 
-    DrawRectangleRounded((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxFill);
-
-    // FUNÇÃO CORRIGIDA: NÃO existe parâmetro para espessura da linha!
-    //DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxBorder); // <<< corrigido
-
-    int fontSize = 28; // Ajuste conforme desejar
-    int margin = 28;
-    float textX = boxX + margin;
-    float textY = boxY + margin;
-    float textW = boxW - 2 * margin;
-    float textH = boxH - 2 * margin;
-    Rectangle rec = {textX, textY, textW, textH};
-    Font showFont = font;
-
-    if (introText && introWriter.drawnChars > 0)
-    {
-        char *buffer = malloc(introWriter.drawnChars + 1);
-        strncpy(buffer, introText, introWriter.drawnChars);
-        buffer[introWriter.drawnChars] = '\0';
-        DrawTextBoxedSafe(showFont, buffer, rec, fontSize, 2, WHITE);
-        free(buffer);
+    if (partWriter.drawnChars > 0) {
+        char *tmp = malloc(partWriter.drawnChars + 1);
+        strncpy(tmp, introParts[currentPart], partWriter.drawnChars);
+        tmp[partWriter.drawnChars] = '\0';
+        DrawTextBoxedSafe(font, tmp, rec, fontSize, 2, WHITE);
+        free(tmp);
     }
 
-    if (introWriter.done && introWriter.drawnChars >= introWriter.length)
-    {
-        const char *msg = "[Pressione ENTER para continuar]";
-        int msgFontSize = fontSize - 2;
-        Vector2 msgSize = MeasureTextEx(showFont, msg, msgFontSize, 2);
-        DrawTextEx(
-            showFont,
-            msg,
-            (Vector2){w / 2 - msgSize.x / 2, boxY + boxH - margin - msgSize.y},
-            msgFontSize,
-            2,
-            WHITE
-        );
-    }
+    //--- Barra de progresso opcional (visual)
+    float progress = partTimer / partDurations[currentPart];
+    if (progress > 1) progress = 1;
+    DrawRectangleRec((Rectangle){
+        boxX, boxY - 8,
+        boxW * progress, 4
+    }, (Color){255,255,255,200});
 
     EndDrawing();
 }
 
 bool IntroEnded(void)
 {
-    return (introWriter.done && introWriter.drawnChars >= introWriter.length &&
-            (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)));
+    return (currentPart == INTRO_PARTS - 1) &&
+           partWriter.done &&
+           (partTimer >= partDurations[currentPart]);
 }
 
 void UnloadIntro(void)
 {
-    if (introText)
-    {
-        free(introText);
-        introText = NULL;
+    for (int i = 0; i < INTRO_PARTS; i++) {
+        if (introParts[i]) { free(introParts[i]); introParts[i] = NULL; }
     }
     UnloadTexture(hackerBg);
-    UnloadTexture(agentSecreto); // <- Libera a imagem do agente!
+    UnloadTexture(agentSecreto);
+    StopMusicStream(bgMusic);
+    UnloadMusicStream(bgMusic);
 }
