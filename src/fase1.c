@@ -1,38 +1,73 @@
 #include "fase1.h"
 #include "raylib.h"
+#include <math.h>
 
-static Texture2D empresa_bg;
+static Model modelo3D;
 static Texture2D pergunta_img;
+static Sound somFase1;
+static Camera3D camera;
 
-void InitFase1(void) {
-    empresa_bg = LoadTexture("src/sprites/empresa3.png");
+static float cameraYaw = 0.0f;
+static const float maxYaw = 45.0f * DEG2RAD;
+static const float minYaw = -45.0f * DEG2RAD;
+
+static bool somJaTocado = false;
+
+void InitFase1(void)
+{
+    modelo3D = LoadModel("src/models/old-computer.obj");
+
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
+
+    somFase1 = LoadSound("src/music/fase1-mateus.wav");
+    somJaTocado = false;
+
+    camera.position = (Vector3){0.0f, 1.6f, 0.0f};
+    camera.target = (Vector3){0.0f, 1.6f, -1.0f};
+    camera.up = (Vector3){0.0f, 1.0f, 0.0f};
+    camera.fovy = 60.0f;
+    camera.projection = CAMERA_PERSPECTIVE;
 }
 
-void UpdateFase1(void) {}
+void UpdateFase1(void)
+{
+    if (!somJaTocado)
+    {
+        PlaySound(somFase1);
+        somJaTocado = true;
+    }
 
-void DrawFase1(void) {
+    if (IsKeyDown(KEY_LEFT))
+        cameraYaw -= 0.02f;
+    if (IsKeyDown(KEY_RIGHT))
+        cameraYaw += 0.02f;
+
+    if (cameraYaw > maxYaw)
+        cameraYaw = maxYaw;
+    if (cameraYaw < minYaw)
+        cameraYaw = minYaw;
+
+    float distance = 1.0f;
+    camera.target.x = camera.position.x + sinf(cameraYaw) * distance;
+    camera.target.z = camera.position.z - cosf(cameraYaw) * distance;
+    camera.target.y = camera.position.y;
+}
+
+void DrawFase1(void)
+{
     BeginDrawing();
     ClearBackground(BLACK);
 
-    // Fundo
-    DrawTexturePro(
-        empresa_bg,
-        (Rectangle){0, 0, empresa_bg.width, empresa_bg.height},
-        (Rectangle){0, 0, GetScreenWidth(), GetScreenHeight()},
-        (Vector2){0, 0},
-        0.0f,
-        WHITE
-    );
+    BeginMode3D(camera);
+    DrawModel(modelo3D, (Vector3){0.0f, -0.5f, -2.0f}, 0.05f, WHITE);
+    EndMode3D();
 
-    // Caixa de diálogo (retângulo cinza)
     int boxX = 60;
     int marginBottom = 220;
     int boxY = GetScreenHeight() - marginBottom;
     int boxWidth = GetScreenWidth() - 120;
     int boxHeight = 130;
 
-    // Imagem da pergunta acima do retângulo
     int imgW = 1000;
     int imgH = pergunta_img.height - 130;
     int imgX = boxX;
@@ -44,28 +79,24 @@ void DrawFase1(void) {
         (Rectangle){imgX, imgY, imgW, imgH},
         (Vector2){0, 0},
         0.0f,
-        WHITE
-    );
+        WHITE);
 
-    // Texto "???" bem no canto inferior esquerdo da imagem
     int txtFontSize = 30;
-    int txtX = imgX + 10;              // bem encostado à esquerda
+    int txtX = imgX + 10;
     int txtY = imgY + imgH - txtFontSize;
-
     DrawText("???", txtX, txtY, txtFontSize, WHITE);
 
-    // Balão de fala (retângulo com lado direito arredondado)
     int borderRadius = boxHeight / 2;
     DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight, (Color){20, 20, 20, 220});
     DrawCircle(boxX + boxWidth - borderRadius, boxY + borderRadius, borderRadius, (Color){20, 20, 20, 220});
-
-    // Texto da pergunta
     DrawText("Aqui será a pergunta?", boxX + 20, boxY + 30, 28, WHITE);
 
     EndDrawing();
 }
 
-void UnloadFase1(void) {
-    UnloadTexture(empresa_bg);
+void UnloadFase1(void)
+{
+    UnloadModel(modelo3D);
     UnloadTexture(pergunta_img);
+    UnloadSound(somFase1);
 }

@@ -122,7 +122,6 @@ void DrawIntro(void)
     DrawTextureEx(agentSecreto, (Vector2){agentX, agentY}, 0, agentScale, WHITE);
 
     Color boxFill = (Color){0, 0, 0, 180};
-    Color boxBorder = (Color){0, 0, 0, 240};
     float roundness = 0.07f;
     int segments = 32;
     //float borderThickness = 2.0f;
