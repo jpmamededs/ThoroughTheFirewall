@@ -1,5 +1,7 @@
 #include "fase1.h"
 #include "raylib.h"
+#include "generalFunctions.h"
+#include <string.h> 
 #include <math.h>
 
 static Model modelo3D;
@@ -25,6 +27,16 @@ static float animacaoTelefoneY = 0.0f;
 static float tempoDesdeInicio = 0.0f;
 static float cooldownTelefone = -3.0f;
 static Rectangle telefoneBounds = {0};
+static float delayTexto = 0.0f; 
+static TypeWriter fase1Writer;
+static bool typeStarted = false;
+static Music typingMusicF1 = { 0 };
+static bool  typingLoaded  = false;
+
+const char *GetCurrentText(TypeWriter *writer)
+{
+    return writer->text;
+}
 
 void InitFase1(void)
 {
@@ -64,6 +76,22 @@ void UpdateFase1(void)
     float delta = GetFrameTime();
     tempoDesdeInicio += delta;
 
+    if (!typeStarted && delayTexto > 0.0f) {
+        delayTexto -= delta;
+        if (delayTexto <= 0.0f) {
+            const char *fala =
+                "Oi, sobre aquela coisa de hacking, eu tô meio ocupado nesse mês, então vou te mostrar aquela Gemini AI.\n"
+                "Ela vai te guiar nessa nossa missão, então você não ficará perdido, ok? Tome cuidado. Tchau.";
+            InitTypeWriter(&fase1Writer, fala, 18.5f); 
+            typeStarted = true;
+        }
+    }
+
+    if (typeStarted) {
+        UpdateTypeWriter(&fase1Writer, delta, IsKeyPressed(KEY_SPACE));
+    }
+    if (typingLoaded) UpdateMusicStream(typingMusicF1);
+
     if (!interromperTelefone)
     {
         cooldownTelefone += delta;
@@ -82,9 +110,14 @@ void UpdateFase1(void)
     }
 
     Vector2 mouse = GetMousePosition();
-    if (telefoneVisivel && CheckCollisionPointRec(mouse, telefoneBounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    if (telefoneVisivel && 
+        CheckCollisionPointRec(mouse, telefoneBounds) && 
+        IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         interromperTelefone = true;
+
+        if (!typeStarted) delayTexto = 2.3f;
+
         StopSound(somTelefone);
         animandoTelefone = true;
         telefoneSubindo = false;
@@ -143,34 +176,44 @@ void DrawFase1(void)
     DrawModel(modelo3D, (Vector3){0.0f, -0.5f, -2.0f}, 0.05f, WHITE);
     EndMode3D();
 
-    int boxX = 60;
-    int marginBottom = 220;
-    int boxY = GetScreenHeight() - marginBottom;
-    int boxWidth = GetScreenWidth() - 120;
-    int boxHeight = 130;
+    if (interromperTelefone)
+    {
+        int boxX = 60;
+        int marginBottom = 220;
+        int boxY = GetScreenHeight() - marginBottom;
+        int boxWidth = GetScreenWidth() - 120;
+        int boxHeight = 130;
 
-    int imgW = 1000;
-    int imgH = pergunta_img.height - 130;
-    int imgX = boxX;
-    int imgY = boxY - imgH;
+        int imgW = 1000;
+        int imgH = pergunta_img.height - 130;
+        int imgX = boxX;
+        int imgY = boxY - imgH;
 
-    DrawTexturePro(
-        pergunta_img,
-        (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
-        (Rectangle){imgX, imgY, imgW, imgH},
-        (Vector2){0, 0},
-        0.0f,
-        WHITE);
+        DrawTexturePro(
+            pergunta_img,
+            (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
+            (Rectangle){imgX, imgY, imgW, imgH},
+            (Vector2){0, 0},
+            0.0f,
+            WHITE);
 
-    int txtFontSize = 30;
-    int txtX = imgX + 10;
-    int txtY = imgY + imgH - txtFontSize;
-    DrawText("???", txtX, txtY, txtFontSize, WHITE);
+        int txtFontSize = 30;
+        int txtX = imgX + 10;
+        int txtY = imgY + imgH - txtFontSize;
+        DrawText("???", txtX, txtY, txtFontSize, WHITE);
 
-    int borderRadius = boxHeight / 2;
-    DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight, (Color){20, 20, 20, 220});
-    DrawCircle(boxX + boxWidth - borderRadius, boxY + borderRadius, borderRadius, (Color){20, 20, 20, 220});
-    DrawText("Aqui será a pergunta?", boxX + 20, boxY + 30, 28, WHITE);
+        int borderRadius = boxHeight / 2;
+        DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight, (Color){20, 20, 20, 220});
+        DrawCircle(boxX + boxWidth - borderRadius, boxY + borderRadius, borderRadius, (Color){20, 20, 20, 220});
+
+
+        if (fase1Writer.drawnChars > 0) {
+            char tmp[fase1Writer.drawnChars + 1];
+            strncpy(tmp, GetCurrentText(&fase1Writer), fase1Writer.drawnChars);
+            tmp[fase1Writer.drawnChars] = '\0';
+            DrawText(tmp, boxX + 20, boxY + 30, 28, WHITE);
+        }
+    }
 
     if (telefoneVisivel)
     {
