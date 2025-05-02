@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 #define INTRO_TEXT_SPEED 42 // Letras por segundo
 
 static char *introText = NULL; // Buffer realocável para o texto personalizado
@@ -69,6 +70,7 @@ void InitIntro(const char *nomePersonagem)
         "No entanto, ao contrário dos demais colegas, seus interesses são muito mais obscuros. Seu verdadeiro objetivo não é proteger a empresa, mas sim infiltrá-la. O desafio da sua vida será roubar todos os seus dados da CyberTech, instalando um malware sofisticado nos sistemas da companhia, agindo exclusivamente em benefício próprio.\n\n"
         "Essa missão, porém, está longe de ser simples. Para alcançar seu plano, será preciso superar inúmeros desafios, enfrentar situações de extremo risco e manter sua fachada durante toda sua estadia na CyberTech.Inc. A tensão aumenta ainda mais quando o investigador cibernético mais competente do mercado, Hank Micucci, também é contratado pela empresa, determinado a descobrir qualquer sinal de traição ou vazamento interno.\n\n"
         "A cada decisão, seu disfarce pode ruir e será necessário travar uma batalha mental com Hank e os demais desenvolvedores para ganhar tempo para concluir seu objetivo.";
+
     if (introText)
         free(introText);
     int tamMax = strlen(baseText) + strlen(nomePersonagem) + 64;
@@ -118,7 +120,7 @@ void DrawIntro(void)
     float roundness = 0.07f;
     int segments = 32;
     DrawRectangleRounded((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxFill);
-    DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxBorder);
+    DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, borderThickness, boxBorder);
 
     int fontSize = 28; // Ajuste conforme desejar
     int margin = 28;
