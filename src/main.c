@@ -2,8 +2,14 @@
 #include "cutscenes.h"
 #include "menu.h"
 #include "intro.h"
+#include "fase1.h"    // <-- Adicionado
 
-typedef enum { APP_CUTSCENES, APP_MENU, APP_INTRO, APP_GAME } AppState;
+typedef enum {
+    APP_CUTSCENES,
+    APP_MENU,
+    APP_INTRO,
+    APP_FASE1      // <-- Novo estado para fase1
+} AppState;
 
 int main(void)
 {
@@ -19,9 +25,6 @@ int main(void)
 
     AppState state = APP_CUTSCENES;
     InitCutscenes();
-
-    // Inicie o menu/intro APENAS quando mudar de estado!
-    // (não aqui antes do loop)
 
     while (!WindowShouldClose())
     {
@@ -57,16 +60,15 @@ int main(void)
             if (IntroEnded())
             {
                 UnloadIntro();
-                state = APP_GAME;
+                InitFase1();      // <-- Inicialize a Fase 1 aqui!
+                state = APP_FASE1;
             }
         }
-        else if (state == APP_GAME)
+        else if (state == APP_FASE1)
         {
-            BeginDrawing();
-            ClearBackground(GREEN);
-            DrawText("Personagem escolhido:", 40, 40, 28, BLACK);
-            DrawText(MenuSelectedCharacterName(), 80, 80, 40, DARKGRAY);
-            EndDrawing();
+            UpdateFase1();
+            DrawFase1();
+            // Se quiser, adicione IF para avançar para próxima fase/estado aqui
         }
     }
 
@@ -74,9 +76,11 @@ int main(void)
     if (state == APP_CUTSCENES) UnloadCutscenes();
     if (state == APP_MENU)      UnloadMenu();
     if (state == APP_INTRO)     UnloadIntro();
+    if (state == APP_FASE1)     UnloadFase1();
 
     UnloadMusicStream(music);
     CloseAudioDevice();
     CloseWindow();
+
     return 0;
 }
