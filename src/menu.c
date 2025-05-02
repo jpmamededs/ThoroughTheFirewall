@@ -1,287 +1,243 @@
 #include "menu.h"
 #include "raylib.h"
-#include <math.h>
 #include <stdlib.h>
 #include <string.h>
+
 #define FRAME_COUNT 15
-#define MAX_COLS 64
+#define MAX_COLUMNS 64
 
-typedef struct Node
-{
-    char nome[32];
-    struct Node *prox, *ant;
-} Node;
+typedef struct CharacterNode {
+    char name[32];
+    struct CharacterNode *next, *prev;
+} CharacterNode;
 
-typedef enum
-{
-    MENU_STATE_MAIN,
-    MENU_STATE_CHOOSE_CHAR,
-    MENU_STATE_DONE
-} MenuState;
+typedef enum {
+    MENU_MAIN,
+    MENU_SELECT_CHAR,
+    MENU_FINISHED
+} MenuScreen;
 
-static MenuState currentMenuState = MENU_STATE_MAIN;
+static MenuScreen currentScreen = MENU_MAIN;
 
-// Texturas e efeitos
-static Texture2D matrixSprite;
-static Texture2D jogoTexture;
+// Recursos
+static Texture2D backgroundMatrix;
+static Texture2D logoTexture;
 static Rectangle matrixFrames[FRAME_COUNT];
 static int currentFrame = 0;
-static float frameDuration = 0.05f;
-static float lastFrameTime = 0.0f;
-static float spriteY[MAX_COLS] = {0};
-static bool matrixInited = false;
+static float frameTime = 0.05f;
+static float lastUpdate = 0.0f;
+static float rainY[MAX_COLUMNS] = {0};
+static bool matrixInitialized = false;
 
-// Lista circular fixa de personagens
-static Node *head = NULL;
-static Node *tail = NULL;
-static Node *selecionado = NULL;
-static int numChars = 0;
-static char nomeEscolhido[32] = "";
+// Personagens
+static CharacterNode *head = NULL, *selectedChar = NULL;
+static int charCount = 0;
 
-// Som de botão
-static Sound buttonSound;
-static Rectangle lastHovered = {0};
-static bool hoveredLastFrame = false;
+// Som
+static Sound clickSound;
+static bool wasHoveredLastFrame = false;
 
-// --- Função auxiliar: toca efeito de botão ---
-void PlayButtonSoundOnce(Rectangle btn, bool isHoveredNow)
-{
-    if (isHoveredNow && (!hoveredLastFrame || memcmp(&btn, &lastHovered, sizeof(Rectangle)) != 0))
-    {
-        PlaySound(buttonSound);
-        lastHovered = btn;
+void PlayHoverSound(Rectangle btn, bool hoveredNow) {
+    if (hoveredNow && !wasHoveredLastFrame) {
+        PlaySound(clickSound);
     }
-    hoveredLastFrame = isHoveredNow;
+    wasHoveredLastFrame = hoveredNow;
 }
 
-// --- Lista circular de personagens ---
-void CriarListaPersonagens(void)
-{
-    if (head)
-        return;
-    Node *n1 = malloc(sizeof(Node));
-    Node *n2 = malloc(sizeof(Node));
-    Node *n3 = malloc(sizeof(Node));
-    Node *n4 = malloc(sizeof(Node));
-    strcpy(n1->nome, "João");
-    strcpy(n2->nome, "Mateus");
-    strcpy(n3->nome, "Carlos");
-    strcpy(n4->nome, "Mamede");
-    n1->prox = n2;
-    n2->prox = n3;
-    n3->prox = n4;
-    n4->prox = n1;
-    n1->ant = n4;
-    n2->ant = n1;
-    n3->ant = n2;
-    n4->ant = n3;
-    head = n1;
-    tail = n4;
-    selecionado = head;
-    numChars = 4;
-}
-void DestruirListaPersonagens(void)
-{
-    if (head)
-    {
-        Node *p = head->prox;
-        while (p != head)
-        {
-            Node *aux = p;
-            p = p->prox;
-            free(aux);
+void CreateCharacterList(void) {
+    if (head) return;
+    const char *names[] = {"João", "Mateus", "Carlos", "Mamede"};
+
+    CharacterNode *last = NULL;
+    for (int i = 0; i < 4; i++) {
+        CharacterNode *node = malloc(sizeof(CharacterNode));
+        strcpy(node->name, names[i]);
+
+        if (!head) {
+            head = node;
+            node->next = node->prev = node;
+        } else {
+            node->prev = last;
+            node->next = head;
+            last->next = node;
+            head->prev = node;
         }
-        free(head);
-        head = tail = selecionado = NULL;
-        numChars = 0;
+        last = node;
     }
+
+    selectedChar = head;
+    charCount = 4;
 }
 
-// --- Menu ---
-void InitMenu(void)
-{
-    DestruirListaPersonagens();
-    currentMenuState = MENU_STATE_MAIN;
-    matrixSprite = LoadTexture("src/sprites/Matrix.png");
-    jogoTexture = LoadTexture("src/sprites/jogo.png");
-    buttonSound = LoadSound("src/music/buttonPress.wav");
-    Rectangle frames[FRAME_COUNT] = {
-        {0, 512, 512, 512}, {0, 1024, 512, 512}, {0, 1536, 512, 512}, {512, 0, 512, 512}, {512, 512, 512, 512}, {512, 1024, 512, 512}, {512, 1536, 512, 512}, {1024, 0, 512, 512}, {1024, 512, 512, 512}, {1024, 1024, 512, 512}, {1024, 1536, 512, 512}, {1536, 0, 512, 512}, {1536, 512, 512, 512}, {1536, 1024, 512, 512}, {1536, 1536, 512, 512}};
-    for (int i = 0; i < FRAME_COUNT; i++)
-        matrixFrames[i] = frames[i];
-    currentFrame = 0;
-    lastFrameTime = 0.0f;
-    matrixInited = false;
-    hoveredLastFrame = false;
-    CriarListaPersonagens();
-    nomeEscolhido[0] = '\0';
+void InitMenu(void) {
+    currentScreen = MENU_MAIN;
+    backgroundMatrix = LoadTexture("src/sprites/Matrix.png");
+    logoTexture = LoadTexture("src/sprites/jogo.png");
+    clickSound = LoadSound("src/music/buttonPress.mp3");
+
+    Rectangle frames[] = {
+        {0, 512, 512, 512}, {0, 1024, 512, 512}, {0, 1536, 512, 512},
+        {512, 0, 512, 512}, {512, 512, 512, 512}, {512, 1024, 512, 512},
+        {512, 1536, 512, 512}, {1024, 0, 512, 512}, {1024, 512, 512, 512},
+        {1024, 1024, 512, 512}, {1024, 1536, 512, 512}, {1536, 0, 512, 512},
+        {1536, 512, 512, 512}, {1536, 1024, 512, 512}, {1536, 1536, 512, 512}
+    };
+    for (int i = 0; i < FRAME_COUNT; i++) matrixFrames[i] = frames[i];
+
+    CreateCharacterList();
+    matrixInitialized = false;
+    wasHoveredLastFrame = false;
 }
-void UpdateMenu(void)
-{
-    int w = GetScreenWidth();
-    int h = GetScreenHeight();
+
+void UpdateMenu(void) {
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
     float now = GetTime();
-    if (now - lastFrameTime >= frameDuration)
-    {
+
+    if (now - lastUpdate >= frameTime) {
         currentFrame = (currentFrame + 1) % FRAME_COUNT;
-        lastFrameTime = now;
+        lastUpdate = now;
     }
+
     Vector2 mouse = GetMousePosition();
-    if (currentMenuState == MENU_STATE_MAIN)
-    {
-        Rectangle btnRect = {w / 2 - 150, h - 180, 300, 80};
-        bool hovered = CheckCollisionPointRec(mouse, btnRect);
-        PlayButtonSoundOnce(btnRect, hovered);
-        if ((hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER))
-        {
-            PlaySound(buttonSound);
-            currentMenuState = MENU_STATE_CHOOSE_CHAR;
+
+    if (currentScreen == MENU_MAIN) {
+        Rectangle startBtn = {screenWidth / 2 - 150, screenHeight - 180, 300, 80};
+        bool hovered = CheckCollisionPointRec(mouse, startBtn);
+        PlayHoverSound(startBtn, hovered);
+
+        if ((hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER)) {
+            PlaySound(clickSound);
+            currentScreen = MENU_SELECT_CHAR;
         }
-    }
-    else if (currentMenuState == MENU_STATE_CHOOSE_CHAR)
-    {
-        int btnW = 160, btnH = 80, spaceBetween = 20;
-        int btnTotalW = numChars * btnW + (numChars - 1) * spaceBetween;
-        int btnStartX = (w - btnTotalW) / 2;
-        int btnY = h / 2 - btnH / 2;
-        Node *p = head;
-        for (int i = 0; i < numChars; i++, p = p->prox)
-        {
-            Rectangle btnRect = {btnStartX + i * (btnW + spaceBetween), btnY, btnW, btnH};
-            bool hovered = CheckCollisionPointRec(mouse, btnRect);
-            PlayButtonSoundOnce(btnRect, hovered);
-            if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
-            {
-                PlaySound(buttonSound);
-                selecionado = p;
+
+    } else if (currentScreen == MENU_SELECT_CHAR) {
+        int btnW = 160, btnH = 80, spacing = 20;
+        int totalW = charCount * btnW + (charCount - 1) * spacing;
+        int startX = (screenWidth - totalW) / 2;
+        int y = screenHeight / 2 - btnH / 2;
+
+        CharacterNode *node = head;
+        for (int i = 0; i < charCount; i++, node = node->next) {
+            Rectangle btn = {startX + i * (btnW + spacing), y, btnW, btnH};
+            bool hovered = CheckCollisionPointRec(mouse, btn);
+            PlayHoverSound(btn, hovered);
+
+            if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+                PlaySound(clickSound);
+                selectedChar = node;
             }
         }
-        if (IsKeyPressed(KEY_RIGHT))
-        {
-            PlaySound(buttonSound);
-            selecionado = selecionado->prox;
+
+        if (IsKeyPressed(KEY_RIGHT)) {
+            PlaySound(clickSound);
+            selectedChar = selectedChar->next;
+        } else if (IsKeyPressed(KEY_LEFT)) {
+            PlaySound(clickSound);
+            selectedChar = selectedChar->prev;
         }
-        else if (IsKeyPressed(KEY_LEFT))
-        {
-            PlaySound(buttonSound);
-            selecionado = selecionado->ant;
-        }
-        Rectangle confirmBtn = {w / 2 - 130, btnY + btnH + 50, 260, 56};
-        bool hoveredConfirm = CheckCollisionPointRec(mouse, confirmBtn);
-        PlayButtonSoundOnce(confirmBtn, hoveredConfirm);
-        if ((hoveredConfirm && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER))
-        {
-            PlaySound(buttonSound);
-            currentMenuState = MENU_STATE_DONE;
+
+        Rectangle confirmBtn = {screenWidth / 2 - 130, y + btnH + 50, 260, 56};
+        bool confirmHover = CheckCollisionPointRec(mouse, confirmBtn);
+        PlayHoverSound(confirmBtn, confirmHover);
+
+        if ((confirmHover && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER)) {
+            PlaySound(clickSound);
+            currentScreen = MENU_FINISHED;
         }
     }
 }
-void DrawMenu(void)
-{
-    int w = GetScreenWidth();
-    int h = GetScreenHeight();
+
+void DrawMenu(void) {
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
     BeginDrawing();
     ClearBackground(BLACK);
+
     float scale = 0.3f;
     int spriteW = 512 * scale;
     int spriteH = 512 * scale;
-    int numCols = w / spriteW + 2;
-    if (!matrixInited)
-    {
-        for (int i = 0; i < MAX_COLS; i++)
-            spriteY[i] = GetRandomValue(-spriteH, h);
-        matrixInited = true;
+    int columns = screenWidth / spriteW + 2;
+
+    if (!matrixInitialized) {
+        for (int i = 0; i < MAX_COLUMNS; i++)
+            rainY[i] = GetRandomValue(-spriteH, screenHeight);
+        matrixInitialized = true;
     }
+
     float speed = 100.0f * GetFrameTime();
-    Color semiTransparentGreen = (Color){0, 255, 0, 60};
-    for (int i = 0; i < numCols && i < MAX_COLS; i++)
-    {
-        spriteY[i] += speed;
-        if (spriteY[i] > h)
-            spriteY[i] = -spriteH;
-        float x = i * spriteW;
-        float y = spriteY[i];
-        DrawTexturePro(matrixSprite, matrixFrames[currentFrame], (Rectangle){x, y, spriteW, spriteH}, (Vector2){0, 0}, 0.0f, semiTransparentGreen);
+    Color green = (Color){0, 255, 0, 60};
+
+    for (int i = 0; i < columns && i < MAX_COLUMNS; i++) {
+        rainY[i] += speed;
+        if (rainY[i] > screenHeight) rainY[i] = -spriteH;
+
+        DrawTexturePro(backgroundMatrix, matrixFrames[currentFrame],
+            (Rectangle){i * spriteW, rainY[i], spriteW, spriteH}, (Vector2){0, 0}, 0.0f, green);
     }
-    if (currentMenuState == MENU_STATE_MAIN)
-    {
+
+    if (currentScreen == MENU_MAIN) {
         float imgScale = 0.2f;
-        float imgWidth = jogoTexture.width * imgScale;
-        float imgHeight = jogoTexture.height * imgScale;
-        float posX = (w - imgWidth) / 2;
-        float posY = (h - imgHeight) / 2;
-        DrawTextureEx(jogoTexture, (Vector2){posX, posY}, 0.0f, imgScale, WHITE);
-        Rectangle btnRect = {w / 2 - 150, h - 180, 300, 80};
-        Color btnColor = CheckCollisionPointRec(GetMousePosition(), btnRect) ? (Color){0, 200, 0, 255} : (Color){0, 180, 0, 255};
-        DrawRectangleRec(btnRect, btnColor);
-        DrawText("Iniciar jogo", btnRect.x + 50, btnRect.y + 20, 36, WHITE);
+        float imgW = logoTexture.width * imgScale;
+        float imgH = logoTexture.height * imgScale;
+        DrawTextureEx(logoTexture, (Vector2){(screenWidth - imgW) / 2, (screenHeight - imgH) / 2}, 0.0f, imgScale, WHITE);
+
+        Rectangle startBtn = {screenWidth / 2 - 150, screenHeight - 180, 300, 80};
+        Color btnColor = CheckCollisionPointRec(GetMousePosition(), startBtn) ? DARKGREEN : GREEN;
+        DrawRectangleRec(startBtn, btnColor);
+        DrawText("Iniciar Jogo", startBtn.x + 50, startBtn.y + 20, 36, WHITE);
     }
-    else if (currentMenuState == MENU_STATE_CHOOSE_CHAR)
-    {
-        int spaceBetween = 20, btnW = 160, btnH = 80;
-        int btnTotalW = numChars * btnW + (numChars - 1) * spaceBetween;
-        int btnStartX = (w - btnTotalW) / 2;
-        int btnY = h / 2 - btnH / 2;
-        int fontSize = 36;
-        Node *p = head;
-        for (int i = 0; i < numChars; i++, p = p->prox)
-        {
-            Rectangle btnRect = {btnStartX + i * (btnW + spaceBetween), btnY, btnW, btnH};
-            Color btnColor = (p == selecionado) ? (Color){40, 100, 40, 255} : BLACK;
-            if (CheckCollisionPointRec(GetMousePosition(), btnRect))
-            {
-                btnColor = (p == selecionado) ? (Color){60, 160, 60, 255} : (Color){60, 60, 60, 255};
-            }
-            DrawRectangleRec(btnRect, btnColor);
-            int textW = MeasureText(p->nome, fontSize);
-            DrawText(p->nome, btnRect.x + (btnW - textW) / 2, btnRect.y + (btnH - fontSize) / 2, fontSize, WHITE);
-            DrawRectangleLinesEx(btnRect, 3, (p == selecionado) ? RAYWHITE : DARKGRAY);
+
+    else if (currentScreen == MENU_SELECT_CHAR) {
+        int spacing = 20, btnW = 160, btnH = 80;
+        int totalW = charCount * btnW + (charCount - 1) * spacing;
+        int startX = (screenWidth - totalW) / 2;
+        int y = screenHeight / 2 - btnH / 2;
+
+        CharacterNode *node = head;
+        for (int i = 0; i < charCount; i++, node = node->next) {
+            Rectangle btn = {startX + i * (btnW + spacing), y, btnW, btnH};
+            Color color = (node == selectedChar) ? DARKGREEN : BLACK;
+            if (CheckCollisionPointRec(GetMousePosition(), btn))
+                color = (node == selectedChar) ? GREEN : DARKGRAY;
+
+            DrawRectangleRec(btn, color);
+            int textW = MeasureText(node->name, 36);
+            DrawText(node->name, btn.x + (btnW - textW) / 2, btn.y + 20, 36, WHITE);
+            DrawRectangleLinesEx(btn, 3, (node == selectedChar) ? RAYWHITE : DARKGRAY);
         }
-        DrawText("Escolha seu personagem", w / 2 - 180, btnY - 70, 28, RAYWHITE);
-        const char *instrText = "Clique em um personagem, use < > ou pressione ENTER";
-        int instrFont = 24;
-        int instrTextW = MeasureText(instrText, instrFont);
-        DrawText(instrText, (w - instrTextW) / 2, btnY + btnH + 200, instrFont, GRAY);
-        Rectangle confirmBtn = {w / 2 - 130, btnY + btnH + 50, 260, 56};
-        Color confirmColor = CheckCollisionPointRec(GetMousePosition(), confirmBtn) ? (Color){0, 200, 0, 255} : (Color){20, 80, 20, 255};
+
+        DrawText("Escolha seu personagem", screenWidth / 2 - 180, y - 70, 28, RAYWHITE);
+        Rectangle confirmBtn = {screenWidth / 2 - 130, y + btnH + 50, 260, 56};
+        Color confirmColor = CheckCollisionPointRec(GetMousePosition(), confirmBtn) ? DARKGREEN : GREEN;
         DrawRectangleRec(confirmBtn, confirmColor);
-        const char *confText = "Confirmar";
-        int confFont = 32;
-        int confTw = MeasureText(confText, confFont);
-        DrawText(confText, confirmBtn.x + (260 - confTw) / 2, confirmBtn.y + (56 - confFont) / 2, confFont, WHITE);
+        DrawText("Confirmar", confirmBtn.x + 50, confirmBtn.y + 12, 32, WHITE);
     }
+
     EndDrawing();
 }
 
-bool MenuStartGame(void)
-{
-    return (currentMenuState == MENU_STATE_DONE);
+bool MenuStartGame(void) {
+    return currentScreen == MENU_FINISHED;
 }
-int MenuSelectedCharacter(void)
-{
-    Node *p = head;
-    int idx = 0;
-    while (p && p != selecionado)
-    {
-        p = p->prox;
-        idx++;
-        if (p == head)
-            break;
+
+int MenuSelectedCharacter(void) {
+    CharacterNode *node = head;
+    int index = 0;
+    while (node && node != selectedChar) {
+        node = node->next;
+        index++;
+        if (node == head) break;
     }
-    return idx;
+    return index;
 }
-const char *MenuSelectedCharacterName(void)
-{
-    return nomeEscolhido;
+
+const char* MenuSelectedCharacterName(void) {
+    return selectedChar ? selectedChar->name : "";
 }
-void UnloadMenu(void)
-{
-    if (selecionado)
-        strncpy(nomeEscolhido, selecionado->nome, sizeof(nomeEscolhido));
-    else
-        nomeEscolhido[0] = '\0';
-    UnloadSound(buttonSound);
-    UnloadTexture(jogoTexture);
-    UnloadTexture(matrixSprite);
-    DestruirListaPersonagens();
+
+void UnloadMenu(void) {
+    UnloadSound(clickSound);
+    UnloadTexture(logoTexture);
+    UnloadTexture(backgroundMatrix);
 }
