@@ -125,6 +125,7 @@ void DrawIntro(void)
     Color boxBorder = (Color){0, 0, 0, 240};
     float roundness = 0.07f;
     int segments = 32;
+    //float borderThickness = 2.0f;
 
     DrawRectangleRounded((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxFill);
 
