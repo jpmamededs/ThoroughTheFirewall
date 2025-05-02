@@ -119,14 +119,21 @@ void InitIntro(const char *nomePersonagem, const float tempos[])
 
 void UpdateIntro(void)
 {
-    float dt = GetFrameTime();
-    bool  skipKey = IsKeyPressed(KEY_SPACE) ||
-                    IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 
-    // apenas “pula” a digitação – não muda de página
+    float dt = GetFrameTime();
+
+    if (IsKeyPressed(KEY_SPACE)) {
+        currentPart = INTRO_PARTS - 1;
+        partWriter.done = true;
+        partWriter.drawnChars = partWriter.length;
+        partTimer = partDurations[currentPart];
+        PauseTypingSfx();
+        return;
+    }
+    
     UpdateMusicStream(typingMusic);
     UpdateMusicStream(bgMusic);
-    UpdateTypeWriter(&partWriter, dt, skipKey);
+    UpdateTypeWriter(&partWriter, dt, false);
 
     // se terminou de digitar, pausa som
     if (partWriter.done) PauseTypingSfx();
