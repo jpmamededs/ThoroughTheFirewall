@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
 #define INTRO_TEXT_SPEED 42 // Letras por segundo
 
 static char *introText = NULL; // Buffer realocável para o texto personalizado
@@ -22,6 +21,7 @@ static void DrawTextBoxedSafe(Font font, const char *text, Rectangle rec, int fo
     int len = strlen(text);
     char line[1024] = {0};
     int lineLen = 0;
+
     for (int i = 0; i <= len; i++)
     {
         char c = text[i];
@@ -76,20 +76,25 @@ void InitIntro(const char *nomePersonagem)
     int tamMax = strlen(baseText) + strlen(nomePersonagem) + 64;
     introText = malloc(tamMax);
     snprintf(introText, tamMax, baseText, nomePersonagem);
+
     InitTypeWriter(&introWriter, introText, INTRO_TEXT_SPEED);
+
     font = GetFontDefault();
     hackerBg = LoadTexture("src/sprites/hackerBg.png");
     agentSecreto = LoadTexture("src/sprites/agent_secreto.png"); // <- carrega a sprite agente
 }
+
 void UpdateIntro(void)
 {
     bool skip = IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
     UpdateTypeWriter(&introWriter, GetFrameTime(), skip);
 }
+
 void DrawIntro(void)
 {
     int w = GetScreenWidth();
     int h = GetScreenHeight();
+
     BeginDrawing();
     DrawTexturePro(
         hackerBg,
@@ -99,6 +104,7 @@ void DrawIntro(void)
         0.0f,
         WHITE
     );
+
     // CALCULA POSIÇÃO E TAMANHO DA CAIXA
     float boxW = w * 0.85f;
     float boxH = h * 0.65f;
@@ -119,8 +125,11 @@ void DrawIntro(void)
     Color boxBorder = (Color){0, 0, 0, 240};
     float roundness = 0.07f;
     int segments = 32;
+
     DrawRectangleRounded((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxFill);
-    DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, borderThickness, boxBorder);
+
+    // FUNÇÃO CORRIGIDA: NÃO existe parâmetro para espessura da linha!
+    DrawRectangleRoundedLines((Rectangle){boxX, boxY, boxW, boxH}, roundness, segments, boxBorder); // <<< corrigido
 
     int fontSize = 28; // Ajuste conforme desejar
     int margin = 28;
@@ -130,6 +139,7 @@ void DrawIntro(void)
     float textH = boxH - 2 * margin;
     Rectangle rec = {textX, textY, textW, textH};
     Font showFont = font;
+
     if (introText && introWriter.drawnChars > 0)
     {
         char *buffer = malloc(introWriter.drawnChars + 1);
@@ -138,6 +148,7 @@ void DrawIntro(void)
         DrawTextBoxedSafe(showFont, buffer, rec, fontSize, 2, WHITE);
         free(buffer);
     }
+
     if (introWriter.done && introWriter.drawnChars >= introWriter.length)
     {
         const char *msg = "[Pressione ENTER para continuar]";
@@ -152,13 +163,16 @@ void DrawIntro(void)
             WHITE
         );
     }
+
     EndDrawing();
 }
+
 bool IntroEnded(void)
 {
     return (introWriter.done && introWriter.drawnChars >= introWriter.length &&
             (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)));
 }
+
 void UnloadIntro(void)
 {
     if (introText)
