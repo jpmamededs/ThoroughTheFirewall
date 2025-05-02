@@ -28,7 +28,6 @@ typedef enum
 
 static MenuScreen currentScreen = MENU_MAIN;
 
-// Recursos
 static Texture2D backgroundMatrix;
 static Texture2D logoTexture;
 static Texture2D hacker1, hacker2;
@@ -42,11 +41,9 @@ static float lastUpdate = 0.0f;
 static float rainY[MAX_COLUMNS] = {0};
 static bool matrixInitialized = false;
 
-// Personagens
 static CharacterNode *head = NULL, *selectedChar = NULL;
 static int charCount = 0;
 
-// Som
 static Sound clickSound;
 static bool wasHoveredLastFrame = false;
 
@@ -98,7 +95,7 @@ void CreateCharacterList(void)
     {
         CharacterNode *node = malloc(sizeof(CharacterNode));
         strcpy(node->name, names[i]);
-        node->sfx = (Sound){0}; // inicializar vazio
+        node->sfx = (Sound){0};
         if (!head)
         {
             head = node;
@@ -141,7 +138,6 @@ void InitMenu(void)
     matrixInitialized = false;
     wasHoveredLastFrame = false;
 
-    // Carregar sons únicos por personagem
     CharacterNode *node = head;
     do
     {
@@ -198,8 +194,8 @@ void UpdateMenu(void)
             bool hovered = CheckCollisionPointRec(mouse, btn);
             if (hovered && node != selectedChar)
             {
-                PlaySound(node->sfx);  // Toca som único do personagem
-                PlaySound(clickSound); // Mantém o som clássico de clique
+                PlaySound(node->sfx); 
+                PlaySound(clickSound); 
                 selectedChar = node;
             }
             else if (hovered)
