@@ -19,16 +19,14 @@ int main(void)
     InitAudioDevice();
     Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
     PlayMusicStream(music);
-
     InitCutscenes();
     bool showCharacterName = false;
     bool pcScreenInitialized = false;
-    bool fase2Initialized = false; // NOVO: Controle para fase2
+    bool fase2Initialized = false; // Controle para fase2
 
     while (!WindowShouldClose())
     {
         UpdateMusicStream(music); // Atualiza música de fundo onde aplicável
-
         if (state == APP_CUTSCENES)
         {
             UpdateCutscenes();
@@ -52,6 +50,13 @@ int main(void)
                 float temposIntro[4] = {9.0f, 11.0f, 13.5f, 7.3f};
                 InitIntro(MenuSelectedCharacterName(), temposIntro);
                 state = APP_INTRO;
+            }
+            // NOVO: Se pressionar "P", vai direto para fase2
+            if (IsKeyPressed(KEY_P))
+            {
+                UnloadMenu();
+                fase2Initialized = false; // força o InitFase2 depois
+                state = APP_FASE2;
             }
         }
         else if (state == APP_INTRO)
@@ -101,6 +106,7 @@ int main(void)
                 UnloadPcScreen(); // Libera recursos antes de sair dessa tela
             }
             // NOVO: Se apertar "P" vai para fase2
+            // Se apertar "P" vai para fase2
             if (IsKeyPressed(KEY_P))
             {
                 // Poderia descarregar recursos do PC se precisar...
@@ -118,11 +124,10 @@ int main(void)
             }
             UpdateFase2();
             DrawFase2();
-            // Aqui você pode adicionar outros controles de mudança de estado em fase2,
+            // Outros controles de mudança de estado em fase2,
             // se/quando quiser sair dela, tipo apertar ESC ou outro botão.
         }
     }
-
     // Limpeza
     if (state == APP_CUTSCENES)
         UnloadCutscenes();
@@ -135,7 +140,6 @@ int main(void)
     // PC_SCREEN não tem sons ou alocação pesada aqui
     if (state == APP_FASE2)
         UnloadFase2();
-
     UnloadMusicStream(music);
     CloseAudioDevice();
     CloseWindow();
