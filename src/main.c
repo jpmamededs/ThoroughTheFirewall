@@ -5,7 +5,7 @@
 #include "fase1.h"
 #include "gemini.h"
 #include "pc_screen.h"
-#include "fase2.h"   // NOVO: Inclua a header da fase2
+#include "fase2.h" // NOVO: Inclua a header da fase2
 #include "generalFunctions.h"
 
 AppState state = APP_CUTSCENES; // Global como antes
@@ -96,7 +96,10 @@ int main(void)
             }
             UpdatePcScreen();
             DrawPcScreen();
-
+            if (state != APP_PC_SCREEN)
+            {
+                UnloadPcScreen(); // Libera recursos antes de sair dessa tela
+            }
             // NOVO: Se apertar "P" vai para fase2
             if (IsKeyPressed(KEY_P))
             {

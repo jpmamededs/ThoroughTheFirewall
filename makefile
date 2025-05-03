@@ -10,7 +10,7 @@ SOURCES = $(wildcard $(SRC_DIR)/*.c)
 # Compilador e opções
 CC = gcc
 CFLAGS = -Wall -std=c99 -I$(INCLUDE_DIR) -Icurl/include -mwindows
-LIBS = -L$(LIB_DIR) -Lcurl/lib -lraylib -lcurl -lopengl32 -lgdi32 -lwinmm
+LIBS = -L$(LIB_DIR) -Lcurl/lib -lraylib -lcurl -lopengl32 -lgdi32 -lwinmm -mwindows
 EXE_EXT = .exe
 
 BIN_TARGET = $(RELEASE_DIR)/$(TARGET)$(EXE_EXT)

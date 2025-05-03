@@ -4,5 +4,6 @@
 void InitPcScreen(void);
 void UpdatePcScreen(void);
 void DrawPcScreen(void);
+void UnloadPcScreen(void);
 
 #endif
