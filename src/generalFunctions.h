@@ -3,6 +3,16 @@
 
 #include <stdbool.h>
 
+typedef enum
+{
+    APP_CUTSCENES,
+    APP_MENU,
+    APP_INTRO,
+    APP_FASE1,
+    APP_PC_SCREEN,
+    APP_FASE2
+} AppState;
+
 typedef struct {
     const char* text;   // Texto completo (não gerencia o buffer, só referencia)
     int length;         // strlen(text)

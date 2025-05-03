@@ -4,18 +4,11 @@
 #include "intro.h"
 #include "fase1.h"
 #include "gemini.h"
-#include "pc_screen.h" // <- incluímos a nova tela
+#include "pc_screen.h"
+#include "fase2.h"   // NOVO: Inclua a header da fase2
+#include "generalFunctions.h"
 
-typedef enum
-{
-    APP_CUTSCENES,
-    APP_MENU,
-    APP_INTRO,
-    APP_FASE1,
-    APP_PC_SCREEN
-} AppState;
-
-AppState state = APP_CUTSCENES; // <- agora global
+AppState state = APP_CUTSCENES; // Global como antes
 
 int main(void)
 {
@@ -23,15 +16,14 @@ int main(void)
     int screenHeight = GetMonitorHeight(0);
     InitWindow(screenWidth, screenHeight, "Sprite andando");
     SetWindowPosition(0, 0);
-
     InitAudioDevice();
     Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
     PlayMusicStream(music);
 
     InitCutscenes();
-
     bool showCharacterName = false;
     bool pcScreenInitialized = false;
+    bool fase2Initialized = false; // NOVO: Controle para fase2
 
     while (!WindowShouldClose())
     {
@@ -57,10 +49,8 @@ int main(void)
             {
                 PauseMusicStream(music); // para música
                 UnloadMenu();
-
                 float temposIntro[4] = {9.0f, 11.0f, 13.5f, 7.3f};
                 InitIntro(MenuSelectedCharacterName(), temposIntro);
-
                 state = APP_INTRO;
             }
         }
@@ -80,7 +70,6 @@ int main(void)
         else if (state == APP_FASE1)
         {
             UpdateFase1();
-
             if (!showCharacterName)
             {
                 DrawFase1();
@@ -107,6 +96,27 @@ int main(void)
             }
             UpdatePcScreen();
             DrawPcScreen();
+
+            // NOVO: Se apertar "P" vai para fase2
+            if (IsKeyPressed(KEY_P))
+            {
+                // Poderia descarregar recursos do PC se precisar...
+                pcScreenInitialized = false;
+                fase2Initialized = false; // Força init da fase2
+                state = APP_FASE2;
+            }
+        }
+        else if (state == APP_FASE2)
+        {
+            if (!fase2Initialized)
+            {
+                InitFase2();
+                fase2Initialized = true;
+            }
+            UpdateFase2();
+            DrawFase2();
+            // Aqui você pode adicionar outros controles de mudança de estado em fase2,
+            // se/quando quiser sair dela, tipo apertar ESC ou outro botão.
         }
     }
 
@@ -120,6 +130,8 @@ int main(void)
     if (state == APP_FASE1)
         UnloadFase1();
     // PC_SCREEN não tem sons ou alocação pesada aqui
+    if (state == APP_FASE2)
+        UnloadFase2();
 
     UnloadMusicStream(music);
     CloseAudioDevice();
