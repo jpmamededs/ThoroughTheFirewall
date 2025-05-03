@@ -4,14 +4,6 @@
 #include <string.h>
 #include <math.h>
 
-typedef enum {
-    APP_CUTSCENES,
-    APP_MENU,
-    APP_INTRO,
-    APP_FASE1,
-    APP_PC_SCREEN
-} AppState;
-
 extern AppState state;
 
 static Model modelo3D;
