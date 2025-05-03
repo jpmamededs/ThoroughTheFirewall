@@ -103,7 +103,7 @@ void DrawPcScreen(void)
     if (showBackground)
     {
         int iconMargin = 10;
-        DrawTextureEx(terminalIcon, (Vector2){iconMargin, iconMargin}, 0.0f, 2.0f, WHITE);
+        DrawTextureEx(terminalIcon, (Vector2){iconMargin, iconMargin}, 0.0f, 1.3f, WHITE);
     }
 
     EndDrawing();

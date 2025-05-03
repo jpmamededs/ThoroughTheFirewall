@@ -12,6 +12,6 @@ newmtl 02___Default
 	Kd 0.5882 0.5882 0.5882
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
-	map_Ka NB_col2.png
-	map_Kd NB_col2.png
-	map_bump NB_col2.png
+	map_Ka NB_col.jpg
+	map_Kd NB_col.jpg
+	map_bump NB_col.jpg
