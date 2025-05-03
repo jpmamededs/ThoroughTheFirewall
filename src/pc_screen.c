@@ -47,7 +47,6 @@ static float tempoAposFade = 0.0f;
 static float tempoMensagemFinal = 0.0f;
 static bool aguardandoMensagemFinal = false;
 
-static const float duracaoFadeOut = 1.0f;
 static const float esperaPreta = 2.0f;
 static const float tempoMensagemFinalDelay = 2.0f;
 

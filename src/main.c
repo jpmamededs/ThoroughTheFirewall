@@ -99,19 +99,23 @@ int main(void)
                 InitPcScreen();
                 pcScreenInitialized = true;
             }
+
+            AppState previousState = state;
+
             UpdatePcScreen();
             DrawPcScreen();
-            if (state != APP_PC_SCREEN)
+
+            if (previousState != state)
             {
-                UnloadPcScreen(); // Libera recursos antes de sair dessa tela
+                UnloadPcScreen();
+                pcScreenInitialized = false;
             }
-            // NOVO: Se apertar "P" vai para fase2
-            // Se apertar "P" vai para fase2
+
             if (IsKeyPressed(KEY_P))
             {
-                // Poderia descarregar recursos do PC se precisar...
+                UnloadPcScreen();
                 pcScreenInitialized = false;
-                fase2Initialized = false; // Força init da fase2
+                fase2Initialized = false;
                 state = APP_FASE2;
             }
         }
