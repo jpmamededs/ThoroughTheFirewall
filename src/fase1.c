@@ -14,6 +14,9 @@ static Sound somTelefone;
 static Sound somRadio;
 static Camera3D camera;
 
+static Model portaModel;
+static Texture2D portaTexture;
+
 static float cameraYaw = 0.0f;
 static const float maxYaw = 45.0f * DEG2RAD;
 static const float minYaw = -45.0f * DEG2RAD;
@@ -50,6 +53,10 @@ void InitFase1(void)
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
     somRadio = LoadSound("src/music/phone-guy.mp3");
+
+    portaModel = LoadModel("src/models/DOOR.obj");
+    portaTexture = LoadTexture("src/models/Garage_Metalness.png");
+    portaModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = portaTexture;
 
     SetSoundVolume(somFase1, 1.0f);
     SetSoundVolume(somTelefone, 1.0f);
@@ -188,6 +195,11 @@ void DrawFase1(void)
 
     BeginMode3D(camera);
     DrawModel(modelo3D, (Vector3){0.0f, -0.5f, -2.0f}, 0.05f, WHITE);
+    Vector3 portaPos = {28.0f, -1.0f, -12.0f};
+    Vector3 portaRotAxis = {0.0f, 1.0f, 0.0f};
+    float portaRotAngle = 45.0f;
+    Vector3 portaScale = {0.05f, 0.05f, 0.05f};
+    DrawModelEx(portaModel, portaPos, portaRotAxis, portaRotAngle, portaScale, WHITE);
     EndMode3D();
 
     // Caixa de fala

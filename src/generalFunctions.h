@@ -9,6 +9,7 @@ typedef enum
     APP_MENU,
     APP_INTRO,
     APP_FASE1,
+    APP_FASE1_2,
     APP_PC_SCREEN,
     APP_FASE2
 } AppState;

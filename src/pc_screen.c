@@ -205,7 +205,7 @@ void UpdatePcScreen(void)
             tempoAposFade += dt;
             if (tempoAposFade >= esperaPreta)
             {
-                state = APP_FASE2;
+                state = APP_FASE1_2;
             }
         }
     }

@@ -3,12 +3,13 @@
 #include "menu.h"
 #include "intro.h"
 #include "fase1.h"
+#include "fase1_2.h"
 #include "gemini.h"
 #include "pc_screen.h"
-#include "fase2.h" // NOVO: Inclua a header da fase2
+#include "fase2.h"
 #include "generalFunctions.h"
 
-AppState state = APP_CUTSCENES; // Global como antes
+AppState state = APP_CUTSCENES;
 
 int main(void)
 {
@@ -116,8 +117,21 @@ int main(void)
                 UnloadPcScreen();
                 pcScreenInitialized = false;
                 fase2Initialized = false;
-                state = APP_FASE2;
+                state = APP_FASE1_2;
             }
+        }
+        else if (state == APP_FASE1_2)
+        {
+            static bool fase1_2Initialized = false;
+        
+            if (!fase1_2Initialized)
+            {
+                InitFase1_2();
+                fase1_2Initialized = true;
+            }
+        
+            UpdateFase1_2();
+            DrawFase1_2();
         }
         else if (state == APP_FASE2)
         {
@@ -141,9 +155,10 @@ int main(void)
         UnloadIntro();
     if (state == APP_FASE1)
         UnloadFase1();
-    // PC_SCREEN não tem sons ou alocação pesada aqui
     if (state == APP_FASE2)
         UnloadFase2();
+    if (state == APP_FASE1_2)
+        UnloadFase1_2();
     UnloadMusicStream(music);
     CloseAudioDevice();
     CloseWindow();
