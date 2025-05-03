@@ -8,6 +8,7 @@ static Texture2D background;
 static Texture2D terminalIcon;
 static Texture2D geminiIcon;
 static Sound bootSound;
+static Font geminiFont;
 
 static float fadeTimer = 0.0f;
 static float fadeDuration = 3.0f;
@@ -21,8 +22,12 @@ static Vector2 geminiFinalPos;
 static Vector2 geminiAnimPos;
 static bool geminiAnimDone = false;
 static bool geminiAnimStarted = false;
-static float geminiAnimCooldown = 1.0f; // 1 segundo após boot
+static float geminiAnimCooldown = 1.0f;
 static float geminiAnimTimer = 0.0f;
+
+static bool mostrarCaixaDialogo = false;
+static float tempoPosAnimacao = 0.0f;
+static float delayCaixaDialogo = 1.0f;
 
 void InitPcScreen(void)
 {
@@ -31,13 +36,14 @@ void InitPcScreen(void)
     terminalIcon = LoadTexture("src/sprites/os/terminal_icon.png");
     geminiIcon = LoadTexture("src/sprites/os/gemini.png");
     bootSound = LoadSound("src/music/boot.mp3");
+    geminiFont = LoadFont("src/fonts/GoogleSansMono.ttf");
 
     fadeTimer = 0.0f;
     showBackground = false;
     bootSoundPlayed = false;
     terminalChamado = false;
 
-    float geminiAnimScale = 1.0f / 13.5f; // 13.5x menor
+    float geminiAnimScale = 1.0f / 13.5f;
     geminiFinalPos = (Vector2){
         GetScreenWidth() - geminiIcon.width * geminiAnimScale - 20,
         GetScreenHeight() - geminiIcon.height * geminiAnimScale - 20
@@ -51,6 +57,8 @@ void InitPcScreen(void)
     geminiAnimDone = false;
     geminiAnimStarted = false;
     geminiAnimTimer = 0.0f;
+    mostrarCaixaDialogo = false;
+    tempoPosAnimacao = 0.0f;
 }
 
 void UpdatePcScreen(void)
@@ -85,7 +93,6 @@ void UpdatePcScreen(void)
         }
     }
 
-    // Espera 1 segundo após o som para começar animação
     if (bootSoundPlayed && !geminiAnimStarted)
     {
         geminiAnimTimer += dt;
@@ -95,7 +102,6 @@ void UpdatePcScreen(void)
         }
     }
 
-    // Anima ícone gemini surgindo da direita após cooldown
     if (geminiAnimStarted && !geminiAnimDone)
     {
         float speed = 600.0f * dt;
@@ -108,6 +114,16 @@ void UpdatePcScreen(void)
         else
         {
             geminiAnimDone = true;
+            tempoPosAnimacao = 0.0f;
+        }
+    }
+
+    if (geminiAnimDone && !mostrarCaixaDialogo)
+    {
+        tempoPosAnimacao += dt;
+        if (tempoPosAnimacao >= delayCaixaDialogo)
+        {
+            mostrarCaixaDialogo = true;
         }
     }
 }
@@ -131,18 +147,18 @@ void DrawPcScreen(void)
     {
         float cycleTime = fadeDuration;
         float t = fmodf(fadeTimer, cycleTime + fadePause);
-
         float alpha = 0.0f;
+
         if (t < cycleTime)
         {
             alpha = sinf(t / cycleTime * PI);
-            if (alpha < 0)
-                alpha = -alpha;
+            if (alpha < 0) alpha = -alpha;
         }
 
         Vector2 wallpaperPos = {
             (GetScreenWidth() - wallpaper.width * 0.3f) / 2,
-            (GetScreenHeight() - wallpaper.height * 0.3f) / 2};
+            (GetScreenHeight() - wallpaper.height * 0.3f) / 2
+        };
 
         DrawTextureEx(wallpaper, wallpaperPos, 0.0f, 0.3f,
                       (Color){255, 255, 255, (unsigned char)(alpha * 255)});
@@ -156,24 +172,45 @@ void DrawPcScreen(void)
     {
         int iconMargin = 10;
         float terminalScale = 1.3f;
-        float geminiSideScale = 0.06f;       // Levemente menor
-        float geminiAnimScale = 1.0f / 13.5f; // Muito menor
+        float geminiSideScale = 0.06f;
+        float geminiAnimScale = 1.0f / 13.5f;
 
-        // Ícone do terminal
+        // Terminal
         Vector2 terminalPos = {iconMargin, iconMargin};
         DrawTextureEx(terminalIcon, terminalPos, 0.0f, terminalScale, WHITE);
 
-        // Ícone gemini na barra lateral
+        // Gemini barra lateral
         Vector2 geminiPos = {
-            iconMargin,
+            iconMargin + 1,
             iconMargin + terminalIcon.height * terminalScale + 8
         };
         DrawTextureEx(geminiIcon, geminiPos, 0.0f, geminiSideScale, WHITE);
 
-        // Ícone gemini animado no canto inferior direito
+        // Gemini animado
         if (geminiAnimStarted)
         {
             DrawTextureEx(geminiIcon, geminiAnimPos, 0.0f, geminiAnimScale, WHITE);
+        }
+
+        // Caixa de diálogo
+        if (mostrarCaixaDialogo)
+        {
+            const char *texto = "Ola, sou a Gemini. Vou te instruir sempre que precisar.";
+            int padding = 20;
+            int fontSize = 18;
+
+            // Mede o texto
+            Vector2 textSize = MeasureTextEx(geminiFont, texto, fontSize, 1);
+
+            int largura = (int)textSize.x + padding * 2;
+            int altura  = (int)textSize.y + padding * 2;
+
+            int x = geminiFinalPos.x - largura - 20;
+            int y = geminiFinalPos.y + 5 - altura / 2;
+
+            // Caixa branca com cantos arredondados
+            DrawRectangleRounded((Rectangle){x, y, largura, altura}, 0.3f, 16, WHITE);
+            DrawTextEx(geminiFont, texto, (Vector2){x + padding, y + padding}, fontSize, 1, DARKGRAY);
         }
     }
 
