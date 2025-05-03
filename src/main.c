@@ -4,13 +4,18 @@
 #include "intro.h"
 #include "fase1.h"
 #include "gemini.h"
+#include "pc_screen.h" // <- incluímos a nova tela
 
-typedef enum {
+typedef enum
+{
     APP_CUTSCENES,
     APP_MENU,
     APP_INTRO,
-    APP_FASE1
+    APP_FASE1,
+    APP_PC_SCREEN
 } AppState;
+
+AppState state = APP_CUTSCENES; // <- agora global
 
 int main(void)
 {
@@ -23,14 +28,14 @@ int main(void)
     Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
     PlayMusicStream(music);
 
-    AppState state = APP_CUTSCENES;
     InitCutscenes();
 
     bool showCharacterName = false;
+    bool pcScreenInitialized = false;
 
     while (!WindowShouldClose())
     {
-        UpdateMusicStream(music); // Sempre atualiza, mas será pausado onde necessário
+        UpdateMusicStream(music); // Atualiza música de fundo onde aplicável
 
         if (state == APP_CUTSCENES)
         {
@@ -40,7 +45,7 @@ int main(void)
             {
                 UnloadCutscenes();
                 InitMenu();
-                ResumeMusicStream(music); // <- Música volta ao entrar no menu
+                ResumeMusicStream(music); // volta a música
                 state = APP_MENU;
             }
         }
@@ -50,10 +55,10 @@ int main(void)
             DrawMenu();
             if (MenuStartGame())
             {
-                PauseMusicStream(music); // <- Música para ao sair do menu
+                PauseMusicStream(music); // para música
                 UnloadMenu();
 
-                float temposIntro[4] = {9.0f, 11.0f, 13.5f, 7.3f}; // segundos por página
+                float temposIntro[4] = {9.0f, 11.0f, 13.5f, 7.3f};
                 InitIntro(MenuSelectedCharacterName(), temposIntro);
 
                 state = APP_INTRO;
@@ -68,6 +73,8 @@ int main(void)
                 UnloadIntro();
                 InitFase1();
                 state = APP_FASE1;
+                showCharacterName = false;
+                pcScreenInitialized = false; // caso volte do PC
             }
         }
         else if (state == APP_FASE1)
@@ -91,6 +98,16 @@ int main(void)
                 EndDrawing();
             }
         }
+        else if (state == APP_PC_SCREEN)
+        {
+            if (!pcScreenInitialized)
+            {
+                InitPcScreen();
+                pcScreenInitialized = true;
+            }
+            UpdatePcScreen();
+            DrawPcScreen();
+        }
     }
 
     // Limpeza
@@ -102,6 +119,7 @@ int main(void)
         UnloadIntro();
     if (state == APP_FASE1)
         UnloadFase1();
+    // PC_SCREEN não tem sons ou alocação pesada aqui
 
     UnloadMusicStream(music);
     CloseAudioDevice();

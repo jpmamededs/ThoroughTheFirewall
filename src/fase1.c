@@ -1,8 +1,18 @@
 #include "fase1.h"
 #include "raylib.h"
 #include "generalFunctions.h"
-#include <string.h> 
+#include <string.h>
 #include <math.h>
+
+typedef enum {
+    APP_CUTSCENES,
+    APP_MENU,
+    APP_INTRO,
+    APP_FASE1,
+    APP_PC_SCREEN
+} AppState;
+
+extern AppState state;
 
 static Model modelo3D;
 static Texture2D pergunta_img;
@@ -27,11 +37,12 @@ static float animacaoTelefoneY = 0.0f;
 static float tempoDesdeInicio = 0.0f;
 static float cooldownTelefone = -3.0f;
 static Rectangle telefoneBounds = {0};
-static float delayTexto = 0.0f; 
+static float delayTexto = 0.0f;
+
 static TypeWriter fase1Writer;
 static bool typeStarted = false;
-static Music typingMusicF1 = { 0 };
-static bool  typingLoaded  = false;
+static Music typingMusicF1 = {0};
+static bool typingLoaded = false;
 
 const char *GetCurrentText(TypeWriter *writer)
 {
@@ -53,6 +64,7 @@ void InitFase1(void)
     SetSoundVolume(somRadio, 1.0f);
     SetMasterVolume(1.0f);
 
+    // Reset de estado
     somFase1Tocado = false;
     somRadioTocado = false;
     interromperTelefone = false;
@@ -63,7 +75,10 @@ void InitFase1(void)
     animacaoTelefoneY = 0.0f;
     tempoDesdeInicio = 0.0f;
     cooldownTelefone = -3.0f;
+    delayTexto = 0.0f;
+    typeStarted = false;
 
+    // Câmera
     camera.position = (Vector3){0.0f, 1.6f, 0.0f};
     camera.target = (Vector3){0.0f, 1.6f, -1.0f};
     camera.up = (Vector3){0.0f, 1.0f, 0.0f};
@@ -76,22 +91,26 @@ void UpdateFase1(void)
     float delta = GetFrameTime();
     tempoDesdeInicio += delta;
 
-    if (!typeStarted && delayTexto > 0.0f) {
+    // Inicia fala digitada após delay
+    if (!typeStarted && delayTexto > 0.0f)
+    {
         delayTexto -= delta;
-        if (delayTexto <= 0.0f) {
+        if (delayTexto <= 0.0f)
+        {
             const char *fala =
                 "Oi, sobre aquela coisa de hacking, eu tô meio ocupado nesse mês, então vou te mostrar aquela Gemini AI.\n"
                 "Ela vai te guiar nessa nossa missão, então você não ficará perdido, ok? Tome cuidado. Tchau.";
-            InitTypeWriter(&fase1Writer, fala, 18.5f); 
+            InitTypeWriter(&fase1Writer, fala, 18.5f);
             typeStarted = true;
         }
     }
 
-    if (typeStarted) {
+    if (typeStarted)
         UpdateTypeWriter(&fase1Writer, delta, IsKeyPressed(KEY_SPACE));
-    }
-    if (typingLoaded) UpdateMusicStream(typingMusicF1);
+    if (typingLoaded)
+        UpdateMusicStream(typingMusicF1);
 
+    // Toca telefone automaticamente com cooldown
     if (!interromperTelefone)
     {
         cooldownTelefone += delta;
@@ -110,13 +129,15 @@ void UpdateFase1(void)
     }
 
     Vector2 mouse = GetMousePosition();
-    if (telefoneVisivel && 
-        CheckCollisionPointRec(mouse, telefoneBounds) && 
+
+    if (telefoneVisivel &&
+        CheckCollisionPointRec(mouse, telefoneBounds) &&
         IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         interromperTelefone = true;
 
-        if (!typeStarted) delayTexto = 2.3f;
+        if (!typeStarted)
+            delayTexto = 2.3f;
 
         StopSound(somTelefone);
         animandoTelefone = true;
@@ -136,6 +157,7 @@ void UpdateFase1(void)
         somFase1Tocado = true;
     }
 
+    // Rotação da câmera
     if (IsKeyDown(KEY_LEFT))
         cameraYaw -= 0.02f;
     if (IsKeyDown(KEY_RIGHT))
@@ -176,6 +198,7 @@ void DrawFase1(void)
     DrawModel(modelo3D, (Vector3){0.0f, -0.5f, -2.0f}, 0.05f, WHITE);
     EndMode3D();
 
+    // Caixa de fala
     if (interromperTelefone)
     {
         int boxX = 60;
@@ -189,25 +212,17 @@ void DrawFase1(void)
         int imgX = boxX;
         int imgY = boxY - imgH;
 
-        DrawTexturePro(
-            pergunta_img,
-            (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
-            (Rectangle){imgX, imgY, imgW, imgH},
-            (Vector2){0, 0},
-            0.0f,
-            WHITE);
+        DrawTexturePro(pergunta_img, (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
+                       (Rectangle){imgX, imgY, imgW, imgH}, (Vector2){0, 0}, 0.0f, WHITE);
 
-        int txtFontSize = 30;
-        int txtX = imgX + 10;
-        int txtY = imgY + imgH - txtFontSize;
-        DrawText("???", txtX, txtY, txtFontSize, WHITE);
+        DrawText("???", imgX + 10, imgY + imgH - 30, 30, WHITE);
 
         int borderRadius = boxHeight / 2;
         DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight, (Color){20, 20, 20, 220});
         DrawCircle(boxX + boxWidth - borderRadius, boxY + borderRadius, borderRadius, (Color){20, 20, 20, 220});
 
-
-        if (fase1Writer.drawnChars > 0) {
+        if (fase1Writer.drawnChars > 0)
+        {
             char tmp[fase1Writer.drawnChars + 1];
             strncpy(tmp, GetCurrentText(&fase1Writer), fase1Writer.drawnChars);
             tmp[fase1Writer.drawnChars] = '\0';
@@ -215,6 +230,7 @@ void DrawFase1(void)
         }
     }
 
+    // Telefone animado
     if (telefoneVisivel)
     {
         int screenWidth = GetScreenWidth();
@@ -240,6 +256,29 @@ void DrawFase1(void)
             (Vector2){0, 0},
             0.0f,
             WHITE);
+    }
+
+    // Botão "Usar Computador"
+    if (interromperTelefone && somRadioTocado && !IsSoundPlaying(somRadio))
+    {
+        Rectangle btnBounds = {
+            GetScreenWidth() / 2 - 100,
+            GetScreenHeight() / 2 + 100,
+            200,
+            50};
+
+        DrawRectangleRec(btnBounds, GREEN);
+        DrawText("Usar Computador", btnBounds.x + 20, btnBounds.y + 15, 20, BLACK);
+
+        Vector2 mouse = GetMousePosition();
+        if (CheckCollisionPointRec(mouse, btnBounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        {
+            StopSound(somFase1);
+            StopSound(somTelefone);
+            StopSound(somRadio);
+
+            state = APP_PC_SCREEN;
+        }
     }
 
     EndDrawing();
