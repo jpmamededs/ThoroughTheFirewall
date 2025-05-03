@@ -21,7 +21,7 @@ static Vector2 geminiFinalPos;
 static Vector2 geminiAnimPos;
 static bool geminiAnimDone = false;
 static bool geminiAnimStarted = false;
-static float geminiAnimCooldown = 2.0f;
+static float geminiAnimCooldown = 1.0f; // 1 segundo após boot
 static float geminiAnimTimer = 0.0f;
 
 void InitPcScreen(void)
@@ -37,7 +37,7 @@ void InitPcScreen(void)
     bootSoundPlayed = false;
     terminalChamado = false;
 
-    float geminiAnimScale = 1.0f / 13.5f;
+    float geminiAnimScale = 1.0f / 13.5f; // 13.5x menor
     geminiFinalPos = (Vector2){
         GetScreenWidth() - geminiIcon.width * geminiAnimScale - 20,
         GetScreenHeight() - geminiIcon.height * geminiAnimScale - 20
@@ -85,7 +85,7 @@ void UpdatePcScreen(void)
         }
     }
 
-    // Espera 1 segundo após boot para iniciar animação
+    // Espera 1 segundo após o som para começar animação
     if (bootSoundPlayed && !geminiAnimStarted)
     {
         geminiAnimTimer += dt;
@@ -95,7 +95,7 @@ void UpdatePcScreen(void)
         }
     }
 
-    // Animação do gemini no canto inferior
+    // Anima ícone gemini surgindo da direita após cooldown
     if (geminiAnimStarted && !geminiAnimDone)
     {
         float speed = 600.0f * dt;
@@ -156,21 +156,21 @@ void DrawPcScreen(void)
     {
         int iconMargin = 10;
         float terminalScale = 1.3f;
-        float geminiSideScale = 0.05f;           // Um pouco menor
-        float geminiAnimScale = 1.0f / 13.5f;   // Bem menor
+        float geminiSideScale = 0.06f;       // Levemente menor
+        float geminiAnimScale = 1.0f / 13.5f; // Muito menor
 
         // Ícone do terminal
         Vector2 terminalPos = {iconMargin, iconMargin};
         DrawTextureEx(terminalIcon, terminalPos, 0.0f, terminalScale, WHITE);
 
-        // Ícone gemini da barra lateral
+        // Ícone gemini na barra lateral
         Vector2 geminiPos = {
-            iconMargin + 6,  // move 6 pixels para a direita
+            iconMargin,
             iconMargin + terminalIcon.height * terminalScale + 8
         };
         DrawTextureEx(geminiIcon, geminiPos, 0.0f, geminiSideScale, WHITE);
 
-        // Ícone gemini animado
+        // Ícone gemini animado no canto inferior direito
         if (geminiAnimStarted)
         {
             DrawTextureEx(geminiIcon, geminiAnimPos, 0.0f, geminiAnimScale, WHITE);
