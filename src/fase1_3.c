@@ -36,9 +36,13 @@ static bool fadeWhiteOut = false;
 
 static bool mostrarConfiante = false;
 static bool somFalaTocado = false;
+static bool dialogoFinalizado = false;
+
+static Sound somFalaDetetive2;
+static bool somFala2Tocado = false;
 
 static TypeWriter writer;
-static const char* dialogoTexto =
+static const char *dialogoTexto =
     "Então, basicamente, você e... mais 3 pessoas estão sendo interrogados por crimes cibernéticos... "
     "Eu sou o investigador desse caso, e vou te fazer algumas perguntas, ok?";
 
@@ -51,7 +55,7 @@ void InitFase1_3(void)
 
     spriteNome = LoadTexture("src/sprites/detetive-hank-text.png");
     spriteBustup = LoadTexture("src/sprites/Gumshoe_OA (1).png");
-    spriteConfiante = LoadTexture("src/sprites/detective_confident.png");
+    spriteConfiante = LoadTexture("src/sprites/detective_confident.png"); // spritesheet completa
 
     somSurpresa = LoadSound("src/music/surprise.mp3");
     somFalaDetetive = LoadSound("src/music/detectiveSpeaking.mp3");
@@ -74,6 +78,10 @@ void InitFase1_3(void)
 
     mostrarConfiante = false;
     somFalaTocado = false;
+    dialogoFinalizado = false;
+
+    somFalaDetetive2 = LoadSound("src/music/detectiveSpeaking2.mp3");
+    somFala2Tocado = false;
 
     InitTypeWriter(&writer, dialogoTexto, strlen(dialogoTexto) / 10.0f);
 }
@@ -156,7 +164,18 @@ void UpdateFase1_3(void)
             somFalaTocado = true;
         }
 
-        UpdateTypeWriter(&writer, delta, IsKeyPressed(KEY_ENTER));
+        bool skip = IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE);
+        UpdateTypeWriter(&writer, delta, skip);
+
+        if (writer.done && skip && !dialogoFinalizado)
+        {
+            dialogoFinalizado = true;
+        }
+        if (dialogoFinalizado && !somFala2Tocado)
+        {
+            PlaySound(somFalaDetetive2);
+            somFala2Tocado = true;
+        }
     }
 }
 
@@ -177,67 +196,75 @@ void DrawFase1_3(void)
 
     if (mostrarConfiante)
     {
-        float scale = 1.5f;
-        float finalWidth = spriteConfiante.width * scale;
-        float finalHeight = spriteConfiante.height * scale;
+        float scale = 1.3f;
+
+        Rectangle src = dialogoFinalizado
+                            ? (Rectangle){3029, 3357, 631, 725} // novo sprite após texto
+                            : (Rectangle){2087, 0, 631, 722};   // sprite inicial
+
+        float finalWidth = src.width * scale;
+        float finalHeight = src.height * scale;
 
         Vector2 pos = {
             (GetScreenWidth() - finalWidth) / 2.0f,
             GetScreenHeight() - finalHeight};
 
-        Rectangle src = {0, 0, (float)spriteConfiante.width, (float)spriteConfiante.height};
         Rectangle dst = {pos.x, pos.y, finalWidth, finalHeight};
         DrawTexturePro(spriteConfiante, src, dst, (Vector2){0, 0}, 0.0f, WHITE);
 
-        float dialogHeight = 120.0f;
-        DrawRectangle(50, GetScreenHeight() - dialogHeight - 30,
-                      GetScreenWidth() - 100, dialogHeight, (Color){0, 0, 0, 200});
-        DrawRectangleLines(50, GetScreenHeight() - dialogHeight - 30,
-                           GetScreenWidth() - 100, dialogHeight, WHITE);
-
-        char buffer[512] = {0};
-        strncpy(buffer, writer.text, writer.drawnChars);
-
-        int fontSize = 24;
-        int maxWidth = GetScreenWidth() - 140;
-        int x = 70;
-        int y = GetScreenHeight() - dialogHeight - 10;
-
-        const char *lineStart = buffer;
-        int lineHeight = fontSize + 6;
-
-        while (*lineStart)
+        if (!dialogoFinalizado)
         {
-            const char *lineEnd = lineStart;
-            int lineWidth = 0;
-            int lastSpace = -1;
-            int charCount = 0;
+            float dialogHeight = 120.0f;
+            DrawRectangle(50, GetScreenHeight() - dialogHeight - 30,
+                          GetScreenWidth() - 100, dialogHeight, (Color){0, 0, 0, 200});
+            DrawRectangleLines(50, GetScreenHeight() - dialogHeight - 30,
+                               GetScreenWidth() - 100, dialogHeight, WHITE);
 
-            while (*lineEnd && lineWidth < maxWidth)
+            char buffer[512] = {0};
+            strncpy(buffer, writer.text, writer.drawnChars);
+
+            int fontSize = 24;
+            int maxWidth = GetScreenWidth() - 140;
+            int x = 70;
+            int y = GetScreenHeight() - dialogHeight - 10;
+
+            const char *lineStart = buffer;
+            int lineHeight = fontSize + 6;
+
+            while (*lineStart)
             {
-                if (*lineEnd == ' ')
-                    lastSpace = charCount;
+                const char *lineEnd = lineStart;
+                int lineWidth = 0;
+                int lastSpace = -1;
+                int charCount = 0;
 
-                lineEnd++;
-                charCount++;
+                while (*lineEnd && lineWidth < maxWidth)
+                {
+                    if (*lineEnd == ' ')
+                        lastSpace = charCount;
 
-                char temp[256] = {0};
-                strncpy(temp, lineStart, charCount);
-                lineWidth = MeasureText(temp, fontSize);
+                    lineEnd++;
+                    charCount++;
+
+                    char temp[256] = {0};
+                    strncpy(temp, lineStart, charCount);
+                    lineWidth = MeasureText(temp, fontSize);
+                }
+
+                if (lineWidth >= maxWidth && lastSpace >= 0)
+                {
+                    charCount = lastSpace;
+                }
+
+                char tempLine[256] = {0};
+                strncpy(tempLine, lineStart, charCount);
+                DrawText(tempLine, x, y, fontSize, WHITE);
+
+                lineStart += charCount;
+                while (*lineStart == ' ')
+                    lineStart++;
+                y += lineHeight;
             }
-
-            if (lineWidth >= maxWidth && lastSpace >= 0)
-            {
-                charCount = lastSpace;
-            }
-
-            char tempLine[256] = {0};
-            strncpy(tempLine, lineStart, charCount);
-            DrawText(tempLine, x, y, fontSize, WHITE);
-
-            lineStart += charCount;
-            while (*lineStart == ' ') lineStart++;
-            y += lineHeight;
         }
     }
 
@@ -259,4 +286,6 @@ void UnloadFase1_3(void)
     UnloadTexture(spriteConfiante);
     UnloadSound(somSurpresa);
     UnloadSound(somFalaDetetive);
+    UnloadSound(somFalaDetetive2);
+
 }
