@@ -4,56 +4,126 @@
 #include "generalFunctions.h"
 #include <string.h>
 #include <stdio.h>
-
 extern AppState state;
-
 // Recursos da fase 2
 static Texture2D fundo;
 static Texture2D pergunta_img;
-
 // Sprites dos personagens
 static Texture2D sprJoao, sprMateus, sprCarlos, sprMamede;
+static Texture2D sprGemini;
 static TypeWriter fase2Writer;
 static bool typeStarted = false;
 static bool podeAvancar = false;
-
 // TIMER FASE2
 static float fase2Timer = 30.0f;
 static bool fase2TimerActive = true;
 static bool fase2TimerFinished = false;
-
 // NAVEGAÇÃO DAS OPÇÕES
-static int selectedOption = 0; // Agora global para manter seleção nos frames
-
+static int selectedOption = 0;
 // Texto exibido
 static const char *fase2_fala =
-    "Tudo bem, agora que tenho acesso ao computador central o que eu devo fazer primeiro? Essa é uma decisão dificil,\n"
-    "talvez eu precise de ajuda...";
+    "Qual o primeiro passo que deve ser tomado para criar uma reverse shell em C99?";
+// --- Gemini Ajuda (balão canto superior esquerdo)
+static bool geminiHelpClicked = false;
+static const char* gemini_help_msg_default = "Clique aqui caso precise de ajuda!";
+static const char* gemini_help_msg_ajuda = "A primeira, segunda e terceira opções estao erradas";
+// --- Opções desabilitadas
+static bool optionDisabled[5] = { false, false, false, false, false };
+// --- Controle de desabilitação por timeout
+static bool cronometroDesligado = false;
+// Gemini box parameters (tornamos globais para recalcular no clique E em Draw)
+static float geminiRectW = 550; // Inicial padrão
+static float geminiRectH = 0;   // Calcular em tempo de execução
+static int   geminiTextWidth = 0; // Atual em exibição
+// GEMINI HELP ANIMATION
+static float geminiRectAnim = 0.0f;     // 0.0 (off) até 1.0 (cheio)
+static bool geminiMouseOver = false;
+static float geminiAnimSpeed = 6.0f;
+#define GEMINI_RECT_PADRAO 550
+#define GEMINI_PAD_X 36
+#define OPTION_TEXT_MARGIN_LEFT 36 // <<<<< MARGEM PARA O TEXTO DAS OPÇÕES
 
+// --- NOVO: PARA O SISTEMA DE CORREÇÃO E PISCAR ---
+static bool respostaRespondida = false;   // Se alguma alternativa já foi clicada
+static int opcaoSelecionadaUsuario = -1;  // Qual alternativa foi clicada, -1 nenhuma
+static float blinkTimer = 0.0f;           // Para o efeito de piscar
+
+void AtualizaTamanhoGeminiBox() {
+    float geminiScale = 0.1f;
+    float geminiH = sprGemini.height * geminiScale;
+    int txtSize = 20;
+    const char* gemini_msg = !geminiHelpClicked ? gemini_help_msg_default : gemini_help_msg_ajuda;
+    geminiTextWidth = MeasureText(gemini_msg, txtSize);
+    float minW = GEMINI_RECT_PADRAO;
+    float maxW = GetScreenWidth() - 140; // margem lateral
+    geminiRectW = minW;
+    if (geminiTextWidth + 2*GEMINI_PAD_X > minW)
+        geminiRectW = (geminiTextWidth + 2*GEMINI_PAD_X > maxW) ? maxW : geminiTextWidth + 2*GEMINI_PAD_X;
+    geminiRectH = geminiH * 0.75f;
+}
 void InitFase2(void)
 {
     fundo = LoadTexture("src/sprites/empresa3.png");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
-    // IMPORTANTE: Imagens devem ter fundo transparente!
-    sprJoao    = LoadTexture("src/sprites/joaoSprite.png");          // João (a menina)
+    sprJoao    = LoadTexture("src/sprites/joaoSprite.png");
     sprMateus  = LoadTexture("src/sprites/mateusSprite.png");
     sprCarlos  = LoadTexture("src/sprites/carlosSprite.png");
     sprMamede  = LoadTexture("src/sprites/mamedeSprite.png");
+    sprGemini  = LoadTexture("src/sprites/os/gemini.png");
     InitTypeWriter(&fase2Writer, fase2_fala, 18.5f);
     typeStarted = true;
     podeAvancar = false;
-
     fase2Timer = 30.0f;
     fase2TimerActive = true;
     fase2TimerFinished = false;
-
     selectedOption = 0;
-}
+    geminiRectAnim = 0.0f;
+    geminiMouseOver = false;
+    geminiHelpClicked = false;
+    cronometroDesligado = false;
+    for (int i = 0; i < 5; ++i) optionDisabled[i] = false; // habilite tudo ao iniciar
+    AtualizaTamanhoGeminiBox();
 
+    // -- sistema de resposta --
+    respostaRespondida = false;
+    opcaoSelecionadaUsuario = -1;
+    blinkTimer = 0.0f;
+}
 void UpdateFase2(void)
 {
     float delta = GetFrameTime();
-
+    // GEMINI ANIMATION e hitbox ---------
+    float geminiX = 49, geminiY = 67, geminiScale = 0.1f;
+    float geminiW = sprGemini.width * geminiScale;
+    float geminiH = sprGemini.height * geminiScale;
+    AtualizaTamanhoGeminiBox();
+    float rx = geminiX + geminiW - 20.0f;
+    float ry = geminiY + (geminiH - geminiRectH)/2.0f;
+    Rectangle geminiLogoRec = {geminiX, geminiY, geminiW, geminiH};
+    Rectangle geminiRectRec = {rx, ry, geminiRectW, geminiRectH};
+    Vector2 mouseGem = GetMousePosition();
+    bool mouseOverLogo = CheckCollisionPointRec(mouseGem, geminiLogoRec);
+    bool mouseOverRect = CheckCollisionPointRec(mouseGem, geminiRectRec);
+    geminiMouseOver = mouseOverLogo || mouseOverRect;
+    float dir = geminiMouseOver ? 1.0f : -1.0f;
+    geminiRectAnim += dir * geminiAnimSpeed * delta;
+    if (geminiRectAnim > 1.0f) geminiRectAnim = 1.0f;
+    if (geminiRectAnim < 0.0f) geminiRectAnim = 0.0f;
+    if ((mouseOverLogo || mouseOverRect) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (!geminiHelpClicked && !cronometroDesligado) {
+            geminiHelpClicked = true;
+            AtualizaTamanhoGeminiBox();
+            geminiRectAnim = 1.0f;
+            optionDisabled[0] = true;
+            optionDisabled[1] = true;
+            optionDisabled[2] = true;
+            // também reposicione para opção habilitada mais próxima:
+            if (optionDisabled[selectedOption]) {
+                for (int i = 3; i < 5; i++)
+                    if (!optionDisabled[i]) { selectedOption = i; break; }
+            }
+        }
+    }
     // TIMER FASE2
     if (fase2TimerActive && !fase2TimerFinished) {
         fase2Timer -= delta;
@@ -61,27 +131,63 @@ void UpdateFase2(void)
             fase2Timer = 0;
             fase2TimerActive = false;
             fase2TimerFinished = true;
-            // Caso queira fazer algo ao acabar o tempo, coloque aqui (ex: state = APP_GAME_OVER;)
+            for (int i = 0; i < 5; ++i) optionDisabled[i] = true;
+            cronometroDesligado = true; // Marque que o timeout ocorreu!
         }
     }
 
-    // ==================== NAVEGAÇÃO PELAS OPÇÕES =========================
+    // -- VARIÁVEIS Q SÃO USADAS EM UPDATE E DRAW --
     int numRects = 5;
+    int baseWidth = 600;
+    int larguraStep = 85;
+    int rectHeight = 78;
+    int spacing = 28;
+    int offsetY = 295;
+    int offsetX = 35;
 
-    if (IsKeyPressed(KEY_DOWN)) {
-        selectedOption++;
-        if (selectedOption >= numRects) selectedOption = 0;
-    }
-    if (IsKeyPressed(KEY_UP)) {
-        selectedOption--;
-        if (selectedOption < 0) selectedOption = numRects-1;
-    }
-    // =====================================================================
+    // --- DETECTA O CLIQUE NAS OPÇÕES, SE PERMITIDO E NÃO RESPONDIDO ---
+    if (!respostaRespondida && !cronometroDesligado) {
+        for (int i = 0; i < numRects; i++) {
+            int rectWidth = baseWidth + i * larguraStep;
+            int y = offsetY + i * (rectHeight + spacing);
+            int x = GetScreenWidth() - rectWidth - offsetX;
+            Rectangle rec = {x, y, rectWidth, rectHeight};
+            if (!optionDisabled[i] &&
+                CheckCollisionPointRec(GetMousePosition(), rec) &&
+                IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
 
+                respostaRespondida = true;
+                opcaoSelecionadaUsuario = i;
+                blinkTimer = 0.0f; // zera o pisca
+                // Desabilita tudo (só pode escolher uma vez!)
+                for (int j = 0; j < 5; j++) optionDisabled[j] = true;
+                // Para o timer e impede timeout trocar cores
+                fase2TimerActive = false;
+                cronometroDesligado = false;
+                break;
+            }
+        }
+    }
+
+    // NAVEGAÇÃO: só navega para opções habilitadas
+    if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_UP)) {
+        int dir = 0;
+        if (IsKeyPressed(KEY_DOWN)) dir = 1;
+        if (IsKeyPressed(KEY_UP))   dir = -1;
+        int tries = 0;
+        int trySel = selectedOption;
+        do {
+            trySel = (trySel + dir + numRects) % numRects;
+            tries++;
+        } while (optionDisabled[trySel] && tries < numRects);
+        if (!optionDisabled[trySel])
+            selectedOption = trySel;
+    }
     if (typeStarted) {
         UpdateTypeWriter(&fase2Writer, delta, IsKeyPressed(KEY_SPACE));
-        if (fase2Writer.drawnChars == (int)strlen(fase2_fala))
+        if (fase2Writer.drawnChars == (int)strlen(fase2_fala)) {
             podeAvancar = true;
+        }
     }
     if (podeAvancar) {
         Rectangle btnBounds = {
@@ -95,17 +201,17 @@ void UpdateFase2(void)
         }
     }
 }
-
 void DrawFase2(void)
 {
+    float delta = GetFrameTime();
+    blinkTimer += delta;
+
     BeginDrawing();
     ClearBackground(RAYWHITE);
-
-    // --- FUNDO
+    // FUNDO
     DrawTextureEx(fundo, (Vector2){0,0}, 0.0f,
-        (float)GetScreenWidth() / fundo.width, RAYWHITE);
-
-    // Seleciona sprite conforme personagem
+                  (float)GetScreenWidth() / fundo.width, RAYWHITE);
+    // Personagem e HUD normal...
     const char* name = MenuSelectedCharacterName();
     Texture2D spr = sprJoao;
     if(strcmp(name, "Mateus") == 0)
@@ -116,18 +222,15 @@ void DrawFase2(void)
         spr = sprMamede;
     else if(strcmp(name, "Carlos") == 0)
         spr = sprCarlos;
-
-    // --- Só aumenta a escala do Mateus ---
     float scale = 0.6f;
     if(strcmp(name, "Mateus") == 0)
-        scale = 1.3f; // MAIOR SÓ PRA MATEUS!
+        scale = 1.3f;
     else if(strcmp(name, "Carlos") == 0)
         scale = 0.56f;
     else if(strcmp(name, "Mamede") == 0)
         scale = 1.0f;
     float tw2 = spr.width * scale;
     float th = spr.height * scale;
-
     int boxX = 60;
     int marginBottom = 220;
     int boxY = GetScreenHeight() - marginBottom;
@@ -143,11 +246,12 @@ void DrawFase2(void)
     if (strcmp(name, "Carlos") == 0)
         pos.x += 100;
     DrawTextureEx(spr, pos, 0, scale, WHITE);
-
     // Caixa de fala e imagem da pergunta
     DrawTexturePro(pergunta_img, (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
                    (Rectangle){imgX, imgY, imgW, imgH}, (Vector2){0, 0}, 0.0f, WHITE);
-    DrawText("???", imgX + 10, imgY + imgH - 30, 30, WHITE);
+    // ==== ALTERAÇÃO PARA EXIBIR O NOME DO PERSONAGEM ====
+    DrawText((name && name[0]) ? name : "???", imgX + 10, imgY + imgH - 30, 30, WHITE);
+    // ==== FIM DA ALTERAÇÃO ====
     int borderRadius = boxHeight / 2;
     DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight, (Color){20, 20, 20, 220});
     DrawCircle(boxX + boxWidth - borderRadius, boxY + borderRadius, borderRadius, (Color){20, 20, 20, 220});
@@ -157,81 +261,124 @@ void DrawFase2(void)
         tmp[fase2Writer.drawnChars] = '\0';
         DrawText(tmp, boxX + 20, boxY + 30, 28, WHITE);
     }
-
-    // ################# CRONÔMETRO #################
+    // CRONÔMETRO
     int timerRadius = 55;
     int timerX = GetScreenWidth() - timerRadius - 25;
     int timerY = 25 + timerRadius;
-
     DrawCircle(timerX, timerY, timerRadius, (Color){25,25,30, 220});
     DrawCircleSectorLines((Vector2){timerX, timerY}, timerRadius, 0, 360, 32, (Color){180,180,180,220});
     float angle = (fase2Timer / 30.0f) * 360.0f;
     Color barColor = (fase2Timer <= 10.0f) ? (Color){230,30,30,150} : (Color){80, 230, 80, 130};
     DrawCircleSector((Vector2){timerX, timerY}, timerRadius-4, -90, -90+angle, 60, barColor);
-
     char timerText[8];
     int tempo = (int)fase2Timer;
     snprintf(timerText, sizeof(timerText), "%02d", tempo);
     int fonte = 49;
-    Color timeColor = (fase2Timer <= 10.0f) ? RED : WHITE;
+    Color timeColor = (fase2Timer <= 5.0f) ? RED : ((fase2Timer <= 10.0f) ? (Color){230,30,30,150} : WHITE);
     if (fase2Timer <= 5.0f) { fonte = 58; }
-
-    int tw = MeasureText(timerText, fonte);
-    DrawText(timerText, timerX - tw/2, timerY - fonte/2, fonte, timeColor);
-    DrawText("s", timerX + tw/2 + 2, timerY - fonte/3 + 10, 28, (Color){170,170,210,210});
-    // #################################################################################
-
-    // ============ 5 RETÂNGULOS DO LADO DIREITO EM "MEIA PIRÂMIDE" COM HOVER/NAVEGAÇÃO =========
+    int timerTextWidth = MeasureText(timerText, fonte);
+    DrawText(timerText, timerX - timerTextWidth/2, timerY - fonte/2, fonte, timeColor);
+    DrawText("s", timerX + timerTextWidth/2 + 2, timerY - fonte/3 + 10, 28, (Color){170,170,210,210});
+    // RETÂNGULOS OPÇÕES LADO DIREITO
     int numRects = 5;
-    int baseWidth = 600;     // Bem compridos!
-    int larguraStep = 85;    // Cada camada mais comprida
-    int rectHeight = 78;     // Altos!
+    int baseWidth = 600;
+    int larguraStep = 85;
+    int rectHeight = 78;
     int spacing = 28;
     int offsetY = 295;
     int offsetX = 35;
-
     Color rectGray      = (Color){56, 56, 56, 216};
-    Color hoverGreen    = (Color){ 26, 110, 51, 235 };   // verde escuro (um pouco mais vivo para seleção)
-    Color mouseGreen    = (Color){14, 77, 33, 235};      // verde escuro padrão hover mouse
-
+    Color hoverGreen    = (Color){ 26, 110, 51, 235 };
+    Color mouseGreen    = (Color){14, 77, 33, 235};
+    Color disabledGray  = (Color){90, 90, 90, 175 };
+    Color timeoutRed    = (Color){230, 30, 30, 210};
     Vector2 mouse = GetMousePosition();
+
+    // NOVO ARRAY DE OPÇÕES (com letra e descrição)
+    const char* opcoes[5] = {
+        "A) Definir IP local da vítima.",
+        "B) Bloquear conexões no firewall.",
+        "C) Enviar comandos diretamente ao shell do sistema.",
+        "D) Executar o shell remoto com privilégios elevados.",
+        "E) Criar um socket de comunicação para permitir a conexão."
+    };
 
     for (int i = 0; i < numRects; i++)
     {
         int rectWidth = baseWidth + i * larguraStep;
         int y = offsetY + i * (rectHeight + spacing);
         int x = GetScreenWidth() - rectWidth - offsetX;
-
         Rectangle rec = {x, y, rectWidth, rectHeight};
-
         Color cor = rectGray;
+        Color txtColor = WHITE;
 
-        // Mouse hover sobrescreve a seleção de teclado!
-        if (CheckCollisionPointRec(mouse, rec)) {
-            cor = mouseGreen;
-            selectedOption = i;
-        } else if (selectedOption == i) {
-            cor = hoverGreen;
+        if (respostaRespondida) {
+            // Já respondeu!
+            if (opcaoSelecionadaUsuario == 4) {
+                // Acertou (clicou na E), faz E piscar verde
+                if (i == 4 && ((int)(blinkTimer * 5.0f) % 2 == 0)) {
+                    cor = (Color){26, 110, 51, 255}; // verde forte
+                }
+            } else {
+                // Errou (não clicou na E)
+                if (i == opcaoSelecionadaUsuario && ((int)(blinkTimer * 5.0f) % 2 == 0)) {
+                    cor = (Color){230, 30, 30, 210}; // vermelho forte
+                }
+                if (i == 4 && ((int)(blinkTimer * 5.0f) % 2 == 0)) {
+                    cor = (Color){26, 110, 51, 255}; // verde forte na opção E
+                }
+            }
+            if(optionDisabled[i]) {
+                txtColor = (Color){180,180,180,210};
+            }
+        } else {
+            // Ninguém respondeu ainda: use as cores normais
+            if (optionDisabled[i]) {
+                if(cronometroDesligado)
+                    cor = timeoutRed; // desabilitado por timeout: vermelho
+                else
+                    cor = disabledGray; // desabilitado por outro motivo: cinza
+                txtColor = (cronometroDesligado ? (Color){255,80,80,255} : (Color){180,180,180,210});
+            } else if (CheckCollisionPointRec(mouse, rec)) {
+                if (!optionDisabled[i]) selectedOption = i;
+                cor = mouseGreen;
+            } else if (selectedOption == i) {
+                cor = hoverGreen;
+            }
         }
 
         DrawRectangleRounded(rec, 0.32f, 16, cor);
-
-        // Texto dentro do retângulo centralizado
-        char texto[32];
-        snprintf(texto, sizeof(texto), "Opção %d", i+1);
-        int txtWidth = MeasureText(texto, 32);
         DrawText(
-            texto,
-            x + rectWidth/2 - txtWidth/2,
-            y + rectHeight/2 - 32/2,
-            32, WHITE
+            opcoes[i],
+            x + OPTION_TEXT_MARGIN_LEFT, // <== ALTERADO PARA ALINHAR À ESQUERDA
+            y + rectHeight/2 - 24/2,
+            24, txtColor
         );
     }
-    // ===========================================================================================
 
+    // === EXIBA O RETÂNGULO E TEXTO DO GEMINI POR ÚLTIMO, SEMPRE NA FRENTE ===
+    float geminiX = 49, geminiY = 67, geminiScale = 0.1f;
+    float geminiW = sprGemini.width * geminiScale;
+    float geminiH = sprGemini.height * geminiScale;
+    const char* gemini_msg = !geminiHelpClicked ? gemini_help_msg_default : gemini_help_msg_ajuda;
+    int txtSize = 20;
+    float rx = geminiX + geminiW - 20.0f;
+    float ry = geminiY + (geminiH - geminiRectH)/2.0f;
+    float animW = geminiRectW * geminiRectAnim;
+    Color logoCol = geminiMouseOver ? (Color){ 18, 60, 32, 255 } : (Color){ 26, 110, 51, 255 };
+    if (geminiRectAnim > 0.01f) {
+        Color rectCol = (Color){ 15, 42, 26, (unsigned char)( 210 * geminiRectAnim ) };
+        float round = 0.33f;
+        DrawRectangleRounded((Rectangle){ rx, ry, animW, geminiRectH }, round, 12, rectCol);
+        if (geminiRectAnim > 0.05f) {
+            if (animW > geminiTextWidth + 2*GEMINI_PAD_X - 4) {
+                DrawText(gemini_msg, rx + GEMINI_PAD_X, ry + geminiRectH/2 - txtSize/2, txtSize, WHITE);
+            }
+        }
+    }
+    DrawTextureEx(sprGemini, (Vector2){geminiX, geminiY}, 0.0f, geminiScale, logoCol);
     EndDrawing();
 }
-
 void UnloadFase2(void)
 {
     UnloadTexture(fundo);
@@ -240,4 +387,5 @@ void UnloadFase2(void)
     UnloadTexture(sprMateus);
     UnloadTexture(sprCarlos);
     UnloadTexture(sprMamede);
+    UnloadTexture(sprGemini);
 }
