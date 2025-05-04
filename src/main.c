@@ -16,13 +16,12 @@ int main(void)
 {
     int screenWidth = GetMonitorWidth(0);
     int screenHeight = GetMonitorHeight(0);
-    InitWindow(screenWidth, screenHeight, "Sprite andando");
+    InitWindow(screenWidth, screenHeight, "Jogo AED");
     SetWindowPosition(0, 0);
     InitAudioDevice();
     Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
     PlayMusicStream(music);
     InitCutscenes();
-    bool showCharacterName = false;
     bool pcScreenInitialized = false;
     bool fase2Initialized = false;
     bool fase1_3Initialized = false;
@@ -55,12 +54,14 @@ int main(void)
                 InitIntro(MenuSelectedCharacterName(), temposIntro);
                 state = APP_INTRO;
             }
+            // APENAS PARA DEBUG
             if (IsKeyPressed(KEY_P))
             {
                 UnloadMenu();
                 fase2Initialized = false;
                 state = APP_FASE2;
             }
+            // FIM DEBUG
         }
         else if (state == APP_INTRO)
         {
@@ -71,29 +72,13 @@ int main(void)
                 UnloadIntro();
                 InitFase1();
                 state = APP_FASE1;
-                showCharacterName = false;
                 pcScreenInitialized = false;
             }
         }
         else if (state == APP_FASE1)
         {
             UpdateFase1();
-            if (!showCharacterName)
-            {
-                DrawFase1();
-                if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER))
-                {
-                    showCharacterName = true;
-                }
-            }
-            else
-            {
-                BeginDrawing();
-                ClearBackground(GREEN);
-                DrawText("Personagem escolhido:", 40, 40, 28, BLACK);
-                DrawText(MenuSelectedCharacterName(), 80, 80, 40, DARKGRAY);
-                EndDrawing();
-            }
+            DrawFase1();
         }
         else if (state == APP_PC_SCREEN)
         {

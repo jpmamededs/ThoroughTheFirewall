@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include <stdlib.h>
 #include <string.h>
+
 #define FRAME_COUNT 15
 #define MAX_COLUMNS 64
 #define SPRITE_SRC_WIDTH 480
@@ -46,35 +47,76 @@ static bool wasHoveredLastFrame = false;
 static bool isFadingOut = false;
 static float fadeAlpha = 0.0f;
 
+static void PlayCharacterSound(CharacterNode *node)
+{
+    if (!IsSoundPlaying(node->sfx))        // evita retrigger no mesmo frame
+        PlaySound(node->sfx);
+}
+
 static void PlayHoverSound(Rectangle btn, bool hoveredNow)
 {
-    if (hoveredNow && !wasHoveredLastFrame)
+    // Mantém o estado de hover de cada botão individualmente
+    #define MAX_HOVER_BTNS 32
+    typedef struct { Rectangle rect; bool wasHover; } HoverState;
+
+    static HoverState states[MAX_HOVER_BTNS] = {0};
+    static int count = 0;
+
+    /* procura o botão ou o registra se ainda não existir */
+    int id = -1;
+    for (int i = 0; i < count; i++)
+        if (memcmp(&states[i].rect, &btn, sizeof(Rectangle)) == 0)
+        { id = i; break; }
+
+    if (id < 0 && count < MAX_HOVER_BTNS)          // novo botão
     {
-        PlaySound(clickSound);
+        id = count++;
+        states[id].rect = btn;
+        states[id].wasHover = false;
     }
-    wasHoveredLastFrame = hoveredNow;
+
+    if (id >= 0)
+    {
+        if (hoveredNow && !states[id].wasHover)    // **ENTROU** no retângulo
+            PlaySound(clickSound);
+
+        states[id].wasHover = hoveredNow;          // guarda estado p/ próximo frame
+    }
 }
 
 static void DrawCharacterButtonContent(CharacterNode *node, Rectangle btn, bool isHovered, bool isSelected)
 {
-    Rectangle src = {0, 0, SPRITE_SRC_WIDTH, SPRITE_SRC_HEIGHT};
-    Texture2D texture;
+    Rectangle src = { 0, 0, SPRITE_SRC_WIDTH, SPRITE_SRC_HEIGHT };
+    Texture2D texture = { 0 };
+
+    bool hasTexture = true;
+
     if (strcmp(node->name, "Mateus") == 0)
         texture = (isHovered || isSelected) ? hacker2 : hacker1;
-    else if (strcmp(node->name, "João") == 0)
+    else if (strcmp(node->name, "João")   == 0)
         texture = (isHovered || isSelected) ? menina2 : menina1;
     else if (strcmp(node->name, "Mamede") == 0)
         texture = (isHovered || isSelected) ? meninoPdavida2 : meninoPdavida1;
     else if (strcmp(node->name, "Carlos") == 0)
         texture = (isHovered || isSelected) ? deBone2 : deBone1;
     else
-    {
-        int textW = MeasureText(node->name, 36);
-        DrawText(node->name, btn.x + (btn.width - textW) / 2, btn.y + 20, 36, WHITE);
-        return;
+        hasTexture = false;
+
+    if (hasTexture) {
+        Rectangle dest = { btn.x, btn.y, SPRITE_BTN_WIDTH, SPRITE_BTN_HEIGHT };
+        DrawTexturePro(texture, src, dest, (Vector2){ 0, 0 }, 0.0f, WHITE);
     }
-    Rectangle dest = {btn.x, btn.y, SPRITE_BTN_WIDTH, SPRITE_BTN_HEIGHT};
-    DrawTexturePro(texture, src, dest, (Vector2){0, 0}, 0.0f, WHITE);
+
+    const int fontSize = 36;
+    int textW = MeasureText(node->name, fontSize);
+    int textX = btn.x + (btn.width - textW) / 2;
+    int textY = btn.y + btn.height - fontSize - 16;
+
+    if (isHovered && !isSelected) {
+        DrawRectangleRec(btn, (Color){150, 150, 150, 100}); // Cinza translúcido por cima
+    }
+
+    DrawText(node->name, textX, textY, fontSize, BLACK);
 }
 
 void CreateCharacterList(void)
@@ -108,6 +150,9 @@ void CreateCharacterList(void)
 void InitMenu(void)
 {
     currentScreen = MENU_MAIN;
+
+    if (!IsAudioDeviceReady()) InitAudioDevice();
+
     backgroundMatrix = LoadTexture("src/sprites/Matrix.png");
     logoTexture = LoadTexture("src/sprites/jogo.png");
     hacker1 = LoadTexture("src/sprites/hacker1-unselected.png");
@@ -120,22 +165,25 @@ void InitMenu(void)
     deBone2 = LoadTexture("src/sprites/deBone-selected.png");
     clickSound = LoadSound("src/music/buttonPress.wav");
     alertSound = LoadSound("src/music/welcome-to-the-game-hacking-alert_sm4UxhuM.mp3");
+
     Rectangle frames[] = {
         {0, 512, 512, 512}, {0, 1024, 512, 512}, {0, 1536, 512, 512}, {512, 0, 512, 512}, {512, 512, 512, 512}, {512, 1024, 512, 512}, {512, 1536, 512, 512}, {1024, 0, 512, 512}, {1024, 512, 512, 512}, {1024, 1024, 512, 512}, {1024, 1536, 512, 512}, {1536, 0, 512, 512}, {1536, 512, 512, 512}, {1536, 1024, 512, 512}, {1536, 1536, 512, 512}
     };
-    for (int i = 0; i < FRAME_COUNT; i++)
+
+    for (int i = 0; i < FRAME_COUNT; i++) {
         matrixFrames[i] = frames[i];
+    }
+
     CreateCharacterList();
     matrixInitialized = false;
     wasHoveredLastFrame = false;
     isFadingOut = false;
     fadeAlpha = 0.0f;
 
-    // Carregar sons dos personagens
     CharacterNode *node = head;
     do
     {
-        if (strcmp(node->name, "João") == 0)
+        if (strcmp(node->name, "João") == 0) 
             node->sfx = LoadSound("src/music/menina-menu.wav");
         else if (strcmp(node->name, "Mateus") == 0)
             node->sfx = LoadSound("src/music/hacker-menu.wav");
@@ -144,7 +192,8 @@ void InitMenu(void)
         else if (strcmp(node->name, "Mamede") == 0)
             node->sfx = LoadSound("src/music/meninoPdavida-menu.wav");
 
-        TraceLog(LOG_INFO, "Som carregado para: %s", node->name);
+        SetSoundVolume(node->sfx, 1.0f);
+
         node = node->next;
     } while (node != head);
 }
@@ -153,12 +202,16 @@ void UpdateMenu(void)
 {
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
+
+    Vector2 mouse = GetMousePosition();
+
     float now = GetTime();
     if (now - lastUpdate >= frameTime)
     {
         currentFrame = (currentFrame + 1) % FRAME_COUNT;
         lastUpdate = now;
     }
+
     if (isFadingOut)
     {
         fadeAlpha += GetFrameTime();
@@ -169,62 +222,108 @@ void UpdateMenu(void)
         }
         return;
     }
-    Vector2 mouse = GetMousePosition();
+
+    /* ----------------------   TELA INICIAL   ---------------------------- */
     if (currentScreen == MENU_MAIN)
     {
         Rectangle startBtn = {screenWidth / 2 - 150, screenHeight - 180, 300, 80};
         bool hovered = CheckCollisionPointRec(mouse, startBtn);
         PlayHoverSound(startBtn, hovered);
+
         if ((hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER))
         {
             PlaySound(clickSound);
             currentScreen = MENU_SELECT_CHAR;
         }
     }
+
+    /* ----------------   SELEÇÃO DE PERSONAGENS   ------------------------ */
     else if (currentScreen == MENU_SELECT_CHAR)
     {
         int spacing = 30;
         int totalW = charCount * SPRITE_BTN_WIDTH + (charCount - 1) * spacing;
         int startX = (screenWidth - totalW) / 2;
         int y = screenHeight / 2 - SPRITE_BTN_HEIGHT / 2;
+    
+        static CharacterNode *lastHovered = NULL;
         CharacterNode *node = head;
         for (int i = 0; i < charCount; i++, node = node->next)
         {
-            Rectangle btn = {startX + i * (SPRITE_BTN_WIDTH + spacing), y, SPRITE_BTN_WIDTH, SPRITE_BTN_HEIGHT};
+            Rectangle btn = {startX + i * (SPRITE_BTN_WIDTH + spacing), y,
+                             SPRITE_BTN_WIDTH, SPRITE_BTN_HEIGHT};
             bool hovered = CheckCollisionPointRec(mouse, btn);
-            if (hovered && node != selectedChar)
+    
+            /* som ao entrar no hover */
+            PlayHoverSound(btn, hovered);
+            if (hovered && node != lastHovered)
             {
-                PlaySound(node->sfx);
+                PlayCharacterSound(node);
+                lastHovered = node;
+            }
+            else if (!hovered && node == lastHovered)
+            {
+                lastHovered = NULL;
+            }
+    
+            /* clique do mouse escolhe o personagem */
+            if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON) &&
+                node != selectedChar)
+            {
                 PlaySound(clickSound);
                 selectedChar = node;
             }
-            else if (hovered)
-            {
-                PlayHoverSound(btn, hovered);
-            }
         }
-        Rectangle confirmBtn = {screenWidth / 2 - 130, y + SPRITE_BTN_HEIGHT + 40, 260, 56};
+    
+        /* navegação por setas também continua funcionando */
+        if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D))
+        {
+            selectedChar = selectedChar ? selectedChar->next : head;
+            PlayCharacterSound(selectedChar);
+            PlaySound(clickSound);
+
+            // Calcula posição central logo abaixo do botão Confirmar
+            Rectangle confirmBtn = {
+                screenWidth/2 - 130,
+                y + SPRITE_BTN_HEIGHT + 40,
+                260, 56
+            };
+
+            int mx = confirmBtn.x + confirmBtn.width/2;
+            int my = confirmBtn.y + confirmBtn.height + 8; // 8px abaixo do botão
+            SetMousePosition(mx, my);
+        }
+        else if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A))
+        {
+            selectedChar = selectedChar ? selectedChar->prev : head;
+            PlayCharacterSound(selectedChar);      // aqui também!
+            PlaySound(clickSound);
+
+            // Calcula posição central logo abaixo do botão Confirmar
+            Rectangle confirmBtn = {
+                screenWidth/2 - 130,
+                y + SPRITE_BTN_HEIGHT + 40,
+                260, 56
+            };
+            
+            int mx = confirmBtn.x + confirmBtn.width/2;
+            int my = confirmBtn.y + confirmBtn.height + 8; // 8px abaixo do botão
+            SetMousePosition(mx, my);
+        }
+    
+        /* botão Confirmar – mouse ou ENTER */
+        Rectangle confirmBtn = {screenWidth / 2 - 130,
+                                y + SPRITE_BTN_HEIGHT + 40, 260, 56};
         bool confirmHover = CheckCollisionPointRec(mouse, confirmBtn);
         PlayHoverSound(confirmBtn, confirmHover);
-        if ((confirmHover && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER))
+        if ((confirmHover && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) ||
+            IsKeyPressed(KEY_ENTER))
         {
             PlaySound(clickSound);
             PlaySound(alertSound);
             isFadingOut = true;
         }
-        if (IsKeyPressed(KEY_RIGHT))
-        {
-            selectedChar = selectedChar->next;
-            PlaySound(selectedChar->sfx);
-            PlaySound(clickSound);
-        }
-        else if (IsKeyPressed(KEY_LEFT))
-        {
-            selectedChar = selectedChar->prev;
-            PlaySound(selectedChar->sfx);
-            PlaySound(clickSound);
-        }
     }
+
 }
 
 void DrawMenu(void)
@@ -271,11 +370,23 @@ void DrawMenu(void)
         int startX = (screenWidth - totalW) / 2;
         int y = screenHeight / 2 - SPRITE_BTN_HEIGHT / 2;
         CharacterNode *node = head;
+
         for (int i = 0; i < charCount; i++, node = node->next)
         {
             Rectangle btn = {startX + i * (SPRITE_BTN_WIDTH + spacing), y, SPRITE_BTN_WIDTH, SPRITE_BTN_HEIGHT};
             bool hovered = CheckCollisionPointRec(GetMousePosition(), btn);
+
+            Color normalColor = (Color){ 40, 40, 40, 200 };   // fundo escuro padrão
+            Color hoverColor  = (Color){150, 150, 150, 100};
+            DrawRectangleRec(btn, hovered ? hoverColor : normalColor);
+
+            // Conteúdo do card (sprite + nome)
             DrawCharacterButtonContent(node, btn, hovered, node == selectedChar);
+
+            // Destaque de borda se for o selecionado
+            if (node == selectedChar) {
+                DrawRectangleLinesEx(btn, 6, RED);
+            }
         }
         DrawText("Escolha seu personagem", screenWidth / 2 - 180, y - 70, 28, RAYWHITE);
         Rectangle confirmBtn = {screenWidth / 2 - 130, y + SPRITE_BTN_HEIGHT + 40, 260, 56};

@@ -190,7 +190,6 @@ void DrawIntro(void)
         free(tmp);
     }
 
-    //--- Barra de progresso opcional (visual)
     float progress = partTimer / partDurations[currentPart];
     if (progress > 1) progress = 1;
     DrawRectangleRec((Rectangle){
