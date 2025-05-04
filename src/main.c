@@ -4,11 +4,12 @@
 #include "intro.h"
 #include "fase1.h"
 #include "fase1_2.h"
-#include "fase1_3.h" // <--- ADICIONADO
+#include "interrogatorio.h"
 #include "gemini.h"
 #include "pc_screen.h"
 #include "fase2.h"
 #include "generalFunctions.h"
+#include "debug.h" 
 
 AppState state = APP_CUTSCENES;
 
@@ -19,12 +20,12 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "Jogo AED");
     SetWindowPosition(0, 0);
     InitAudioDevice();
-    Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
+    Music music = LoadMusicStream("");
     PlayMusicStream(music);
     InitCutscenes();
     bool pcScreenInitialized = false;
     bool fase2Initialized = false;
-    bool fase1_3Initialized = false;
+    bool interrogatorio_Initialized = false;
 
     while (!WindowShouldClose())
     {
@@ -60,6 +61,15 @@ int main(void)
                 UnloadMenu();
                 fase2Initialized = false;
                 state = APP_FASE2;
+            }
+            if (IsKeyPressed(KEY_R)) {
+                UnloadMenu();
+                InitDebug();
+                state = APP_DEBUG;
+            }if (IsKeyPressed(KEY_T)) {
+                UnloadMenu();
+                InitInterrogatorio();
+                state = INTERROGATORIO;
             }
             // FIM DEBUG
         }
@@ -119,16 +129,16 @@ int main(void)
             UpdateFase1_2();
             DrawFase1_2();
         }
-        else if (state == APP_FASE1_3)
+        else if (state == INTERROGATORIO)
         {
-            if (!fase1_3Initialized)
+            if (!interrogatorio_Initialized)
             {
-                InitFase1_3();
-                fase1_3Initialized = true;
+                InitInterrogatorio();
+                interrogatorio_Initialized = true;
             }
 
-            UpdateFase1_3();
-            DrawFase1_3();
+            UpdateInterrogatorio();
+            DrawInterrogatorio();
         }
         else if (state == APP_FASE2)
         {
@@ -140,6 +150,11 @@ int main(void)
 
             UpdateFase2();
             DrawFase2();
+        }
+        else if (state == APP_DEBUG)
+        {
+            UpdateDebug();
+            DrawDebug();
         }
     }
 
@@ -156,8 +171,8 @@ int main(void)
         UnloadFase2();
     if (state == APP_FASE1_2)
         UnloadFase1_2();
-    if (state == APP_FASE1_3)
-        UnloadFase1_3();
+    if (state == INTERROGATORIO)
+        UnloadInterrogatorio();
 
     UnloadMusicStream(music);
     CloseAudioDevice();

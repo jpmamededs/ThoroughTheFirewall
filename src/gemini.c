@@ -31,7 +31,7 @@ static size_t sbWrite(void *data, size_t size, size_t nmemb, void *userp) {
     return add;
 }
 
-void ObterRespostaGemini(const char *prompt, char *out) {
+void ObterRespostaGemini(const char *prompt, const char *context, char *out) {
     CURL *curl = curl_easy_init();
     if (!curl)
     {
@@ -41,14 +41,24 @@ void ObterRespostaGemini(const char *prompt, char *out) {
 
     cJSON *root      = cJSON_CreateObject();
     cJSON *contents  = cJSON_AddArrayToObject(root, "contents");
-    cJSON *mensagem  = cJSON_CreateObject();
-    cJSON_AddItemToArray(contents, mensagem);
 
-    cJSON_AddStringToObject(mensagem, "role", "user");
-    cJSON *parts     = cJSON_AddArrayToObject(mensagem, "parts");
-    cJSON *partObj   = cJSON_CreateObject();
-    cJSON_AddItemToArray(parts, partObj);
-    cJSON_AddStringToObject(partObj, "text", prompt);
+    // MENSAGEM 1: CONTEXTO
+    cJSON *contextMsg = cJSON_CreateObject();
+    cJSON_AddItemToArray(contents, contextMsg);
+    cJSON_AddStringToObject(contextMsg, "role", "user");
+    cJSON *contextParts = cJSON_AddArrayToObject(contextMsg, "parts");
+    cJSON *contextText = cJSON_CreateObject();
+    cJSON_AddItemToArray(contextParts, contextText);
+    cJSON_AddStringToObject(contextText, "text", context);
+
+    // MENSAGEM 2: PROMPT DO USUÁRIO
+    cJSON *promptMsg = cJSON_CreateObject();
+    cJSON_AddItemToArray(contents, promptMsg);
+    cJSON_AddStringToObject(promptMsg, "role", "user");
+    cJSON *promptParts = cJSON_AddArrayToObject(promptMsg, "parts");
+    cJSON *promptText = cJSON_CreateObject();
+    cJSON_AddItemToArray(promptParts, promptText);
+    cJSON_AddStringToObject(promptText, "text", prompt);
 
     char *jsonReq = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);

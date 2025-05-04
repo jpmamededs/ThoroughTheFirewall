@@ -10,9 +10,10 @@ typedef enum
     APP_INTRO,
     APP_FASE1,
     APP_FASE1_2,
-    APP_FASE1_3,
     APP_PC_SCREEN,
-    APP_FASE2
+    APP_FASE2,
+    INTERROGATORIO,
+    APP_DEBUG
 } AppState;
 
 typedef struct {
