@@ -4,13 +4,13 @@ color 0a
 title Terminal Hacker
 cls
 
-echo Lembrete: Quando for finalizar aquela sua tarefa, digite run-virus
+echo Lembrete: Quando for finalizar aquela sua tarefa, digite 'passar firewall'
 echo.
 
 :inicio
 set /p comando=Digite o comando: 
 
-if /i "%comando%"=="run-virus" (
+if /i "%comando%"=="passar firewall" (
     cls
     echo Iniciando protocolo...
     timeout /t 1 >nul
