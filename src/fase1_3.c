@@ -39,7 +39,7 @@ static bool somFalaTocado = false;
 
 static TypeWriter writer;
 static const char* dialogoTexto =
-    "Então, basicamente, você e... mais 3 pessoas estão sendo investigadas por crimes cibernéticos... "
+    "Então, basicamente, você e... mais 3 pessoas estão sendo interrogados por crimes cibernéticos... "
     "Eu sou o investigador desse caso, e vou te fazer algumas perguntas, ok?";
 
 void InitFase1_3(void)
@@ -75,7 +75,7 @@ void InitFase1_3(void)
     mostrarConfiante = false;
     somFalaTocado = false;
 
-    InitTypeWriter(&writer, dialogoTexto, strlen(dialogoTexto) / 10.0f); // 10 segundos
+    InitTypeWriter(&writer, dialogoTexto, strlen(dialogoTexto) / 10.0f);
 }
 
 void UpdateFase1_3(void)
@@ -98,7 +98,6 @@ void UpdateFase1_3(void)
                 posNome.x = targetNome.x;
         }
 
-        // Movimento de entrada rápida do bustup
         if (!bustupChegou)
         {
             posBustup.x += speed * delta;
@@ -116,7 +115,6 @@ void UpdateFase1_3(void)
     }
     else if (spritesVisiveis)
     {
-        // Após entrada, movimento lento do bustup
         posBustup.x += slowSpeed * delta;
 
         tempoAposAnimacao += delta;
@@ -158,7 +156,7 @@ void UpdateFase1_3(void)
             somFalaTocado = true;
         }
 
-        UpdateTypeWriter(&writer, delta, IsKeyPressed(KEY_ENTER)); // ENTER = pular
+        UpdateTypeWriter(&writer, delta, IsKeyPressed(KEY_ENTER));
     }
 }
 
