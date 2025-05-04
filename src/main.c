@@ -4,6 +4,7 @@
 #include "intro.h"
 #include "fase1.h"
 #include "fase1_2.h"
+#include "fase1_3.h" // <--- ADICIONADO
 #include "gemini.h"
 #include "pc_screen.h"
 #include "fase2.h"
@@ -23,11 +24,13 @@ int main(void)
     InitCutscenes();
     bool showCharacterName = false;
     bool pcScreenInitialized = false;
-    bool fase2Initialized = false; // Controle para fase2
+    bool fase2Initialized = false;
+    bool fase1_3Initialized = false;
 
     while (!WindowShouldClose())
     {
-        UpdateMusicStream(music); // Atualiza música de fundo onde aplicável
+        UpdateMusicStream(music);
+
         if (state == APP_CUTSCENES)
         {
             UpdateCutscenes();
@@ -36,7 +39,7 @@ int main(void)
             {
                 UnloadCutscenes();
                 InitMenu();
-                ResumeMusicStream(music); // volta a música
+                ResumeMusicStream(music);
                 state = APP_MENU;
             }
         }
@@ -46,17 +49,16 @@ int main(void)
             DrawMenu();
             if (MenuStartGame())
             {
-                PauseMusicStream(music); // para música
+                PauseMusicStream(music);
                 UnloadMenu();
                 float temposIntro[4] = {9.0f, 11.0f, 13.5f, 7.3f};
                 InitIntro(MenuSelectedCharacterName(), temposIntro);
                 state = APP_INTRO;
             }
-            // NOVO: Se pressionar "P", vai direto para fase2
             if (IsKeyPressed(KEY_P))
             {
                 UnloadMenu();
-                fase2Initialized = false; // força o InitFase2 depois
+                fase2Initialized = false;
                 state = APP_FASE2;
             }
         }
@@ -70,7 +72,7 @@ int main(void)
                 InitFase1();
                 state = APP_FASE1;
                 showCharacterName = false;
-                pcScreenInitialized = false; // caso volte do PC
+                pcScreenInitialized = false;
             }
         }
         else if (state == APP_FASE1)
@@ -102,7 +104,6 @@ int main(void)
             }
 
             AppState previousState = state;
-
             UpdatePcScreen();
             DrawPcScreen();
 
@@ -123,15 +124,26 @@ int main(void)
         else if (state == APP_FASE1_2)
         {
             static bool fase1_2Initialized = false;
-        
+
             if (!fase1_2Initialized)
             {
                 InitFase1_2();
                 fase1_2Initialized = true;
             }
-        
+
             UpdateFase1_2();
             DrawFase1_2();
+        }
+        else if (state == APP_FASE1_3)
+        {
+            if (!fase1_3Initialized)
+            {
+                InitFase1_3();
+                fase1_3Initialized = true;
+            }
+
+            UpdateFase1_3();
+            DrawFase1_3();
         }
         else if (state == APP_FASE2)
         {
@@ -140,12 +152,12 @@ int main(void)
                 InitFase2();
                 fase2Initialized = true;
             }
+
             UpdateFase2();
             DrawFase2();
-            // Outros controles de mudança de estado em fase2,
-            // se/quando quiser sair dela, tipo apertar ESC ou outro botão.
         }
     }
+
     // Limpeza
     if (state == APP_CUTSCENES)
         UnloadCutscenes();
@@ -159,6 +171,9 @@ int main(void)
         UnloadFase2();
     if (state == APP_FASE1_2)
         UnloadFase1_2();
+    if (state == APP_FASE1_3)
+        UnloadFase1_3();
+
     UnloadMusicStream(music);
     CloseAudioDevice();
     CloseWindow();
