@@ -66,7 +66,6 @@ void UpdateFase1_3(void)
             somTocado = true;
         }
 
-        // Movimento rápido dos sprites
         if (posNome.x > targetNome.x)
         {
             posNome.x -= speed * delta;
@@ -91,7 +90,6 @@ void UpdateFase1_3(void)
     }
     else if (spritesVisiveis)
     {
-        // Movimento lento contínuo do bustup
         posBustup.x += slowSpeed * delta;
 
         tempoAposAnimacao += delta;
