@@ -9,6 +9,8 @@ static Model modelo3D;
 static Model portaModel;
 static Texture2D portaTexture;
 static Music somBaterPorta;
+static Sound somAbrindoPorta; // NOVO
+
 static Camera3D camera;
 
 static float cameraYaw = 0.0f;
@@ -20,6 +22,10 @@ static bool portaAtendida = false;
 static bool iniciandoTransicao = false;
 static float fadeAlpha = 0.0f;
 
+static float tempoDesdeFadeCompleto = 0.0f;
+static bool fadeCompleto = false;
+static bool somAbrindoTocado = false; // NOVO
+
 void InitFase1_2(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
@@ -29,6 +35,7 @@ void InitFase1_2(void)
     portaModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = portaTexture;
 
     somBaterPorta = LoadMusicStream("src/music/doorKnock.mp3");
+    somAbrindoPorta = LoadSound("src/music/doorOpening.mp3"); // NOVO
 
     tempoDesdeInicio = 0.0f;
     somTocado = false;
@@ -36,6 +43,9 @@ void InitFase1_2(void)
     portaAtendida = false;
     iniciandoTransicao = false;
     fadeAlpha = 0.0f;
+    fadeCompleto = false;
+    tempoDesdeFadeCompleto = 0.0f;
+    somAbrindoTocado = false;
 
     camera.position = (Vector3){0.0f, 1.6f, 0.0f};
     camera.target = (Vector3){0.0f, 1.6f, -1.0f};
@@ -84,7 +94,27 @@ void UpdateFase1_2(void)
         if (fadeAlpha >= 1.0f)
         {
             fadeAlpha = 1.0f;
-            state = APP_FASE2;
+
+            if (!fadeCompleto)
+            {
+                fadeCompleto = true;
+                tempoDesdeFadeCompleto = 0.0f;
+
+                // Toca som da porta abrindo assim que tela fica preta
+                if (!somAbrindoTocado)
+                {
+                    PlaySound(somAbrindoPorta);
+                    somAbrindoTocado = true;
+                }
+            }
+            else
+            {
+                tempoDesdeFadeCompleto += delta;
+                if (tempoDesdeFadeCompleto >= 2.0f)
+                {
+                    state = APP_FASE1_3;
+                }
+            }
         }
     }
 }
@@ -107,7 +137,6 @@ void DrawFase1_2(void)
 
     EndMode3D();
 
-    // Botão "Atender Porta" se câmera girada o suficiente e som já tocou
     if (!portaAtendida && cameraYaw >= 30.0f * DEG2RAD && somTocado)
     {
         Rectangle btn = {
@@ -129,7 +158,6 @@ void DrawFase1_2(void)
         }
     }
 
-    // Fade-out gradual
     if (iniciandoTransicao)
     {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0, 0, 0, (unsigned char)(fadeAlpha * 255)});
@@ -144,4 +172,5 @@ void UnloadFase1_2(void)
     UnloadModel(portaModel);
     UnloadTexture(portaTexture);
     UnloadMusicStream(somBaterPorta);
+    UnloadSound(somAbrindoPorta); // NOVO
 }
