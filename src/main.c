@@ -4,8 +4,9 @@
 #include "intro.h"
 #include "fase1.h"
 #include "fase1_2.h"
-#include "fase1_3.h" // <--- ADICIONADO
+#include "fase1_3.h"
 #include "gemini.h"
+#include "faseFinal.h"
 #include "pc_screen.h"
 #include "fase2.h"
 #include "generalFunctions.h"
@@ -16,15 +17,19 @@ int main(void)
 {
     int screenWidth = GetMonitorWidth(0);
     int screenHeight = GetMonitorHeight(0);
+
     InitWindow(screenWidth, screenHeight, "Jogo AED");
     SetWindowPosition(0, 0);
     InitAudioDevice();
     Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
     PlayMusicStream(music);
+
     InitCutscenes();
+
     bool pcScreenInitialized = false;
     bool fase2Initialized = false;
-    bool fase1_3Initialized = false;
+    static bool fase1_3Initialized = false;      // Adicionado para a fase1_3
+    static bool faseFinalInitialized = false;     // Adicionado para faseFinal
 
     while (!WindowShouldClose())
     {
@@ -61,6 +66,12 @@ int main(void)
                 fase2Initialized = false;
                 state = APP_FASE2;
             }
+            if (IsKeyPressed(KEY_O))
+            {
+                UnloadMenu();
+                faseFinalInitialized = false;
+                state = APP_FASEFINAL;
+            }
             // FIM DEBUG
         }
         else if (state == APP_INTRO)
@@ -87,17 +98,14 @@ int main(void)
                 InitPcScreen();
                 pcScreenInitialized = true;
             }
-
             AppState previousState = state;
             UpdatePcScreen();
             DrawPcScreen();
-
             if (previousState != state)
             {
                 UnloadPcScreen();
                 pcScreenInitialized = false;
             }
-
             if (IsKeyPressed(KEY_P))
             {
                 UnloadPcScreen();
@@ -109,13 +117,11 @@ int main(void)
         else if (state == APP_FASE1_2)
         {
             static bool fase1_2Initialized = false;
-
             if (!fase1_2Initialized)
             {
                 InitFase1_2();
                 fase1_2Initialized = true;
             }
-
             UpdateFase1_2();
             DrawFase1_2();
         }
@@ -126,7 +132,6 @@ int main(void)
                 InitFase1_3();
                 fase1_3Initialized = true;
             }
-
             UpdateFase1_3();
             DrawFase1_3();
         }
@@ -137,9 +142,18 @@ int main(void)
                 InitFase2();
                 fase2Initialized = true;
             }
-
             UpdateFase2();
             DrawFase2();
+        }
+        else if (state == APP_FASEFINAL)
+        {
+            if (!faseFinalInitialized)
+            {
+                InitFaseFinal();
+                faseFinalInitialized = true;
+            }
+            UpdateFaseFinal();
+            DrawFaseFinal();
         }
     }
 
@@ -158,6 +172,8 @@ int main(void)
         UnloadFase1_2();
     if (state == APP_FASE1_3)
         UnloadFase1_3();
+    if (state == APP_FASEFINAL)
+        UnloadFaseFinal();
 
     UnloadMusicStream(music);
     CloseAudioDevice();

@@ -1,5 +1,5 @@
-// generalFunctions.h
-#pragma once
+#ifndef GENERALFUNCTIONS_H
+#define GENERALFUNCTIONS_H
 
 #include <stdbool.h>
 #include "raylib.h" // Necessário para Tipos Color, Rectangle, etc
@@ -16,7 +16,8 @@ typedef enum
     APP_FASE1_2,
     APP_FASE1_3,
     APP_PC_SCREEN,
-    APP_FASE2
+    APP_FASE2,
+    APP_FASEFINAL
     // ... adicione outros estados conforme precisar
 } AppState;
 
@@ -31,6 +32,7 @@ typedef struct {
     float speed;        // Letras por segundo
     bool done;          // Texto terminou?
 } TypeWriter;
+
 void InitTypeWriter(TypeWriter* tw, const char* text, float speed);
 void UpdateTypeWriter(TypeWriter* tw, float deltaTime, bool skip);
 void SkipTypeWriter(TypeWriter* tw);
@@ -60,20 +62,15 @@ typedef struct {
 // Helpers Gerais
 void InitDialogueQuestion(DialogueQuestion* dq, const char* pergunta_txt, DialogueOption* opcoes, int num_opcoes, float timer_total);
 void UpdateDialogueQuestion(DialogueQuestion* dq, float deltaTime);
-
 // Navegação via tecla: direction = +1 (baixo), -1 (cima)
 void DialogueNavigateOptions(const DialogueQuestion* dq, int* selectedIndex, int direction);
-
 // Clique: retorna índice da opção clicada ou -1 (use mesmo offsetX, offsetY etc do Draw)
 int GetDialogueOptionClick(const DialogueQuestion* dq,
     int offsetX, int offsetY, int baseWidth, int rectHeight, int spacing, int larguraStep);
-
 // Desenho visual: opções e timer
 void DrawChronometer(float timer_restante, float timer_total, int x, int y, int radius);
-
 // Desenha uma opção individual
 void DrawDialogueOption(const DialogueOption* opt, Rectangle rec, bool selected, bool disabled, bool blink, Color base, Color txtCor);
-
 // Desenha todas as opções:
 // blinkWrong: índice da opção errada marcada (pisca vermelho), -1 se nenhuma
 // blink: se true, ativa o efeito piscar
@@ -82,3 +79,5 @@ void DrawAllDialogueOptions(const DialogueQuestion* dq, int selected,
     int offsetX, int offsetY,
     int baseWidth, int rectHeight, int spacing, int larguraStep,
     int blinkWrong, bool blink, int blinkCorrect);
+
+#endif // GENERALFUNCTIONS_H
