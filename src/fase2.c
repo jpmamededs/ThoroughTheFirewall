@@ -1,70 +1,59 @@
 #include "fase2.h"
-#include "raylib.h"
-#include "menu.h"
 #include "generalFunctions.h"
+#include "menu.h"
+#include "raylib.h"
 #include <string.h>
 #include <stdio.h>
-extern AppState state;
-// Frases original, acerto e erro
-#define FALA_NORMAL "Qual o primeiro passo que deve ser tomado para criar uma reverse shell em C99?"
-#define FALA_ACERTO "Consegui lembrar. Acho que ninguem se quer esta pensando que eu possa ser o hacker! "
-#define FALA_ERRO "Droga! Eu acho que fiz algo errado, devo ter disparado algum alerta, preciso fugir.\nEste alarme vai acabar com meu disfarce!!!"
-// João:
-#define FALA_JOAO_ACERTO "Ufa, consegui lembrar disso. Acho que os próximos passos serão mais dificeis."
-#define FALA_JOAO_ERRO   "Meu Deus, que barulho é esse! Acho que fui pega, o Hank não pode me encontrar.\nTomara que este alarme não denuncie minha posição!!!"
-// Carlos:
-#define FALA_CARLOS_ACERTO "Isso é como tirar doce de criança, o sistema deles é muito vulnerável."
-#define FALA_CARLOS_ERRO   "Como eu pude errar isso? Não acredito que esse pequenos deslize vai me custar tanto.\nEste barulho está ensurdecedor!!!"
-// Mamede:
-#define FALA_MAMEDE_ACERTO "Ha! Essa foi fácil, espero que tudo siga de acordo com o que planejei."
-#define FALA_MAMEDE_ERRO   "Droga! Não era isso... preciso ser mais cuidadoso, tudo pode ir por água abaixo agora!\nMaldito alarme, vai chamar atenção!"
-// Recursos da fase 2
+#include <math.h>
+
 static Texture2D fundo;
 static Texture2D pergunta_img;
-// Sprites dos personagens
 static Texture2D sprJoao, sprJoao2, sprJoao3;
 static Texture2D sprMateus, sprMateus2, sprMateus3;
 static Texture2D sprCarlos, sprCarlos2, sprCarlos3;
 static Texture2D sprMamede, sprMamede2, sprMamede3;
 static Texture2D sprGemini;
-static TypeWriter fase2Writer;
-static bool typeStarted = false;
+static Texture2D sprEnterButton;
+// FADEOUT
+static bool fase2_fazendo_fadeout = false;
+static float fase2_fadeout_time = 0.0f;
+#define FASE2_FADEOUT_DURACAO 0.8f
+static DialogueOption opcoesFase2[] = {
+    {"A) Definir IP local da vítima.", false, false},
+    {"B) Bloquear conexões no firewall.", false, false},
+    {"C) Enviar comandos diretamente ao shell do sistema.", false, false},
+    {"D) Executar o shell remoto com privilégios elevados.", false, false},
+    {"E) Criar um socket de comunicação para permitir a conexão.", true, false},
+};
+static DialogueQuestion pergunta2;
+// Falas pós-resposta (por personagem correto/errado)
+#define FALA_NORMAL "Qual o primeiro passo que deve ser tomado para criar uma reverse shell em C99?"
+#define FALA_ACERTO "Consegui lembrar. Acho que ninguem se quer esta pensando que eu possa ser o hacker! "
+#define FALA_ERRO "Droga! Eu acho que fiz algo errado, devo ter disparado algum alerta, preciso fugir.\nEste alarme vai acabar com meu disfarce!!!"
+#define FALA_JOAO_ACERTO "Ufa, consegui lembrar disso. Acho que os próximos passos serão mais dificeis."
+#define FALA_JOAO_ERRO   "Meu Deus, que barulho é esse! Acho que fui pega, o Hank não pode me encontrar.\nTomara que este alarme não denuncie minha posição!!!"
+#define FALA_CARLOS_ACERTO "Isso é como tirar doce de criança, o sistema deles é muito vulnerável."
+#define FALA_CARLOS_ERRO   "Como eu pude errar isso? Não acredito que esse pequenos deslize vai me custar tanto.\nEste barulho está ensurdecedor!!!"
+#define FALA_MAMEDE_ACERTO "Ha! Essa foi fácil, espero que tudo siga de acordo com o que planejei."
+#define FALA_MAMEDE_ERRO   "Droga! Não era isso... preciso ser mais cuidadoso, tudo pode ir por água abaixo agora!\nMaldito alarme, vai chamar atenção!"
+static TypeWriter writer;
+static char fala_exibida[512];
 static bool podeAvancar = false;
-// TIMER FASE2
-static float fase2Timer = 30.0f;
-static bool fase2TimerActive = true;
-static bool fase2TimerFinished = false;
-// NAVEGAÇÃO DAS OPÇÕES
-static int selectedOption = 0;
-static char fase2_fala[512] = FALA_NORMAL;
-// --- POS-RESPOSTA TIMER
 static float respostaShowTimer = 0.0f;
-static const float RESPOSTA_MOSTRA_SEG = 5.0f; // tempo de exibição após resposta
-
-// --- Gemini Ajuda (balão canto superior esquerdo)
+static const float RESPOSTA_MOSTRA_SEG = 5.0f;
+static int selectedOption = 0;
 static bool geminiHelpClicked = false;
 static const char* gemini_help_msg_default = "Clique aqui caso precise de ajuda!";
-static const char* gemini_help_msg_ajuda = "A primeira, segunda e terceira opções estao erradas";
-// --- Opções desabilitadas
-static bool optionDisabled[5] = { false, false, false, false, false };
-// --- Controle de desabilitação por timeout
-static bool cronometroDesligado = false;
-// Gemini box parameters (tornamos globais para recalcular no clique E em Draw)
-static float geminiRectW = 550; // Inicial padrão
-static float geminiRectH = 0;   // Calcular em tempo de execução
-static int   geminiTextWidth = 0; // Atual em exibição
-// GEMINI HELP ANIMATION
-static float geminiRectAnim = 0.0f;     // 0.0 (off) até 1.0 (cheio)
+static const char* gemini_help_msg_ajuda = "A primeira, segunda e terceira opções estão erradas";
+static float geminiRectW = 550;
+static float geminiRectH = 0;
+static int   geminiTextWidth = 0;
+static float geminiRectAnim = 0.0f;
 static bool geminiMouseOver = false;
 static float geminiAnimSpeed = 6.0f;
 #define GEMINI_RECT_PADRAO 550
 #define GEMINI_PAD_X 36
-#define OPTION_TEXT_MARGIN_LEFT 36 // <<<<< MARGEM PARA O TEXTO DAS OPÇÕES
-// --- NOVO: PARA O SISTEMA DE CORREÇÃO E PISCAR ---
-static bool respostaRespondida = false;   // Se alguma alternativa já foi clicada
-static int opcaoSelecionadaUsuario = -1;  // Qual alternativa foi clicada, -1 nenhuma
-static float blinkTimer = 0.0f;           // Para o efeito de piscar
-void AtualizaTamanhoGeminiBox() {
+void AtualizaTamanhoGeminiBox(void) {
     float geminiScale = 0.1f;
     float geminiH = sprGemini.height * geminiScale;
     int txtSize = 20;
@@ -77,6 +66,7 @@ void AtualizaTamanhoGeminiBox() {
         geminiRectW = (geminiTextWidth + 2*GEMINI_PAD_X > maxW) ? maxW : geminiTextWidth + 2*GEMINI_PAD_X;
     geminiRectH = geminiH * 0.75f;
 }
+extern AppState state;
 void InitFase2(void)
 {
     fundo = LoadTexture("src/sprites/empresa3.png");
@@ -94,29 +84,30 @@ void InitFase2(void)
     sprMamede2 = LoadTexture("src/sprites/mamede2.png");
     sprMamede3 = LoadTexture("src/sprites/mamede3.png");
     sprGemini  = LoadTexture("src/sprites/os/gemini.png");
-    strcpy(fase2_fala, FALA_NORMAL);
-    InitTypeWriter(&fase2Writer, fase2_fala, 18.5f);
-    typeStarted = true;
-    podeAvancar = false;
-    fase2Timer = 30.0f;
-    fase2TimerActive = true;
-    fase2TimerFinished = false;
+    sprEnterButton  = LoadTexture("src/sprites/enter_button.png");
+    InitDialogueQuestion(&pergunta2, FALA_NORMAL, opcoesFase2, 5, 30.0f);
+    strcpy(fala_exibida, FALA_NORMAL);
+    InitTypeWriter(&writer, fala_exibida, 18.5f);
     selectedOption = 0;
+    geminiHelpClicked = false;
     geminiRectAnim = 0.0f;
     geminiMouseOver = false;
-    geminiHelpClicked = false;
-    cronometroDesligado = false;
-    for (int i = 0; i < 5; ++i) optionDisabled[i] = false; // habilite tudo ao iniciar
-    AtualizaTamanhoGeminiBox();
-    respostaRespondida = false;
-    opcaoSelecionadaUsuario = -1;
-    blinkTimer = 0.0f;
+    podeAvancar = false;
     respostaShowTimer = 0.0f;
+    AtualizaTamanhoGeminiBox();
+    fase2_fazendo_fadeout = false;
+    fase2_fadeout_time = 0.0f;
+}
+const char* FalaPorResultado(const char* name, bool acerto) {
+    if (!name || !name[0]) name = "Mateus";
+    if (strcmp(name, "João") == 0)      return acerto ? FALA_JOAO_ACERTO   : FALA_JOAO_ERRO;
+    if (strcmp(name, "Carlos") == 0)    return acerto ? FALA_CARLOS_ACERTO : FALA_CARLOS_ERRO;
+    if (strcmp(name, "Mamede") == 0)    return acerto ? FALA_MAMEDE_ACERTO : FALA_MAMEDE_ERRO;
+    return acerto ? FALA_ACERTO : FALA_ERRO;
 }
 void UpdateFase2(void)
 {
     float delta = GetFrameTime();
-    // GEMINI ANIMATION e hitbox
     float geminiX = 49, geminiY = 67, geminiScale = 0.1f;
     float geminiW = sprGemini.width * geminiScale;
     float geminiH = sprGemini.height * geminiScale;
@@ -134,151 +125,96 @@ void UpdateFase2(void)
     if (geminiRectAnim > 1.0f) geminiRectAnim = 1.0f;
     if (geminiRectAnim < 0.0f) geminiRectAnim = 0.0f;
     if ((mouseOverLogo || mouseOverRect) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        if (!geminiHelpClicked && !cronometroDesligado) {
+        if (!geminiHelpClicked && !pergunta2.timer_explodiu && !pergunta2.respondeu) {
             geminiHelpClicked = true;
             AtualizaTamanhoGeminiBox();
             geminiRectAnim = 1.0f;
-            optionDisabled[0] = true;
-            optionDisabled[1] = true;
-            optionDisabled[2] = true;
-            if (optionDisabled[selectedOption]) {
-                for (int i = 3; i < 5; i++)
-                    if (!optionDisabled[i]) { selectedOption = i; break; }
+            pergunta2.opcoes[0].desabilitada = true;
+            pergunta2.opcoes[1].desabilitada = true;
+            pergunta2.opcoes[2].desabilitada = true;
+            if (pergunta2.opcoes[selectedOption].desabilitada) {
+                for (int i = 3; i < pergunta2.num_opcoes; i++)
+                    if (!pergunta2.opcoes[i].desabilitada) {
+                        selectedOption = i;
+                        break;
+                    }
             }
         }
     }
-    // TIMER FASE2
-    if (fase2TimerActive && !fase2TimerFinished) {
-        fase2Timer -= delta;
-        if (fase2Timer <= 0) {
-            fase2Timer = 0;
-            fase2TimerActive = false;
-            fase2TimerFinished = true;
-            for (int i = 0; i < 5; ++i) optionDisabled[i] = true;
-            cronometroDesligado = true;
-        }
-    }
-    int numRects = 5;
-    int baseWidth = 600;
-    int larguraStep = 85;
-    int rectHeight = 78;
-    int spacing = 28;
-    int offsetY = 295;
-    int offsetX = 35;
-    // Seleção por mouse ou teclado ENTER/KP_ENTER
-    if (!respostaRespondida && !cronometroDesligado) {
-        int i_clicada = -1;
-        for (int i = 0; i < numRects; i++) {
+    UpdateDialogueQuestion(&pergunta2, delta);
+    int baseWidth = 600, larguraStep = 85, rectHeight = 78, spacing = 28, offsetY = 295, offsetX = 35;
+    Vector2 mouse = GetMousePosition();
+    if (!pergunta2.respondeu && !pergunta2.timer_explodiu) {
+        for (int i = 0; i < pergunta2.num_opcoes; i++) {
             int rectWidth = baseWidth + i * larguraStep;
             int y = offsetY + i * (rectHeight + spacing);
             int x = GetScreenWidth() - rectWidth - offsetX;
             Rectangle rec = {x, y, rectWidth, rectHeight};
-            if (!optionDisabled[i] &&
-                CheckCollisionPointRec(GetMousePosition(), rec) &&
-                IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                i_clicada = i;
+            if (!pergunta2.opcoes[i].desabilitada &&
+                CheckCollisionPointRec(mouse, rec)) {
+                selectedOption = i;
             }
         }
-        if (!optionDisabled[selectedOption] &&
+        if (IsKeyPressed(KEY_DOWN)) DialogueNavigateOptions(&pergunta2, &selectedOption, +1);
+        if (IsKeyPressed(KEY_UP))   DialogueNavigateOptions(&pergunta2, &selectedOption, -1);
+        int clicada = GetDialogueOptionClick(&pergunta2, 35, 295, 600, 78, 28, 85);
+        if (!pergunta2.opcoes[selectedOption].desabilitada &&
             (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)))
-        {
-            i_clicada = selectedOption;
-        }
-        if (i_clicada != -1) {
-            respostaRespondida = true;
-            respostaShowTimer = 0.0f; // inicia o timer ao responder
-            opcaoSelecionadaUsuario = i_clicada;
-            blinkTimer = 0.0f;
-            for (int j = 0; j < 5; j++) optionDisabled[j] = true;
-            fase2TimerActive = false;
-            cronometroDesligado = false;
+            clicada = selectedOption;
+        if (clicada != -1) {
+            pergunta2.opcao_selecionada_usuario = clicada;
+            pergunta2.respondeu = true;
+            respostaShowTimer = 0.0f;
+            pergunta2.timer_ativo = false;
+            for (int i = 0; i < pergunta2.num_opcoes; ++i)
+                pergunta2.opcoes[i].desabilitada = true;
             const char* name = MenuSelectedCharacterName();
-            if (i_clicada == 4) {
-                if(name && strcmp(name, "João") == 0) {
-                    strcpy(fase2_fala, FALA_JOAO_ACERTO);
-                } else if(name && strcmp(name, "Mateus") == 0) {
-                    strcpy(fase2_fala, FALA_ACERTO);
-                } else if(name && strcmp(name, "Carlos") == 0) {
-                    strcpy(fase2_fala, FALA_CARLOS_ACERTO);
-                } else if(name && strcmp(name, "Mamede") == 0) {
-                    strcpy(fase2_fala, FALA_MAMEDE_ACERTO);
-                } else {
-                    strcpy(fase2_fala, FALA_ACERTO);
-                }
-                InitTypeWriter(&fase2Writer, fase2_fala, 18.5f);
-                typeStarted = true;
-                podeAvancar = false;
-            }
-            else if(name && strcmp(name, "Mateus") == 0) {
-                strcpy(fase2_fala, FALA_ERRO);
-                InitTypeWriter(&fase2Writer, fase2_fala, 18.5f);
-                typeStarted = true;
-                podeAvancar = false;
-            }
-            else if(name && strcmp(name, "João") == 0) {
-                strcpy(fase2_fala, FALA_JOAO_ERRO);
-                InitTypeWriter(&fase2Writer, fase2_fala, 18.5f);
-                typeStarted = true;
-                podeAvancar = false;
-            }
-            else if(name && strcmp(name, "Carlos") == 0) {
-                strcpy(fase2_fala, FALA_CARLOS_ERRO);
-                InitTypeWriter(&fase2Writer, fase2_fala, 18.5f);
-                typeStarted = true;
-                podeAvancar = false;
-            }
-            else if(name && strcmp(name, "Mamede") == 0) {
-                strcpy(fase2_fala, FALA_MAMEDE_ERRO);
-                InitTypeWriter(&fase2Writer, fase2_fala, 18.5f);
-                typeStarted = true;
-                podeAvancar = false;
-            }
+            bool acertou = pergunta2.opcoes[clicada].correta;
+            strcpy(fala_exibida, FalaPorResultado(name, acertou));
+            InitTypeWriter(&writer, fala_exibida, 18.5f);
+            podeAvancar = false;
         }
     }
-    // NAVEGAÇÃO: só navega para opções habilitadas
-    if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_UP)) {
-        int dir = 0;
-        if (IsKeyPressed(KEY_DOWN)) dir = 1;
-        if (IsKeyPressed(KEY_UP))   dir = -1;
-        int tries = 0;
-        int trySel = selectedOption;
-        do {
-            trySel = (trySel + dir + numRects) % numRects;
-            tries++;
-        } while (optionDisabled[trySel] && tries < numRects);
-        if (!optionDisabled[trySel])
-            selectedOption = trySel;
-    }
-    if (typeStarted) {
-        UpdateTypeWriter(&fase2Writer, delta, IsKeyPressed(KEY_SPACE));
-        if (fase2Writer.drawnChars == (int)strlen(fase2_fala)) {
-            podeAvancar = true;
-        }
-    }
-    if (respostaRespondida) {
-        respostaShowTimer += delta;
-    }
-    if (podeAvancar) {
-        Rectangle btnBounds = {
-            GetScreenWidth() / 2 - 100,
-            GetScreenHeight() / 2 + 100,
-            200,
-            50};
+    UpdateTypeWriter(&writer, delta, IsKeyPressed(KEY_SPACE));
+    if (!podeAvancar && writer.done) podeAvancar = true;
+    if (pergunta2.respondeu) respostaShowTimer += delta;
+    // LÓGICA DO BOTÃO E FADEOUT
+    if (podeAvancar && (respostaShowTimer > RESPOSTA_MOSTRA_SEG)) {
+        float pulse = 0.07f * sinf(GetTime() * 3.0f); // mais devagar
+        float btnScaleBase = 0.85f;  // menor!
+        float btnScale = btnScaleBase + pulse;
+        float btnW = sprEnterButton.width * btnScale;
+        float btnH = sprEnterButton.height * btnScale;
+        float btnX = GetScreenWidth()/2 - btnW/2 + 120; // MAIS À DIREITA
+        float btnY = GetScreenHeight()/2 - 150;
+        Rectangle btnBounds = {btnX, btnY, btnW, btnH};
         Vector2 mouse = GetMousePosition();
-        if (CheckCollisionPointRec(mouse, btnBounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            state = APP_PC_SCREEN;
+        if (!fase2_fazendo_fadeout) {
+            if (CheckCollisionPointRec(mouse, btnBounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                fase2_fazendo_fadeout = true;
+                fase2_fadeout_time = 0.0f;
+            }
+            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) {
+                fase2_fazendo_fadeout = true;
+                fase2_fadeout_time = 0.0f;
+            }
+        }
+        if (fase2_fazendo_fadeout) {
+            fase2_fadeout_time += delta;
+            if (fase2_fadeout_time >= FASE2_FADEOUT_DURACAO) {
+                state = APP_PC_SCREEN;
+            }
         }
     }
 }
 void DrawFase2(void)
 {
+    static float blinkTimer = 0.0f;
     float delta = GetFrameTime();
     blinkTimer += delta;
     BeginDrawing();
     ClearBackground(RAYWHITE);
-    // FUNDO
     DrawTextureEx(fundo, (Vector2){0,0}, 0.0f, (float)GetScreenWidth() / fundo.width, RAYWHITE);
-    // Caixa de fala e imagem da pergunta
     int boxX = 60;
     int marginBottom = 220;
     int boxY = GetScreenHeight() - marginBottom;
@@ -295,101 +231,35 @@ void DrawFase2(void)
     int borderRadius = boxHeight / 2;
     DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight, (Color){20, 20, 20, 220});
     DrawCircle(boxX + boxWidth - borderRadius, boxY + borderRadius, borderRadius, (Color){20, 20, 20, 220});
-    if (fase2Writer.drawnChars > 0) {
-        char tmp[fase2Writer.drawnChars + 1];
-        strncpy(tmp, fase2_fala, fase2Writer.drawnChars);
-        tmp[fase2Writer.drawnChars] = '\0';
-        DrawText(tmp, boxX + 20, boxY + 30, 28, WHITE);
+    if (writer.drawnChars > 0) {
+        char txtbuf[512];
+        strncpy(txtbuf, fala_exibida, writer.drawnChars);
+        txtbuf[writer.drawnChars] = '\0';
+        DrawText(txtbuf, boxX + 20, boxY + 30, 28, WHITE);
     }
-
-    // EXIBE opções, crono e gemini somente se estiver no tempo após resposta!
-    if (!respostaRespondida || respostaShowTimer <= RESPOSTA_MOSTRA_SEG) {
-        // CRONÔMETRO
-        int timerRadius = 55;
-        int timerX = GetScreenWidth() - timerRadius - 25;
-        int timerY = 25 + timerRadius;
-        DrawCircle(timerX, timerY, timerRadius, (Color){25,25,30, 220});
-        DrawCircleSectorLines((Vector2){timerX, timerY}, timerRadius, 0, 360, 32, (Color){180,180,180,220});
-        float angle = (fase2Timer / 30.0f) * 360.0f;
-        Color barColor = (fase2Timer <= 10.0f) ? (Color){230,30,30,150} : (Color){80, 230, 80, 130};
-        DrawCircleSector((Vector2){timerX, timerY}, timerRadius-4, -90, -90+angle, 60, barColor);
-        char timerText[8];
-        int tempo = (int)fase2Timer;
-        snprintf(timerText, sizeof(timerText), "%02d", tempo);
-        int fonte = 49;
-        Color timeColor = (fase2Timer <= 5.0f) ? RED : ((fase2Timer <= 10.0f) ? (Color){230,30,30,150} : WHITE);
-        if (fase2Timer <= 5.0f) { fonte = 58; }
-        int timerTextWidth = MeasureText(timerText, fonte);
-        DrawText(timerText, timerX - timerTextWidth/2, timerY - fonte/2, fonte, timeColor);
-        DrawText("s", timerX + timerTextWidth/2 + 2, timerY - fonte/3 + 10, 28, (Color){170,170,210,210});
-        // OPÇÕES
-        int numRects = 5;
+    if (!pergunta2.respondeu || respostaShowTimer <= RESPOSTA_MOSTRA_SEG) {
+        DrawChronometer(pergunta2.timer_restante, pergunta2.timer_total, GetScreenWidth()-80, 80, 55);
         int baseWidth = 600;
         int larguraStep = 85;
         int rectHeight = 78;
         int spacing = 28;
         int offsetY = 295;
         int offsetX = 35;
-        Color rectGray      = (Color){56, 56, 56, 216};
-        Color hoverGreen    = (Color){ 26, 110, 51, 235 };
-        Color mouseGreen    = (Color){14, 77, 33, 235};
-        Color disabledGray  = (Color){90, 90, 90, 175 };
-        Color timeoutRed    = (Color){230, 30, 30, 210};
-        Vector2 mouse = GetMousePosition();
-        const char* opcoes[5] = {
-            "A) Definir IP local da vítima.",
-            "B) Bloquear conexões no firewall.",
-            "C) Enviar comandos diretamente ao shell do sistema.",
-            "D) Executar o shell remoto com privilégios elevados.",
-            "E) Criar um socket de comunicação para permitir a conexão."
-        };
-        for (int i = 0; i < numRects; i++)
-        {
-            int rectWidth = baseWidth + i * larguraStep;
-            int y = offsetY + i * (rectHeight + spacing);
-            int x = GetScreenWidth() - rectWidth - offsetX;
-            Rectangle rec = {x, y, rectWidth, rectHeight};
-            Color cor = rectGray;
-            Color txtColor = WHITE;
-            if (respostaRespondida) {
-                if (opcaoSelecionadaUsuario == 4) {
-                    if (i == 4 && ((int)(blinkTimer * 5.0f) % 2 == 0)) {
-                        cor = (Color){26, 110, 51, 255};
-                    }
-                } else {
-                    if (i == opcaoSelecionadaUsuario && ((int)(blinkTimer * 5.0f) % 2 == 0)) {
-                        cor = (Color){230, 30, 30, 210};
-                    }
-                    if (i == 4 && ((int)(blinkTimer * 5.0f) % 2 == 0)) {
-                        cor = (Color){26, 110, 51, 255};
-                    }
-                }
-                if(optionDisabled[i]) {
-                    txtColor = (Color){180,180,180,210};
-                }
+        int blinkWrong = -1;
+        int blinkCorrect = -1;
+        bool blink = false;
+        if (pergunta2.respondeu) {
+            blink = (((int)(blinkTimer * 5.0f) % 2) == 0);
+            if (pergunta2.opcoes[pergunta2.opcao_selecionada_usuario].correta) {
+                blinkCorrect = pergunta2.opcao_selecionada_usuario;
             } else {
-                if (optionDisabled[i]) {
-                    if(cronometroDesligado)
-                        cor = timeoutRed;
-                    else
-                        cor = disabledGray;
-                    txtColor = (cronometroDesligado ? (Color){255,80,80,255} : (Color){180,180,180,210});
-                } else if (CheckCollisionPointRec(mouse, rec)) {
-                    if (!optionDisabled[i]) selectedOption = i;
-                    cor = mouseGreen;
-                } else if (selectedOption == i) {
-                    cor = hoverGreen;
-                }
+                blinkWrong = pergunta2.opcao_selecionada_usuario;
+                for (int i = 0; i < pergunta2.num_opcoes; ++i)
+                    if (pergunta2.opcoes[i].correta) blinkCorrect = i;
             }
-            DrawRectangleRounded(rec, 0.32f, 16, cor);
-            DrawText(
-                opcoes[i],
-                x + OPTION_TEXT_MARGIN_LEFT,
-                y + rectHeight/2 - 24/2,
-                24, txtColor
-            );
         }
-        // GEMINI
+        DrawAllDialogueOptions(&pergunta2, selectedOption, offsetX, offsetY, baseWidth, rectHeight, spacing, larguraStep,
+                               blinkWrong, blink, blinkCorrect);
         float geminiX = 49, geminiY = 67, geminiScale = 0.1f;
         float geminiW = sprGemini.width * geminiScale;
         float geminiH = sprGemini.height * geminiScale;
@@ -411,71 +281,46 @@ void DrawFase2(void)
         }
         DrawTextureEx(sprGemini, (Vector2){geminiX, geminiY}, 0.0f, geminiScale, logoCol);
     }
-    // SPRITE DO PERSONAGEM
     Texture2D spr = sprJoao;
     float scale = 0.6f;
-    int carlosExtraOffset = 0;
-    int mamedeExtraOffset = 0;
+    int carlosExtraOffset = 0, mamedeExtraOffset = 0;
     if(strcmp(name, "Mateus") == 0) {
-        if(respostaRespondida && opcaoSelecionadaUsuario == 4) {
-            spr = sprMateus2;
-            scale = 0.8f;
-        } else if(respostaRespondida && opcaoSelecionadaUsuario != -1 && opcaoSelecionadaUsuario != 4) {
-            spr = sprMateus3;
-            scale = 0.8f;
+        if(pergunta2.respondeu && pergunta2.opcoes[pergunta2.opcao_selecionada_usuario].correta) {
+            spr = sprMateus2; scale = 0.8f;
+        } else if(pergunta2.respondeu && pergunta2.opcao_selecionada_usuario != -1) {
+            spr = sprMateus3; scale = 0.8f;
         } else {
-            spr = sprMateus;
-            scale = 1.3f;
+            spr = sprMateus; scale = 1.3f;
         }
-    }
-    else if(strcmp(name, "João") == 0) {
-        if(respostaRespondida && opcaoSelecionadaUsuario == 4) {
-            spr = sprJoao2;
-            scale = 0.95f;
-        } else if(respostaRespondida && opcaoSelecionadaUsuario != -1 && opcaoSelecionadaUsuario != 4) {
-            spr = sprJoao3;
-            scale = 0.95f;
+    } else if(strcmp(name, "João") == 0) {
+        if(pergunta2.respondeu && pergunta2.opcoes[pergunta2.opcao_selecionada_usuario].correta) {
+            spr = sprJoao2; scale = 0.95f;
+        } else if(pergunta2.respondeu && pergunta2.opcao_selecionada_usuario != -1) {
+            spr = sprJoao3; scale = 0.95f;
         } else {
-            spr = sprJoao;
-            scale = 0.6f;
+            spr = sprJoao; scale = 0.6f;
         }
-    }
-    else if(strcmp(name, "Carlos") == 0) {
-        if(respostaRespondida && opcaoSelecionadaUsuario == 4) {
-            spr = sprCarlos2;
-            scale = 1.02f;
-            carlosExtraOffset = -70;
-        } else if(respostaRespondida && opcaoSelecionadaUsuario != -1 && opcaoSelecionadaUsuario != 4) {
-            spr = sprCarlos3;
-            scale = 1.0f;
-            carlosExtraOffset = -44;
+    } else if(strcmp(name, "Carlos") == 0) {
+        if(pergunta2.respondeu && pergunta2.opcoes[pergunta2.opcao_selecionada_usuario].correta) {
+            spr = sprCarlos2; scale = 1.02f; carlosExtraOffset = -70;
+        } else if(pergunta2.respondeu && pergunta2.opcao_selecionada_usuario != -1) {
+            spr = sprCarlos3; scale = 1.0f; carlosExtraOffset = -44;
         } else {
-            spr = sprCarlos;
-            scale = 0.56f;
-            carlosExtraOffset = 0;
+            spr = sprCarlos; scale = 0.56f; carlosExtraOffset = 0;
         }
-    }
-    else if(strcmp(name, "Mamede") == 0) {
-        if(respostaRespondida && opcaoSelecionadaUsuario == 4) {
-            spr = sprMamede2;
-            scale = 1.0f;
-            mamedeExtraOffset = 0;
-        } else if(respostaRespondida && opcaoSelecionadaUsuario != -1 && opcaoSelecionadaUsuario != 4) {
-            spr = sprMamede3;
-            scale = 1.0f;
-            mamedeExtraOffset = 0;
+    } else if(strcmp(name, "Mamede") == 0) {
+        if(pergunta2.respondeu && pergunta2.opcoes[pergunta2.opcao_selecionada_usuario].correta) {
+            spr = sprMamede2; scale = 1.0f;
+        } else if(pergunta2.respondeu && pergunta2.opcao_selecionada_usuario != -1) {
+            spr = sprMamede3; scale = 1.0f;
         } else {
-            spr = sprMamede;
-            scale = 1.0f;
-            mamedeExtraOffset = 0;
+            spr = sprMamede; scale = 1.0f;
         }
-    }
-    else if(name[0]=='\0') {
-        spr = sprJoao;
-        scale = 0.6f;
+    } else if(name[0]=='\0') {
+        spr = sprJoao; scale = 0.6f;
     }
     float tw2 = spr.width * scale;
-    float th = spr.height * scale;
+    float th  = spr.height * scale;
     Vector2 pos;
     pos.x = imgX - 330 + (imgW - tw2)/2.0f;
     pos.y = imgY - th + 210;
@@ -485,46 +330,51 @@ void DrawFase2(void)
         pos.x += mamedeExtraOffset;
     DrawTextureEx(spr, pos, 0, scale, WHITE);
 
-    // ======= BLUR VERMELHO NAS BORDAS QUANDO ERRAR =======
-    if (respostaRespondida && opcaoSelecionadaUsuario != 4 && opcaoSelecionadaUsuario != -1) {
-        int w = GetScreenWidth();
-        int h = GetScreenHeight();
-        int layers = 5;
-        int layerThick = 20;
+    if (pergunta2.respondeu && !pergunta2.opcoes[pergunta2.opcao_selecionada_usuario].correta && pergunta2.opcao_selecionada_usuario != -1) {
+        int w = GetScreenWidth(), h = GetScreenHeight();
+        int layers = 5, layerThick = 20;
         for (int i = 0; i < layers; i++) {
             int thick = layerThick + i * layerThick;
-            int alpha = 38 - i*5; // Ex: 38,33,28,23,18
+            int alpha = 38 - i*5;
             if (alpha < 6) alpha = 6;
             Color blurRed = (Color){255, 32, 32, alpha};
-            // Top
             DrawRectangle(0, 0, w, thick, blurRed);
-            // Bottom
             DrawRectangle(0, h-thick, w, thick, blurRed);
-            // Left
             DrawRectangle(0, 0, thick, h, blurRed);
-            // Right
             DrawRectangle(w-thick, 0, thick, h, blurRed);
         }
     }
-    // ======= FIM BLUR VERMELHO =======
-
+    // ==== BOTÃO "ENTER" ainda mais à direita, menor, sombra proporcional ====
+    if (pergunta2.respondeu && respostaShowTimer > RESPOSTA_MOSTRA_SEG) {
+        float pulse = 0.07f * sinf(GetTime() * 5.0f);
+        float btnScaleBase = 0.95f;
+        float btnScale = btnScaleBase + pulse;
+        float btnW = sprEnterButton.width * btnScale;
+        float btnH = sprEnterButton.height * btnScale;
+        float btnX = GetScreenWidth()/2 - btnW/2 + 120; // MAIS LONGE PRA DIREITA
+        float btnY = GetScreenHeight()/2 - 150;
+        Color sombra = (Color){0, 0, 0, 90};
+        DrawRectangleRounded((Rectangle){btnX + 8, btnY + 8, btnW, btnH}, 0.25f, 10, sombra);
+        Color brilho = (pulse > 0.04f) ? (Color){255,255,255,75} : WHITE;
+        DrawTextureEx(sprEnterButton, (Vector2){btnX, btnY}, 0.0f, btnScale, brilho);
+    }
+    // FADEOUT PRETO ao avançar de tela
+    if(fase2_fazendo_fadeout) {
+        float perc = fase2_fadeout_time / FASE2_FADEOUT_DURACAO;
+        if (perc > 1.0f) perc = 1.0f;
+        int alpha = (int)(255 * perc);
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0,0,0, alpha});
+    }
     EndDrawing();
 }
 void UnloadFase2(void)
 {
     UnloadTexture(fundo);
     UnloadTexture(pergunta_img);
-    UnloadTexture(sprJoao);
-    UnloadTexture(sprJoao2);
-    UnloadTexture(sprJoao3);
-    UnloadTexture(sprMateus);
-    UnloadTexture(sprMateus2);
-    UnloadTexture(sprMateus3);
-    UnloadTexture(sprCarlos);
-    UnloadTexture(sprCarlos2);
-    UnloadTexture(sprCarlos3);
-    UnloadTexture(sprMamede);
-    UnloadTexture(sprMamede2);
-    UnloadTexture(sprMamede3);
+    UnloadTexture(sprJoao);    UnloadTexture(sprJoao2);    UnloadTexture(sprJoao3);
+    UnloadTexture(sprMateus);  UnloadTexture(sprMateus2);  UnloadTexture(sprMateus3);
+    UnloadTexture(sprCarlos);  UnloadTexture(sprCarlos2);  UnloadTexture(sprCarlos3);
+    UnloadTexture(sprMamede);  UnloadTexture(sprMamede2);  UnloadTexture(sprMamede3);
     UnloadTexture(sprGemini);
+    UnloadTexture(sprEnterButton);
 }

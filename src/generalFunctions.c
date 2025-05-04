@@ -1,8 +1,12 @@
 // generalFunctions.c
 #include "generalFunctions.h"
+#include "raylib.h"
 #include <string.h>
+#include <stdio.h>
 
+// ====== TYPEWRITER ======
 void InitTypeWriter(TypeWriter* tw, const char* text, float speed) {
+    if (!tw) return;
     tw->text = text;
     tw->length = strlen(text);
     tw->drawnChars = 0;
@@ -10,8 +14,8 @@ void InitTypeWriter(TypeWriter* tw, const char* text, float speed) {
     tw->speed = speed;
     tw->done = false;
 }
-
 void UpdateTypeWriter(TypeWriter* tw, float deltaTime, bool skip) {
+    if (!tw) return;
     if (tw->drawnChars < tw->length && !tw->done) {
         tw->accum += deltaTime * tw->speed;
         int nextLen = (int)tw->accum;
@@ -28,8 +32,132 @@ void UpdateTypeWriter(TypeWriter* tw, float deltaTime, bool skip) {
         tw->done = true;
     }
 }
-
 void SkipTypeWriter(TypeWriter* tw) {
+    if (!tw) return;
     tw->drawnChars = tw->length;
     tw->done = true;
+}
+
+// ===== DIALOGUE DATA ===== 
+void InitDialogueQuestion(DialogueQuestion* dq, const char* pergunta_txt, DialogueOption* opcoes, int num_opcoes, float timer_total) {
+    if (!dq) return;
+    dq->pergunta_txt = pergunta_txt;
+    dq->opcoes = opcoes;
+    dq->num_opcoes = num_opcoes;
+    dq->opcao_selecionada_usuario = -1;
+    dq->respondeu = false;
+    dq->timer_restante = timer_total;
+    dq->timer_total = timer_total;
+    dq->timer_ativo = true;
+    dq->timer_explodiu = false;
+    for (int i=0; i<num_opcoes; ++i)
+        dq->opcoes[i].desabilitada = false; // reabilita tudo
+}
+void UpdateDialogueQuestion(DialogueQuestion* dq, float deltaTime) {
+    if (!dq) return;
+    if (!dq->timer_explodiu && dq->timer_ativo && !dq->respondeu) {
+        dq->timer_restante -= deltaTime;
+        if (dq->timer_restante <= 0.0f) {
+            dq->timer_restante = 0.0f;
+            dq->timer_explodiu = true;
+            dq->timer_ativo = false;
+            for(int i=0; i<dq->num_opcoes; ++i)
+                dq->opcoes[i].desabilitada = true;
+        }
+    }
+}
+// Navegação por teclado entre opções habilitadas
+void DialogueNavigateOptions(const DialogueQuestion* dq, int* selectedIndex, int direction) {
+    if (!dq || !selectedIndex) return;
+    int idx = *selectedIndex;
+    int tries = 0;
+    do {
+        idx = (idx + direction + dq->num_opcoes) % dq->num_opcoes;
+        tries++;
+    } while (dq->opcoes[idx].desabilitada && tries < dq->num_opcoes);
+    if (!dq->opcoes[idx].desabilitada)
+        *selectedIndex = idx;
+}
+// Verifica se o usuário clicou em alguma opção (retorna índice ou -1)
+int GetDialogueOptionClick(const DialogueQuestion* dq,
+    int offsetX, int offsetY, int baseWidth, int rectHeight, int spacing, int larguraStep)
+{
+    if (!dq) return -1;
+    Vector2 mouse = GetMousePosition();
+    for (int i = 0; i < dq->num_opcoes; i++) {
+        int rectWidth = baseWidth + i * larguraStep;
+        int y = offsetY + i * (rectHeight + spacing);
+        int x = GetScreenWidth() - rectWidth - offsetX;
+        Rectangle rec = {x, y, rectWidth, rectHeight};
+        if (!dq->opcoes[i].desabilitada &&
+            CheckCollisionPointRec(mouse, rec) &&
+            IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// ===== VISUAL (Desenhar opções, timer, etc) ===== 
+void DrawChronometer(float timer_restante, float timer_total, int x, int y, int radius) {
+    DrawCircle(x, y, radius, (Color){25,25,30, 220});
+    DrawCircleSectorLines((Vector2){x, y}, radius, 0, 360, 32, (Color){180,180,180,220});
+    float angle = (timer_restante / timer_total) * 360.0f;
+    Color barColor = (timer_restante <= 10.0f) ? (Color){230,30,30,150} : (Color){80, 230, 80, 130};
+    DrawCircleSector((Vector2){x, y}, radius-4, -90, -90+angle, 60, barColor);
+    char timerText[8];
+    int t = (int)timer_restante;
+    snprintf(timerText, sizeof(timerText), "%02d", t);
+    int fonte = 49;
+    Color timeColor = (timer_restante <= 5.0f) ? RED : ((timer_restante <= 10.0f) ? (Color){230,30,30,150} : WHITE);
+    if (timer_restante <= 5.0f) { fonte = 58; }
+    int timerTextWidth = MeasureText(timerText, fonte);
+    DrawText(timerText, x - timerTextWidth/2, y - fonte/2, fonte, timeColor);
+    DrawText("s", x + timerTextWidth/2 + 2, y - fonte/3 + 10, 28, (Color){170,170,210,210});
+}
+// Desenha UMA opção visualmente
+void DrawDialogueOption(const DialogueOption* opt, Rectangle rec, bool selected, bool disabled, bool blink, Color base, Color txtCor) {
+    Color cor = base;
+    DrawRectangleRounded(rec, 0.32f, 16, cor);
+    DrawText(opt->texto, rec.x+36, rec.y+rec.height/2-24/2, 24, txtCor);
+}
+
+// Desenha todas as opções, com prioridade total ao blink!
+void DrawAllDialogueOptions(const DialogueQuestion* dq, int selected, int offsetX, int offsetY,
+    int baseWidth, int rectHeight, int spacing, int larguraStep,
+    int blinkWrong, bool blink, int blinkCorrect)
+{
+    Color rectGray      = (Color){56, 56, 56, 216};
+    Color hoverGreen    = (Color){26,110,51,235};
+    Color disabledGray  = (Color){90,90,90,175};
+    Vector2 mouse = GetMousePosition();
+    for (int i = 0; i < dq->num_opcoes; i++) {
+        int rectWidth = baseWidth + i * larguraStep;
+        int y = offsetY + i * (rectHeight + spacing);
+        int x = GetScreenWidth() - rectWidth - offsetX;
+        Rectangle rec = {x, y, rectWidth, rectHeight};
+        int mouseOver = CheckCollisionPointRec(mouse, rec);
+        bool optSelected = (selected == i);
+        Color txtCor = WHITE;
+        Color baseCor = rectGray;
+
+        // === PRIORIDADE: blinkWrong > blinkCorrect > hover > desabilitado > normal ===
+        if ((blinkWrong == i) && blink) {
+            baseCor = (Color){230, 30, 30, 210};  // Vermelho forte
+            txtCor = WHITE;
+        }
+        else if ((blinkCorrect == i) && blink) {
+            baseCor = (Color){26, 110, 51, 255};  // Verde forte
+            txtCor = WHITE;
+        }
+        else if (dq->opcoes[i].desabilitada) {
+            baseCor = disabledGray;
+            txtCor = (Color){180,180,180,210};
+        }
+        else if (!dq->respondeu && !dq->opcoes[i].desabilitada && (mouseOver || optSelected)) {
+            baseCor = hoverGreen;
+        }
+
+        DrawDialogueOption(&dq->opcoes[i], rec, optSelected, dq->opcoes[i].desabilitada, blink, baseCor, txtCor);
+    }
 }
