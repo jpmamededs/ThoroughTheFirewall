@@ -4,7 +4,7 @@
 #include "intro.h"
 #include "fase1.h"
 #include "fase1_2.h"
-#include "fase1_3.h"
+#include "interrogatorio.h"
 #include "gemini.h"
 #include "faseFinal.h"
 #include "pc_screen.h"
@@ -12,18 +12,22 @@
 #include "generalFunctions.h"
 #include "fase3.h"
 
+#include "debug.h" 
+#include <stdlib.h>
+#include <time.h>
 
 AppState state = APP_CUTSCENES;
 
 int main(void)
 {
+    srand(time(NULL));
     int screenWidth = GetMonitorWidth(0);
     int screenHeight = GetMonitorHeight(0);
 
-    InitWindow(screenWidth, screenHeight, "Jogo AED");
+    InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
     SetWindowPosition(0, 0);
     InitAudioDevice();
-    Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
+    Music music = LoadMusicStream("src/music/missao-impossivel.mp3");
     PlayMusicStream(music);
 
     InitCutscenes();
@@ -32,6 +36,7 @@ int main(void)
     bool fase2Initialized = false;
     static bool fase1_3Initialized = false;
     static bool fase3Initialized = false;       // Adicionado para a fase1_3
+    static bool interrogatorio_Initialized = false;      // Adicionado para a fase1_3
     static bool faseFinalInitialized = false;     // Adicionado para faseFinal
 
     while (!WindowShouldClose())
@@ -58,7 +63,7 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                float temposIntro[4] = {9.0f, 11.0f, 13.5f, 7.3f};
+                float temposIntro[5] = {8.4f, 12.1f, 9.1f, 8.6f, 7.5f};
                 InitIntro(MenuSelectedCharacterName(), temposIntro);
                 state = APP_INTRO;
             }
@@ -80,6 +85,14 @@ int main(void)
                 UnloadMenu();
                 fase3Initialized = false;
                 state = APP_FASE3;
+            if (IsKeyPressed(KEY_M)) {
+                UnloadMenu();
+                InitDebug();
+                state = APP_DEBUG;
+            }if (IsKeyPressed(KEY_T)) {
+                UnloadMenu();
+                InitInterrogatorio();
+                state = INTERROGATORIO;
             }
             // FIM DEBUG
         }
@@ -134,15 +147,16 @@ int main(void)
             UpdateFase1_2();
             DrawFase1_2();
         }
-        else if (state == APP_FASE1_3)
+        else if (state == INTERROGATORIO)
         {
-            if (!fase1_3Initialized)
+            if (!interrogatorio_Initialized)
             {
-                InitFase1_3();
-                fase1_3Initialized = true;
+                InitInterrogatorio();
+                interrogatorio_Initialized = true;
             }
-            UpdateFase1_3();
-            DrawFase1_3();
+
+            UpdateInterrogatorio();
+            DrawInterrogatorio();
         }
         else if (state == APP_FASE3)
         {
@@ -174,6 +188,11 @@ int main(void)
             UpdateFaseFinal();
             DrawFaseFinal();
         }
+        else if (state == APP_DEBUG)
+        {
+            UpdateDebug();
+            DrawDebug();
+        }
     }
 
     // Limpeza
@@ -193,6 +212,8 @@ int main(void)
         UnloadFase1_3();
     if (state == APP_FASE3)
         UnloadFase3();
+    if (state == INTERROGATORIO)
+        UnloadInterrogatorio();
     if (state == APP_FASEFINAL)
         UnloadFaseFinal();
 

@@ -41,14 +41,14 @@ void ObterRespostaGemini(const char *prompt, char *out) {
 
     cJSON *root      = cJSON_CreateObject();
     cJSON *contents  = cJSON_AddArrayToObject(root, "contents");
-    cJSON *mensagem  = cJSON_CreateObject();
-    cJSON_AddItemToArray(contents, mensagem);
 
-    cJSON_AddStringToObject(mensagem, "role", "user");
-    cJSON *parts     = cJSON_AddArrayToObject(mensagem, "parts");
-    cJSON *partObj   = cJSON_CreateObject();
-    cJSON_AddItemToArray(parts, partObj);
-    cJSON_AddStringToObject(partObj, "text", prompt);
+    cJSON *promptMsg = cJSON_CreateObject();
+    cJSON_AddItemToArray(contents, promptMsg);
+    cJSON_AddStringToObject(promptMsg, "role", "user");
+    cJSON *promptParts = cJSON_AddArrayToObject(promptMsg, "parts");
+    cJSON *promptText = cJSON_CreateObject();
+    cJSON_AddItemToArray(promptParts, promptText);
+    cJSON_AddStringToObject(promptText, "text", prompt);
 
     char *jsonReq = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);

@@ -6,9 +6,9 @@
 #include <stdio.h>
 
 #define INTRO_TEXT_SPEED 42
-#define INTRO_PARTS       4
+#define INTRO_PARTS       5
 #define BOX_WIDTH_RATIO   0.75f    // largura da caixa (75 % da tela)
-#define BOX_HEIGHT_RATIO  0.30f    // altura da caixa (50 % da tela)
+#define BOX_HEIGHT_RATIO  0.18f    // altura da caixa (50 % da tela)
 #define TYPING_SFX_PATH  "src/music/aiSpeaking.mp3"
 #define BACKGROUND_MUSIC  "src/music/soundscrate-hacker.mp3"
 #define TYPING_VOLUME      0.65f
@@ -24,6 +24,10 @@ static Texture2D hackerBg;
 static Texture2D agentSecreto;
 static Music     typingMusic;
 static Music     bgMusic;
+
+static float fadeAlpha = 1.0f;
+static bool  fadingOut = false;
+#define FADE_DURATION 2.0f
 
 static void DrawTextBoxedSafe(Font font, const char *text, Rectangle rec, int fontSize, int spacing, Color color)
 {
@@ -77,8 +81,9 @@ void InitIntro(const char *nomePersonagem, const float tempos[])
 {
     const char *templates[INTRO_PARTS] = {
         "Você, %s, foi selecionado para integrar um seleto grupo composto pelos melhores desenvolvedores da América, convidados a trabalhar na CyberTech.Inc, a empresa mais renomada do mundo em cibersegurança financeira.\n",
-        "No entanto, ao contrário dos demais colegas, seus interesses são muito mais obscuros. Seu verdadeiro objetivo não é proteger a empresa, mas sim infiltrá-la. O desafio da sua vida será roubar todos os seus dados da CyberTech, instalando um malware sofisticado nos sistemas da companhia, agindo exclusivamente em benefício próprio.\n",
-        "Essa missão, porém, está longe de ser simples. Para alcançar seu plano, será preciso superar inúmeros desafios, enfrentar situações de extremo risco e manter sua fachada durante toda sua estadia na CyberTech.Inc. A tensão aumenta ainda mais quando o investigador cibernético mais competente do mercado, Hank Micucci, também é contratado pela empresa, determinado a descobrir qualquer sinal de traição ou vazamento interno.\n",
+        "No entanto, ao contrário dos demais colegas, seus interesses são muito mais obscuros. Seu verdadeiro objetivo não é proteger a empresa, mas sim infiltrá-la. O seu desafio será roubar todos os seus dados da CyberTech, instalando um malware sofisticado nos sistemas da companhia, agindo exclusivamente em benefício próprio.\n",
+        "Essa missão, porém, está longe de ser simples. Para alcançar seu plano, será preciso superar inúmeros desafios, enfrentar situações de extremo risco e manter sua fachada durante toda sua estadia na CyberTech.Inc\n",
+        "A tensão aumenta ainda mais quando o investigador cibernético mais competente do mercado, Hank Micucci, também é contratado pela empresa, determinado a descobrir qualquer sinal de traição ou vazamento interno.\n",
         "A cada decisão, seu disfarce pode ruir e será necessário travar uma batalha mental com Hank e os demais desenvolvedores para ganhar tempo para concluir seu objetivo."
     };
 
@@ -104,7 +109,7 @@ void InitIntro(const char *nomePersonagem, const float tempos[])
     InitTypeWriter(&partWriter, introParts[currentPart], INTRO_TEXT_SPEED);
 
     font        = GetFontDefault();
-    hackerBg    = LoadTexture("src/sprites/portugual.png");
+    hackerBg    = LoadTexture("src/sprites/hacker-bg.png");
     agentSecreto= LoadTexture("src/sprites/agent_secreto.png");
 
     // som
@@ -112,13 +117,14 @@ void InitIntro(const char *nomePersonagem, const float tempos[])
     bgMusic = LoadMusicStream(BACKGROUND_MUSIC);
 
     SetMusicVolume(typingMusic, TYPING_VOLUME);
-    SetMusicVolume(bgMusic, 0.9f);
+    SetMusicVolume(bgMusic, 3.5f);
     StartTypingSfx();
     PlayMusicStream(bgMusic);    
 }
 
 void UpdateIntro(void)
 {
+    fadeAlpha = UpdateFade(GetFrameTime(), FADE_DURATION, !fadingOut);
 
     float dt = GetFrameTime();
 
@@ -150,6 +156,11 @@ void UpdateIntro(void)
         InitTypeWriter(&partWriter, introParts[currentPart], INTRO_TEXT_SPEED);
         StartTypingSfx(); 
     }
+
+    if (!fadingOut && (currentPart == INTRO_PARTS - 1) && partWriter.done && partTimer >= partDurations[currentPart])
+    {
+        fadingOut = true;
+    }
 }
 
 void DrawIntro(void)
@@ -164,7 +175,7 @@ void DrawIntro(void)
 
     float boxW = w * BOX_WIDTH_RATIO;
     float boxH = h * BOX_HEIGHT_RATIO;
-    float bottom = h * 0.02f;
+    float bottom = h * 0.05f;
     float boxX = (w - boxW) / 2.f;
     float boxY = h - bottom - boxH;
 
@@ -197,14 +208,16 @@ void DrawIntro(void)
         boxW * progress, 4
     }, (Color){255,255,255,200});
 
+    if (fadeAlpha > 0.0f) {
+        DrawRectangle(0, 0, w, h, (Color){0, 0, 0, (unsigned char)(fadeAlpha * 255)});
+    }
+
     EndDrawing();
 }
 
 bool IntroEnded(void)
 {
-    return (currentPart == INTRO_PARTS - 1) &&
-           partWriter.done &&
-           (partTimer >= partDurations[currentPart]);
+    return fadingOut && fadeAlpha >= 1.0f;
 }
 
 void UnloadIntro(void)

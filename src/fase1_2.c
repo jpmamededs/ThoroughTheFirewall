@@ -62,10 +62,11 @@ void UpdateFase1_2(void)
     float delta = GetFrameTime();
     tempoDesdeInicio += delta;
 
-    if (IsKeyDown(KEY_LEFT))
-        cameraYaw -= 0.02f;
-    if (IsKeyDown(KEY_RIGHT))
-        cameraYaw += 0.02f;
+    // Rotação da câmera
+    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
+        cameraYaw -= 0.0018f;
+    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
+        cameraYaw += 0.0018f;
 
     if (cameraYaw > maxYaw)
         cameraYaw = maxYaw;
@@ -112,7 +113,7 @@ void UpdateFase1_2(void)
                 tempoDesdeFadeCompleto += delta;
                 if (tempoDesdeFadeCompleto >= 2.0f)
                 {
-                    state = APP_FASE1_3;
+                    state = INTERROGATORIO;
                 }
             }
         }

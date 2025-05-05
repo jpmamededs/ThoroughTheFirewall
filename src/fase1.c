@@ -30,14 +30,20 @@ static bool telefoneSubindo = false;
 static bool animacaoFeita = false;
 static float animacaoTelefoneY = 0.0f;
 static float tempoDesdeInicio = 0.0f;
-static float cooldownTelefone = -3.0f;
+static float cooldownTelefone = -5.0f;
 static Rectangle telefoneBounds = {0};
 static float delayTexto = 0.0f;
+static float hangUpCooldown = -1.0f;
+static Rectangle btnHangUpBounds = {0};  
 
 static TypeWriter fase1Writer;
 static bool typeStarted = false;
 static Music typingMusicF1 = {0};
 static bool typingLoaded = false;
+
+static float fadeAlphaFase1 = 2.0f;
+static const float FADEIN_DURATION = 2.0f;
+static bool fase1FadeInDone = false;
 
 const char *GetCurrentText(TypeWriter *writer)
 {
@@ -73,9 +79,10 @@ void InitFase1(void)
     animacaoFeita = false;
     animacaoTelefoneY = 0.0f;
     tempoDesdeInicio = 0.0f;
-    cooldownTelefone = -3.0f;
+    cooldownTelefone = -5.0f;
     delayTexto = 0.0f;
     typeStarted = false;
+    hangUpCooldown = -1.0f;
 
     // Câmera
     camera.position = (Vector3){0.0f, 1.6f, 0.0f};
@@ -89,6 +96,23 @@ void UpdateFase1(void)
 {
     float delta = GetFrameTime();
     tempoDesdeInicio += delta;
+    
+    if (!fase1FadeInDone)
+    {
+        fadeAlphaFase1 = UpdateFade(delta, FADEIN_DURATION, true);
+        if (fadeAlphaFase1 <= 0.0f) {
+            fadeAlphaFase1 = 0.0f;
+            fase1FadeInDone = true;
+        }
+    }
+
+    if (hangUpCooldown >= 0.0f) {
+        hangUpCooldown += delta;
+        if (hangUpCooldown >= 5.0f) {
+            hangUpCooldown = -1.0f;
+            cooldownTelefone = 0.0f;
+        }
+    }
 
     // Inicia fala digitada após delay
     if (!typeStarted && delayTexto > 0.0f)
@@ -116,7 +140,7 @@ void UpdateFase1(void)
         if (!IsSoundPlaying(somTelefone) && cooldownTelefone >= 0.0f)
         {
             PlaySound(somTelefone);
-            cooldownTelefone = -3.0f;
+            cooldownTelefone = -9999.0f;
             telefoneVisivel = true;
             if (!animacaoFeita)
             {
@@ -126,6 +150,38 @@ void UpdateFase1(void)
             }
         }
     }
+    else
+    {
+        Vector2 mouse = GetMousePosition();
+
+        int boxX = 60;
+        int marginBottom = 220;
+        int boxY = GetScreenHeight() - marginBottom;
+        int boxWidth = GetScreenWidth() - 120;
+        int btnW = 48, btnH = 48;
+        btnHangUpBounds = (Rectangle){
+            boxX + boxWidth - btnW - 20,   // canto direito da caixa
+            boxY - btnH - 10,              // um pouco acima
+            btnW, btnH
+        };
+
+        if (CheckCollisionPointRec(mouse, btnHangUpBounds) &&
+            IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        {
+            StopSound(somRadio);
+            StopSound(somTelefone);
+
+            interromperTelefone = false;
+            telefoneVisivel     = false;
+            animacaoFeita       = false;
+            animandoTelefone    = false;
+            telefoneSubindo     = false;
+
+            hangUpCooldown   = 0.0f; 
+            cooldownTelefone = -5.0f; 
+            typeStarted      = false;
+        }
+    }
 
     Vector2 mouse = GetMousePosition();
 
@@ -133,34 +189,48 @@ void UpdateFase1(void)
         CheckCollisionPointRec(mouse, telefoneBounds) &&
         IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
-        interromperTelefone = true;
-
-        if (!typeStarted)
-            delayTexto = 2.3f;
-
-        StopSound(somTelefone);
-        animandoTelefone = true;
-        telefoneSubindo = false;
-        animacaoTelefoneY = 0.0f;
-
-        if (!somRadioTocado)
+        bool clicouEsquerda = (mouse.x < telefoneBounds.x + telefoneBounds.width * 0.5f);
+    
+        if (clicouEsquerda)
         {
-            PlaySound(somRadio);
-            somRadioTocado = true;
+            interromperTelefone = true;
+    
+            if (!typeStarted) delayTexto = 2.3f;
+    
+            StopSound(somTelefone);
+    
+            animandoTelefone = true;
+            telefoneSubindo  = false;
+            animacaoTelefoneY = 0.0f;
+    
+            if (!somRadioTocado) {
+                PlaySound(somRadio);
+                somRadioTocado = true;
+            }
+        }
+        else
+        {
+            StopSound(somTelefone);
+            telefoneVisivel  = false;
+            animacaoFeita    = false;
+            animandoTelefone = false;
+    
+            hangUpCooldown   = 0.0f;
+            cooldownTelefone = -1.0f;
         }
     }
 
-    if (tempoDesdeInicio >= 2.0f && !somFase1Tocado)
+    if (tempoDesdeInicio >= 4.0f && !somFase1Tocado)
     {
         PlaySound(somFase1);
         somFase1Tocado = true;
     }
 
     // Rotação da câmera
-    if (IsKeyDown(KEY_LEFT))
-        cameraYaw -= 0.02f;
-    if (IsKeyDown(KEY_RIGHT))
-        cameraYaw += 0.02f;
+    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
+        cameraYaw -= 0.0018f;
+    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
+        cameraYaw += 0.0018f;
 
     if (cameraYaw > maxYaw)
         cameraYaw = maxYaw;
@@ -203,7 +273,7 @@ void DrawFase1(void)
     EndMode3D();
 
     // Caixa de fala
-    if (interromperTelefone)
+    if (interromperTelefone && typeStarted)
     {
         int boxX = 60;
         int marginBottom = 220;
@@ -283,6 +353,12 @@ void DrawFase1(void)
 
             state = APP_PC_SCREEN;
         }
+    }
+
+    if (fadeAlphaFase1 > 0.0f)
+    {
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                    (Color){0, 0, 0, (unsigned char)(fadeAlphaFase1 * 255)});
     }
 
     EndDrawing();
