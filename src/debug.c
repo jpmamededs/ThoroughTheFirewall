@@ -21,7 +21,6 @@ void UpdateDebug(void) {
     if (!requisicaoIniciada && tempoDecorrido >= tempoParaIniciar) {
         ObterRespostaGemini(
             "Você é um detetive. O que deve ser feito agora?",
-            "responda feito uma criança de 33 anos",
             resposta
         );
         respostaPronta = true;

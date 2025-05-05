@@ -21,6 +21,10 @@ typedef enum
     APP_DEBUG
 } AppState;
 
+#define MAX_PERGUNTAS 4
+extern int notasIA[MAX_PERGUNTAS];
+extern char relatoriosIA[MAX_PERGUNTAS][512];
+
 // =====================
 // TYPEWRITER EFFECT (TEXTO DIGITANDO)
 // =====================
@@ -36,6 +40,7 @@ typedef struct {
 void InitTypeWriter(TypeWriter* tw, const char* text, float speed);
 void UpdateTypeWriter(TypeWriter* tw, float deltaTime, bool skip);
 void SkipTypeWriter(TypeWriter* tw);
+float UpdateFade(float dt, float duration, bool fadeIn);
 
 // =====================
 // DIALOGUE EQUIPE/QUIZ (OPÇÕES)

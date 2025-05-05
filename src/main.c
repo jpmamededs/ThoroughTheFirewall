@@ -11,18 +11,21 @@
 #include "fase2.h"
 #include "generalFunctions.h"
 #include "debug.h" 
+#include <stdlib.h>
+#include <time.h>
 
 AppState state = APP_CUTSCENES;
 
 int main(void)
 {
+    srand(time(NULL));
     int screenWidth = GetMonitorWidth(0);
     int screenHeight = GetMonitorHeight(0);
 
-    InitWindow(screenWidth, screenHeight, "Jogo AED");
+    InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
     SetWindowPosition(0, 0);
     InitAudioDevice();
-    Music music = LoadMusicStream("");
+    Music music = LoadMusicStream("src/music/missao-impossivel.mp3");
     PlayMusicStream(music);
 
     InitCutscenes();
@@ -56,7 +59,7 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                float temposIntro[4] = {9.0f, 11.0f, 13.5f, 7.3f};
+                float temposIntro[5] = {8.4f, 12.1f, 9.1f, 8.6f, 7.5f};
                 InitIntro(MenuSelectedCharacterName(), temposIntro);
                 state = APP_INTRO;
             }
@@ -73,7 +76,7 @@ int main(void)
                 faseFinalInitialized = false;
                 state = APP_FASEFINAL;
             }
-            if (IsKeyPressed(KEY_R)) {
+            if (IsKeyPressed(KEY_M)) {
                 UnloadMenu();
                 InitDebug();
                 state = APP_DEBUG;
