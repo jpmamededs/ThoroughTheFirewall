@@ -7,6 +7,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include "typewriter_sync.h"
 
 static void UpdateEtapa1(float dt);
 static void UpdateEtapa2(float dt);
@@ -26,7 +27,7 @@ static struct
     // Recursos
     Texture2D background, spriteNome, spriteBustup, spriteConfiante;
     Music     interrogationMusic;
-    Sound     somSurpresa, somFalaDetetive, somFalaDetetive2;
+    Sound     somSurpresa;
 
     // Controle geral
     InterrogatorioStage stage;
@@ -40,9 +41,9 @@ static struct
     bool    bustupChegou, somSurpresaTocado;
 
     // ---------- ETAPA 2 ----------
-    TypeWriter writer;
     bool   mostrarConfiante, dialogoFinalizado;
-    bool   somFalaTocado, somFala2Tocado;
+    bool   somFala2Tocado;
+    bool   syncIniciado;
 
     // ---------- ETAPA 3 ----------
     char  respostaBuf[128];
@@ -68,17 +69,19 @@ static Question perguntas[TOTAL_PERGUNTAS] =
     { "Você se lembra do conteúdo da última mensagem que recebeu no sistema interno?" },
     { "Se você fosse inocente, o que esperaria que acontecesse agora com a investigação?" }
 };
+static const char *INTRO_TEXTO =
+    "Então, basicamente, você e... mais 3 pessoas estão sendo interrogados "
+    "por crimes cibernéticos... Eu sou o investigador desse caso, e vou te "
+    "fazer algumas perguntas, ok?";
 static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateEtapa1, UpdateEtapa2, UpdateEtapa3 };
 static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawEtapa1,  DrawEtapa2,  DrawEtapa3  };
 static const int QTD_PERGUNTAS = sizeof(perguntas)/sizeof(perguntas[0]);
 static int perguntasSelecionadas[MAX_PERGUNTAS];
 
+static SyncDialogue dialogue;
+
 void InitInterrogatorio(void)
 {
-    const char *texto =
-        "Então, basicamente, você e... mais 3 pessoas estão sendo interrogados por crimes "
-        "cibernéticos... Eu sou o investigador desse caso, e vou te fazer algumas perguntas, ok? [APERTE ENTER]";
-
     // Carregar recursos --------------------------------------------------
     ctx.background        = LoadTexture("src/sprites/background_outside.png");
     ctx.spriteNome        = LoadTexture("src/sprites/detetive-hank-text.png");
@@ -86,8 +89,6 @@ void InitInterrogatorio(void)
     ctx.spriteConfiante   = LoadTexture("src/sprites/detective_confident.png");
     ctx.interrogationMusic= LoadMusicStream("src/music/interrogationThemeA.mp3");
     ctx.somSurpresa       = LoadSound("src/music/surprise.mp3");
-    ctx.somFalaDetetive   = LoadSound("src/music/detectiveSpeaking.mp3");
-    ctx.somFalaDetetive2  = LoadSound("src/music/detectiveSpeaking2.mp3");
     SetMusicVolume(ctx.interrogationMusic, 1.0f);
     PlayMusicStream(ctx.interrogationMusic);
 
@@ -107,9 +108,8 @@ void InitInterrogatorio(void)
     ctx.bustupChegou = ctx.somSurpresaTocado = false;
 
     // ETAPA 2 ------------------------------------------------------------
-    InitTypeWriter(&ctx.writer, texto, strlen(texto)/10.f);
     ctx.mostrarConfiante = ctx.dialogoFinalizado = false;
-    ctx.somFalaTocado = ctx.somFala2Tocado = false;
+    ctx.syncIniciado = false;
 }
 
 void UpdateInterrogatorio(void)
@@ -143,8 +143,8 @@ void UnloadInterrogatorio(void)
     UnloadTexture(ctx.spriteConfiante);
     UnloadMusicStream(ctx.interrogationMusic);
     UnloadSound(ctx.somSurpresa);
-    UnloadSound(ctx.somFalaDetetive);
-    UnloadSound(ctx.somFalaDetetive2);
+
+    UnloadSyncDialogue(&dialogue);
 }
 
 static void UpdateEtapa1(float dt)
@@ -184,17 +184,19 @@ static void UpdateEtapa2(float dt)
         if (ctx.fadeWhiteAlpha <= 0.f) { ctx.fadeWhiteAlpha = 0.f; ctx.fadeWhiteOut = false; }
     }
 
-    if (ctx.mostrarConfiante && !ctx.somFalaTocado) {
-        PlaySound(ctx.somFalaDetetive); ctx.somFalaTocado = true;
+    if (!ctx.syncIniciado) {
+        InitSyncDialogue(&dialogue, "src/music/detectiveSpeaking.mp3", INTRO_TEXTO);
+        ctx.syncIniciado = true;
     }
 
-    bool skip = IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE);
-    UpdateTypeWriter(&ctx.writer, dt, skip);
+    UpdateSyncDialogue(&dialogue);
 
-    if (ctx.writer.done && skip && !ctx.dialogoFinalizado) ctx.dialogoFinalizado = true;
-    if (ctx.dialogoFinalizado && !ctx.somFala2Tocado) { PlaySound(ctx.somFalaDetetive2); ctx.somFala2Tocado = true; }
+    if (SyncDialogueDone(&dialogue) && IsKeyPressed(KEY_ENTER)) 
+    {
+        ctx.dialogoFinalizado = true;
+    }
 
-    if (ctx.dialogoFinalizado && ctx.somFala2Tocado && IsKeyPressed(KEY_ENTER)) {
+    if (ctx.dialogoFinalizado && IsKeyPressed(KEY_ENTER)) {
         ctx.stage = ETAPA_3;
         ctx.perguntaAtual = 0;
         ctx.respostaLen = 0;
@@ -259,21 +261,44 @@ static void DrawEtapa2(void)
     DrawTexturePro(ctx.spriteConfiante, src, (Rectangle){pos.x,pos.y,w,h}, (Vector2){0,0},0, WHITE);
 
     // Caixa de diálogo
-    if (!ctx.dialogoFinalizado) {
-        const float boxH=120.f;
-        DrawRectangle(50, GetScreenHeight()-boxH-30, GetScreenWidth()-100, boxH, (Color){0,0,0,200});
-        DrawRectangleLines(50, GetScreenHeight()-boxH-30, GetScreenWidth()-100, boxH, WHITE);
+    const float boxH = 160.f;
+    const float boxOffsetY = 60.f;
+    float boxY = GetScreenHeight() - boxH - boxOffsetY;
 
-        char buf[512]={0}; strncpy(buf, ctx.writer.text, ctx.writer.drawnChars);
-        const int fs=24, maxW=GetScreenWidth()-140, x0=70, lineH=fs+6;
-        int y=GetScreenHeight()-boxH-10;
-        const char* line=buf;
-        while(*line){
-            const char* p=line; int lastSp=-1,c=0,w=0;
-            while(*p && w<maxW){ if(*p==' ') lastSp=c; ++p;++c; char tmp[256]={0}; strncpy(tmp,line,c); w=MeasureText(tmp,fs);}
-            if(w>=maxW&&lastSp>=0) c=lastSp;
-            char out[256]={0}; strncpy(out,line,c); DrawText(out,x0,y,fs,WHITE);
-            line+=c; while(*line==' ') ++line; y+=lineH;
+    DrawRectangle(50, boxY, GetScreenWidth() - 100, boxH, (Color){0, 0, 0, 220});
+    DrawRectangleLines(50, boxY, GetScreenWidth() - 100, boxH, WHITE);
+
+    if (!ctx.dialogoFinalizado) {
+        char buf[512] = {0};
+        strncpy(buf, dialogue.writer.text, dialogue.writer.drawnChars);
+
+        const int fs = 24;
+        const int maxW = GetScreenWidth() - 140;
+        const int x0 = 70;
+        const int lineH = fs + 6;
+        int y = boxY + 10;
+
+        const char* line = buf;
+        while (*line) {
+            const char* p = line;
+            int lastSp = -1, c = 0, w = 0;
+
+            while (*p && w < maxW) {
+                if (*p == ' ') lastSp = c;
+                ++p; ++c;
+                char tmp[256] = {0};
+                strncpy(tmp, line, c);
+                w = MeasureText(tmp, fs);
+            }
+
+            if (w >= maxW && lastSp >= 0) c = lastSp;
+
+            char out[256] = {0};
+            strncpy(out, line, c);
+            DrawText(out, x0, y, fs, WHITE);
+            line += c;
+            while (*line == ' ') ++line;
+            y += lineH;
         }
     }
 }

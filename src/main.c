@@ -25,7 +25,7 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
     SetWindowPosition(0, 0);
     InitAudioDevice();
-    Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
+    Music music = LoadMusicStream("");
     PlayMusicStream(music);
 
     InitCutscenes();
@@ -76,7 +76,7 @@ int main(void)
                 faseFinalInitialized = false;
                 state = APP_FASEFINAL;
             }
-            if (IsKeyPressed(KEY_R)) {
+            if (IsKeyPressed(KEY_M)) {
                 UnloadMenu();
                 InitDebug();
                 state = APP_DEBUG;
