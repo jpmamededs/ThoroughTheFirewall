@@ -54,7 +54,6 @@ static struct
 } ctx;
 
 #define TOTAL_PERGUNTAS 10
-#define MAX_PERGUNTAS 4
 
 static Question perguntas[TOTAL_PERGUNTAS] = 
 {
@@ -72,8 +71,6 @@ static Question perguntas[TOTAL_PERGUNTAS] =
 static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateEtapa1, UpdateEtapa2, UpdateEtapa3 };
 static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawEtapa1,  DrawEtapa2,  DrawEtapa3  };
 static const int QTD_PERGUNTAS = sizeof(perguntas)/sizeof(perguntas[0]);
-static int notasIA[MAX_PERGUNTAS];
-static char relatoriosIA[MAX_PERGUNTAS][512];
 static int perguntasSelecionadas[MAX_PERGUNTAS];
 
 void InitInterrogatorio(void)

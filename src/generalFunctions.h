@@ -21,6 +21,10 @@ typedef enum
     APP_DEBUG
 } AppState;
 
+#define MAX_PERGUNTAS 4
+extern int notasIA[MAX_PERGUNTAS];
+extern char relatoriosIA[MAX_PERGUNTAS][512];
+
 // =====================
 // TYPEWRITER EFFECT (TEXTO DIGITANDO)
 // =====================

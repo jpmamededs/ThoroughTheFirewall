@@ -4,6 +4,9 @@
 #include <string.h>
 #include <stdio.h>
 
+int notasIA[MAX_PERGUNTAS] = {0};
+char relatoriosIA[MAX_PERGUNTAS][512] = {0};
+
 // ====== TYPEWRITER ======
 void InitTypeWriter(TypeWriter* tw, const char* text, float speed) {
     if (!tw) return;
