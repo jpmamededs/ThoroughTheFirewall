@@ -19,6 +19,8 @@ AppState state = APP_CUTSCENES;
 int main(void)
 {
     srand(time(NULL));
+    SelecionarPerguntasAleatorias();
+
     int screenWidth = GetMonitorWidth(0);
     int screenHeight = GetMonitorHeight(0);
 
@@ -27,13 +29,15 @@ int main(void)
     InitAudioDevice();
     Music music = LoadMusicStream("src/music/missao-impossivel.mp3");
     PlayMusicStream(music);
+    static int perguntaAtual = 0;
 
     InitCutscenes();
 
     bool pcScreenInitialized = false;
     bool fase2Initialized = false;
-    static bool interrogatorio_Initialized = false;      // Adicionado para a fase1_3
-    static bool faseFinalInitialized = false;     // Adicionado para faseFinal
+    static bool faseFinalInitialized = false;
+    static bool interrogatorio_Initialized = false;
+    extern bool interrogatorioFinalizado;
 
     while (!WindowShouldClose())
     {
@@ -82,7 +86,8 @@ int main(void)
                 state = APP_DEBUG;
             }if (IsKeyPressed(KEY_T)) {
                 UnloadMenu();
-                InitInterrogatorio();
+                InitInterrogatorio(perguntaAtual);
+                interrogatorio_Initialized = true;
                 state = INTERROGATORIO;
             }
             // FIM DEBUG
@@ -142,12 +147,21 @@ int main(void)
         {
             if (!interrogatorio_Initialized)
             {
-                InitInterrogatorio();
+                InitInterrogatorio(perguntaAtual);
                 interrogatorio_Initialized = true;
             }
 
             UpdateInterrogatorio();
             DrawInterrogatorio();
+
+            if (interrogatorioFinalizado) {
+                UnloadInterrogatorio();
+                interrogatorio_Initialized = false;
+                perguntaAtual++;
+                // retoma o fluxo
+                InitMenu();
+                state = APP_MENU;
+            }
         }
         else if (state == APP_FASE2)
         {

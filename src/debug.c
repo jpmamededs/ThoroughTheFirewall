@@ -1,11 +1,13 @@
 #include "raylib.h"
 #include "gemini.h"
+#include "generalFunctions.h"
 #include <string.h>
+#include <stdio.h>
 
 static char resposta[1024] = {0};
 static bool respostaPronta = false;
 static bool requisicaoIniciada = false;
-static float tempoParaIniciar = 0.5f; // atraso de meio segundo
+//static float tempoParaIniciar = 0.5f; // atraso de meio segundo
 static float tempoDecorrido = 0.0f;
 
 void InitDebug(void) {
@@ -18,13 +20,27 @@ void InitDebug(void) {
 void UpdateDebug(void) {
     tempoDecorrido += GetFrameTime();
 
-    if (!requisicaoIniciada && tempoDecorrido >= tempoParaIniciar) {
-        ObterRespostaGemini(
-            "Você é um detetive. O que deve ser feito agora?",
-            resposta
-        );
-        respostaPronta = true;
-        requisicaoIniciada = true;
+    //if (!requisicaoIniciada && tempoDecorrido >= tempoParaIniciar) {
+    //    ObterRespostaGemini(
+    //        "Você é um detetive. O que deve ser feito agora?",
+    //        resposta
+    //    );
+    //    respostaPronta = true;
+    //    requisicaoIniciada = true;
+    //}
+
+    int yOffset = 120;
+    for (int i = 0; i < MAX_PERGUNTAS; i++) {
+        if (notasIA[i] >= 0) {
+            char buf[1024];
+            snprintf(buf, sizeof(buf), "[%d] NOTA: %d", i, notasIA[i]);
+            DrawText(buf, 20, yOffset, 20, GREEN);
+            yOffset += 24;
+
+            snprintf(buf, sizeof(buf), "RELATORIO: %s", relatoriosIA[i]);
+            DrawText(buf, 40, yOffset, 20, GRAY);
+            yOffset += 40;
+        }
     }
 }
 
