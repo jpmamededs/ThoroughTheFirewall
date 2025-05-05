@@ -27,7 +27,7 @@ static struct
     // Recursos
     Texture2D background, spriteNome, spriteBustup, spriteConfiante;
     Music     interrogationMusic;
-    Sound     somSurpresa;
+    Sound     somSurpresa, somFalaDetetive2;
 
     // Controle geral
     InterrogatorioStage stage;
@@ -42,7 +42,6 @@ static struct
 
     // ---------- ETAPA 2 ----------
     bool   mostrarConfiante, dialogoFinalizado;
-    bool   somFala2Tocado;
     bool   syncIniciado;
 
     // ---------- ETAPA 3 ----------
@@ -89,6 +88,7 @@ void InitInterrogatorio(void)
     ctx.spriteConfiante   = LoadTexture("src/sprites/detective_confident.png");
     ctx.interrogationMusic= LoadMusicStream("src/music/interrogationThemeA.mp3");
     ctx.somSurpresa       = LoadSound("src/music/surprise.mp3");
+    ctx.somFalaDetetive2  = LoadSound("src/music/detectiveSpeaking2.mp3");
     SetMusicVolume(ctx.interrogationMusic, 1.0f);
     PlayMusicStream(ctx.interrogationMusic);
 
@@ -143,6 +143,7 @@ void UnloadInterrogatorio(void)
     UnloadTexture(ctx.spriteConfiante);
     UnloadMusicStream(ctx.interrogationMusic);
     UnloadSound(ctx.somSurpresa);
+    UnloadSound(ctx.somFalaDetetive2);
 
     UnloadSyncDialogue(&dialogue);
 }
@@ -190,6 +191,12 @@ static void UpdateEtapa2(float dt)
     }
 
     UpdateSyncDialogue(&dialogue);
+
+    if (SyncDialogueDone(&dialogue) && IsKeyPressed(KEY_ENTER)) 
+    {
+        PlaySound(ctx.somFalaDetetive2);  // <- aqui é o momento certo!
+        ctx.dialogoFinalizado = true;
+    }
 
     if (SyncDialogueDone(&dialogue) && IsKeyPressed(KEY_ENTER)) 
     {
