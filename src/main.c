@@ -10,6 +10,8 @@
 #include "pc_screen.h"
 #include "fase2.h"
 #include "generalFunctions.h"
+#include "fase3.h"
+
 
 AppState state = APP_CUTSCENES;
 
@@ -28,7 +30,8 @@ int main(void)
 
     bool pcScreenInitialized = false;
     bool fase2Initialized = false;
-    static bool fase1_3Initialized = false;      // Adicionado para a fase1_3
+    static bool fase1_3Initialized = false;
+    static bool fase3Initialized = false;       // Adicionado para a fase1_3
     static bool faseFinalInitialized = false;     // Adicionado para faseFinal
 
     while (!WindowShouldClose())
@@ -71,6 +74,12 @@ int main(void)
                 UnloadMenu();
                 faseFinalInitialized = false;
                 state = APP_FASEFINAL;
+            }
+            if (IsKeyPressed(KEY_I))
+            {
+                UnloadMenu();
+                fase3Initialized = false;
+                state = APP_FASE3;
             }
             // FIM DEBUG
         }
@@ -135,6 +144,16 @@ int main(void)
             UpdateFase1_3();
             DrawFase1_3();
         }
+        else if (state == APP_FASE3)
+        {
+            if (!fase3Initialized)
+            {
+                InitFase3();
+                fase3Initialized = true;
+            }
+            UpdateFase3();
+            DrawFase3();
+        }
         else if (state == APP_FASE2)
         {
             if (!fase2Initialized)
@@ -172,6 +191,8 @@ int main(void)
         UnloadFase1_2();
     if (state == APP_FASE1_3)
         UnloadFase1_3();
+    if (state == APP_FASE3)
+        UnloadFase3();
     if (state == APP_FASEFINAL)
         UnloadFaseFinal();
 

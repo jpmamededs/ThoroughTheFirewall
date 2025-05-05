@@ -17,6 +17,7 @@ typedef enum
     APP_FASE1_3,
     APP_PC_SCREEN,
     APP_FASE2,
+    APP_FASE3,
     APP_FASEFINAL
     // ... adicione outros estados conforme precisar
 } AppState;
