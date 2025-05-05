@@ -164,3 +164,19 @@ void DrawAllDialogueOptions(const DialogueQuestion* dq, int selected, int offset
         DrawDialogueOption(&dq->opcoes[i], rec, optSelected, dq->opcoes[i].desabilitada, blink, baseCor, txtCor);
     }
 }
+
+float UpdateFade(float dt, float duration, bool fadeIn)
+{
+    static float alpha = 1.0f;
+    float delta = dt / duration;
+
+    if (fadeIn) {
+        alpha -= delta;
+        if (alpha < 0.0f) alpha = 0.0f;
+    } else {
+        alpha += delta;
+        if (alpha > 1.0f) alpha = 1.0f;
+    }
+
+    return alpha;
+}

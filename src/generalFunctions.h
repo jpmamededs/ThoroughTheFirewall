@@ -40,6 +40,7 @@ typedef struct {
 void InitTypeWriter(TypeWriter* tw, const char* text, float speed);
 void UpdateTypeWriter(TypeWriter* tw, float deltaTime, bool skip);
 void SkipTypeWriter(TypeWriter* tw);
+float UpdateFade(float dt, float duration, bool fadeIn);
 
 // =====================
 // DIALOGUE EQUIPE/QUIZ (OPÇÕES)

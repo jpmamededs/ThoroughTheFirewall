@@ -25,7 +25,7 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
     SetWindowPosition(0, 0);
     InitAudioDevice();
-    Music music = LoadMusicStream("");
+    Music music = LoadMusicStream("src/music/missao-impossivel.mp3");
     PlayMusicStream(music);
 
     InitCutscenes();
@@ -59,7 +59,7 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                float temposIntro[4] = {9.0f, 11.0f, 13.5f, 7.3f};
+                float temposIntro[5] = {8.4f, 12.1f, 9.1f, 8.6f, 7.5f};
                 InitIntro(MenuSelectedCharacterName(), temposIntro);
                 state = APP_INTRO;
             }
