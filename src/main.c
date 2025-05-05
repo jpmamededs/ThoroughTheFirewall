@@ -10,6 +10,7 @@
 #include "pc_screen.h"
 #include "fase2.h"
 #include "generalFunctions.h"
+#include "fase3.h"
 #include "debug.h" 
 #include <stdlib.h>
 #include <time.h>
@@ -23,20 +24,20 @@ int main(void)
 
     int screenWidth = GetMonitorWidth(0);
     int screenHeight = GetMonitorHeight(0);
-
     InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
     SetWindowPosition(0, 0);
     InitAudioDevice();
-    Music music = LoadMusicStream("src/music/missao-impossivel.mp3");
+    Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
     PlayMusicStream(music);
-    static int perguntaAtual = 0;
-
     InitCutscenes();
 
+    static int perguntaAtual = 0;
     bool pcScreenInitialized = false;
     bool fase2Initialized = false;
-    static bool faseFinalInitialized = false;
+    static bool fase3Initialized = false;
     static bool interrogatorio_Initialized = false;
+    static bool faseFinalInitialized = false;
+    static bool fase1_2Initialized = false;
     extern bool interrogatorioFinalizado;
 
     while (!WindowShouldClose())
@@ -80,11 +81,18 @@ int main(void)
                 faseFinalInitialized = false;
                 state = APP_FASEFINAL;
             }
+            if (IsKeyPressed(KEY_I))
+            {
+                UnloadMenu();
+                fase3Initialized = false;
+                state = APP_FASE3;
+            }
             if (IsKeyPressed(KEY_M)) {
                 UnloadMenu();
                 InitDebug();
                 state = APP_DEBUG;
-            }if (IsKeyPressed(KEY_T)) {
+            }
+            if (IsKeyPressed(KEY_T)) {
                 UnloadMenu();
                 InitInterrogatorio(perguntaAtual);
                 interrogatorio_Initialized = true;
@@ -134,7 +142,6 @@ int main(void)
         }
         else if (state == APP_FASE1_2)
         {
-            static bool fase1_2Initialized = false;
             if (!fase1_2Initialized)
             {
                 InitFase1_2();
@@ -150,18 +157,27 @@ int main(void)
                 InitInterrogatorio(perguntaAtual);
                 interrogatorio_Initialized = true;
             }
-
             UpdateInterrogatorio();
             DrawInterrogatorio();
-
+            
             if (interrogatorioFinalizado) {
                 UnloadInterrogatorio();
                 interrogatorio_Initialized = false;
                 perguntaAtual++;
-                // retoma o fluxo
+                // retoma o fluxo do jogo
                 InitMenu();
                 state = APP_MENU;
             }
+        }
+        else if (state == APP_FASE3)
+        {
+            if (!fase3Initialized)
+            {
+                InitFase3();
+                fase3Initialized = true;
+            }
+            UpdateFase3();
+            DrawFase3();
         }
         else if (state == APP_FASE2)
         {
@@ -203,6 +219,8 @@ int main(void)
         UnloadFase2();
     if (state == APP_FASE1_2)
         UnloadFase1_2();
+    if (state == APP_FASE3)
+        UnloadFase3();
     if (state == INTERROGATORIO)
         UnloadInterrogatorio();
     if (state == APP_FASEFINAL)
