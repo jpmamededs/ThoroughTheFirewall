@@ -11,18 +11,21 @@
 #include "fase2.h"
 #include "generalFunctions.h"
 #include "debug.h" 
+#include <stdlib.h>
+#include <time.h>
 
 AppState state = APP_CUTSCENES;
 
 int main(void)
 {
+    srand(time(NULL));
     int screenWidth = GetMonitorWidth(0);
     int screenHeight = GetMonitorHeight(0);
 
-    InitWindow(screenWidth, screenHeight, "Jogo AED");
+    InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
     SetWindowPosition(0, 0);
     InitAudioDevice();
-    Music music = LoadMusicStream("");
+    Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
     PlayMusicStream(music);
 
     InitCutscenes();
