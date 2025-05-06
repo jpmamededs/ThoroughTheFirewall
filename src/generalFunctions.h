@@ -16,6 +16,8 @@ typedef enum
     APP_FASE1_2,
     APP_PC_SCREEN,
     APP_FASE2,
+    APP_FASE3,
+    APP_FASE4,
     APP_FASEFINAL,
     APP_PC_SCREEN_FINAL,
     INTERROGATORIO,

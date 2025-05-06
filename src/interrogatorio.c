@@ -9,18 +9,14 @@
 #include <time.h>
 #include "typewriter_sync.h"
 
-static void UpdateEtapa1(float dt);
-static void UpdateEtapa2(float dt);
-static void UpdateEtapa3(float dt);
-static void DrawEtapa1(void);
-static void DrawEtapa2(void);
-static void DrawEtapa3(void);
+static void UpdateApresentacao(float dt);
+static void UpdateFalaHank(float dt);
+static void UpdateFalaInterrogatorio(float dt);
+static void DrawApresentacao(void);
+static void DrawFalaHank(void);
+static void DrawFalaInterrogatorio(void);
 static void DrawFade(void);
 static void AvaliarRespostaComIA(int indicePergunta, const char *pergunta, const char *respostaJogador);
-static void SelecionarPerguntasAleatorias(void);
-
-typedef struct { const char *pergunta; } Question;
-typedef enum { ETAPA_1, ETAPA_2, ETAPA_3, ETAPA_TOTAL } InterrogatorioStage;
 
 static struct
 {
@@ -34,28 +30,28 @@ static struct
     float fadeWhiteAlpha;
     bool  fadeWhiteIn, fadeWhiteOut;
 
-    // ---------- ETAPA 1 ----------
+    // ---------- Apresentacao ----------
     Vector2 posNome, posBustup;
     Vector2 targetNome, targetBustup;
     float   speed, slowSpeed, tempoAposAnimacao;
     bool    bustupChegou, somSurpresaTocado;
 
-    // ---------- ETAPA 2 ----------
+    // ---------- Fala Hank ----------
     bool   mostrarConfiante, dialogoFinalizado;
     bool   syncIniciado;
 
-    // ---------- ETAPA 3 ----------
+    // ---------- Fala Interrogatorio ----------
     char  respostaBuf[128];
     int   respostaLen;
     int   perguntaAtual;
     bool  aguardandoInput;
-    bool  respostaConfirmada; 
+    bool  respostaConfirmada;
+    int perguntaID;
+    int slot; 
 
 } ctx;
 
-#define TOTAL_PERGUNTAS 10
-
-static Question perguntas[TOTAL_PERGUNTAS] = 
+Question perguntas[TOTAL_PERGUNTAS] = 
 {
     { "O que você estava fazendo no momento em que o alarme de segurança disparou ontem?" },
     { "Como você explicaria sua presença perto da sala de servidores fora do seu turno?" },
@@ -68,18 +64,20 @@ static Question perguntas[TOTAL_PERGUNTAS] =
     { "Você se lembra do conteúdo da última mensagem que recebeu no sistema interno?" },
     { "Se você fosse inocente, o que esperaria que acontecesse agora com a investigação?" }
 };
+
 static const char *INTRO_TEXTO =
     "Então, basicamente, você e... mais 3 pessoas estão sendo interrogados "
     "por crimes cibernéticos... Eu sou o investigador desse caso, e vou te "
-    "fazer algumas perguntas, ok?";
-static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateEtapa1, UpdateEtapa2, UpdateEtapa3 };
-static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawEtapa1,  DrawEtapa2,  DrawEtapa3  };
-static const int QTD_PERGUNTAS = sizeof(perguntas)/sizeof(perguntas[0]);
-static int perguntasSelecionadas[MAX_PERGUNTAS];
+    "fazer algumas perguntas, ok? [ENTER]";
 
+static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateApresentacao, UpdateFalaHank, UpdateFalaInterrogatorio };
+static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawApresentacao,  DrawFalaHank,  DrawFalaInterrogatorio  };
+
+int perguntasSelecionadas[MAX_PERGUNTAS];
+bool interrogatorioFinalizado = false;
 static SyncDialogue dialogue;
 
-void InitInterrogatorio(void)
+void InitInterrogatorio(int perguntaIndex)
 {
     // Carregar recursos --------------------------------------------------
     ctx.background        = LoadTexture("src/sprites/background_outside.png");
@@ -93,10 +91,10 @@ void InitInterrogatorio(void)
     PlayMusicStream(ctx.interrogationMusic);
 
     // Estado geral -------------------------------------------------------
-    ctx.stage = ETAPA_1;
+    ctx.stage = APRESENTACAO;
+    interrogatorioFinalizado = false;
     ctx.fadeWhiteAlpha = 0.0f;
     ctx.fadeWhiteIn = ctx.fadeWhiteOut = false;
-    SelecionarPerguntasAleatorias();
 
     // ETAPA 1 ------------------------------------------------------------
     ctx.posNome   = (Vector2){ GetScreenWidth(), GetScreenHeight() - ctx.spriteNome.height - 50 };
@@ -110,13 +108,19 @@ void InitInterrogatorio(void)
     // ETAPA 2 ------------------------------------------------------------
     ctx.mostrarConfiante = ctx.dialogoFinalizado = false;
     ctx.syncIniciado = false;
+
+    // ETAPA 3 ------------------------------------------------------------
+    ctx.respostaLen   = 0;
+    ctx.respostaBuf[0]= '\0';
+    ctx.aguardandoInput = false;
+    ctx.perguntaID = perguntasSelecionadas[perguntaIndex];
+    ctx.slot       = perguntaIndex;
 }
 
 void UpdateInterrogatorio(void)
 {
     UpdateMusicStream(ctx.interrogationMusic);
     float dt = GetFrameTime();
-    // Despacho dinâmico
     stageUpdates[ctx.stage](dt);
 }
 
@@ -129,7 +133,7 @@ void DrawInterrogatorio(void)
     Rectangle dst = {0,0,(float)GetScreenWidth(),(float)GetScreenHeight()};
     DrawTexturePro(ctx.background, src, dst, (Vector2){0,0}, 0, WHITE);
 
-    stageDraws[ctx.stage]();   // Chama o draw da etapa atual
+    stageDraws[ctx.stage]();
     DrawFade();
 
     EndDrawing();
@@ -144,11 +148,11 @@ void UnloadInterrogatorio(void)
     UnloadMusicStream(ctx.interrogationMusic);
     UnloadSound(ctx.somSurpresa);
     UnloadSound(ctx.somFalaDetetive2);
-
     UnloadSyncDialogue(&dialogue);
+    interrogatorioFinalizado = true;
 }
 
-static void UpdateEtapa1(float dt)
+static void UpdateApresentacao(float dt)
 {
     if (!ctx.somSurpresaTocado) { PlaySound(ctx.somSurpresa); ctx.somSurpresaTocado = true; }
 
@@ -172,13 +176,13 @@ static void UpdateEtapa1(float dt)
         ctx.fadeWhiteAlpha += dt * 1.5f;
         if (ctx.fadeWhiteAlpha >= 1.f) {
             ctx.fadeWhiteAlpha = 1.f; ctx.fadeWhiteIn = false; ctx.fadeWhiteOut = true;
-            ctx.stage = ETAPA_2;
+            ctx.stage = FALA_HANK;
             ctx.mostrarConfiante = true;
         }
     }
 }
 
-static void UpdateEtapa2(float dt)
+static void UpdateFalaHank(float dt)
 {
     if (ctx.fadeWhiteOut) {
         ctx.fadeWhiteAlpha -= dt * 1.5f;
@@ -204,15 +208,14 @@ static void UpdateEtapa2(float dt)
     }
 
     if (ctx.dialogoFinalizado && IsKeyPressed(KEY_ENTER)) {
-        ctx.stage = ETAPA_3;
-        ctx.perguntaAtual = 0;
+        ctx.stage = PERGUNTA_INTERROGATORIO;
         ctx.respostaLen = 0;
         ctx.respostaBuf[0] = '\0';
         ctx.aguardandoInput = true;
     }
 }
 
-static void UpdateEtapa3(float dt)
+static void UpdateFalaInterrogatorio(float dt)
 {
     if (!ctx.aguardandoInput) return;
 
@@ -234,29 +237,23 @@ static void UpdateEtapa3(float dt)
 
         // Envia a resposta atual para a IA antes de avançar
         AvaliarRespostaComIA(
-            ctx.perguntaAtual,
-            perguntas[perguntasSelecionadas[ctx.perguntaAtual]].pergunta,
+            ctx.slot,
+            perguntas[ctx.perguntaID].pergunta,
             ctx.respostaBuf
         );
 
-        // Avança ou termina
-        ctx.perguntaAtual++;
-        if (ctx.perguntaAtual < QTD_PERGUNTAS) {
-            ctx.respostaLen = 0;
-            ctx.respostaBuf[0] = '\0';
-            ctx.aguardandoInput = true;
-        }
+        interrogatorioFinalizado = true;
     }
 }
 
 
-static void DrawEtapa1(void)
+static void DrawApresentacao(void)
 {
     DrawTexture(ctx.spriteNome,   ctx.posNome.x,   ctx.posNome.y,   WHITE);
     DrawTexture(ctx.spriteBustup, ctx.posBustup.x, ctx.posBustup.y, WHITE);
 }
 
-static void DrawEtapa2(void)
+static void DrawFalaHank(void)
 {
     // Sprite confiante
     float scale = 1.3f;
@@ -310,7 +307,7 @@ static void DrawEtapa2(void)
     }
 }
 
-static void DrawEtapa3(void)
+static void DrawFalaInterrogatorio(void)
 {
     float scale = 1.3f;
     Rectangle src = { 3029, 3357, 631, 725 };
@@ -321,13 +318,13 @@ static void DrawEtapa3(void)
 
     // Caixa da pergunta
     const float boxH = 160.f;
-    const float boxOffsetY = 60.f;  // Quanto maior, mais alto sobe
+    const float boxOffsetY = 60.f;
     float boxY = GetScreenHeight() - boxH - boxOffsetY;
     DrawRectangle(50, boxY, GetScreenWidth() - 100, boxH, (Color){0,0,0,220});
     DrawRectangleLines(50, boxY, GetScreenWidth() - 100, boxH, WHITE);
 
     // Pergunta atual
-    DrawText(perguntas[perguntasSelecionadas[ctx.perguntaAtual]].pergunta, 70, boxY + 10, 24, WHITE);
+    DrawText(perguntas[ctx.perguntaID].pergunta, 70, boxY + 10, 24, WHITE);
 
     // Campo de input (sub‑caixa)
     const float inputH = 40.f;
@@ -338,16 +335,8 @@ static void DrawEtapa3(void)
 
     // Texto digitado
     DrawText(ctx.respostaBuf, 80, yInput+8, 24, GREEN);
-    if (ctx.aguardandoInput && (GetTime()*2.0 - floor(GetTime()*2.0)) > 0.5)
+    if (ctx.aguardandoInput && (GetTime()*2.0 - floor(GetTime()*2.0)) > 0.5) {
         DrawText("|", 80 + MeasureText(ctx.respostaBuf, 24), yInput+8, 24, GREEN);
-
-    // Mostra o relatório da IA da pergunta anterior (se houver)
-    if (ctx.perguntaAtual > 0) {
-        int idx = ctx.perguntaAtual - 1;
-        char info[600] = {0};
-        snprintf(info, sizeof(info), "NOTA: %d\nRELATÓRIO: %s", notasIA[idx], relatoriosIA[idx]);
-
-        DrawText(info, 70, boxY - 100, 20, YELLOW);  // desenha acima da caixa
     }
 }
 
@@ -390,19 +379,18 @@ static void AvaliarRespostaComIA(int indicePergunta, const char *pergunta, const
 
     if (sscanf(retorno, "NOTA=%d", &nota) == 1) {
         const char *pRel = strstr(retorno, "RELATORIO=");
-        if (pRel) {
-            strncpy(relatorio, pRel + strlen("RELATORIO="), sizeof(relatorio)-1);
-        }
+        if (pRel) strncpy(relatorio,
+                          pRel + strlen("RELATORIO="),
+                          sizeof(relatorio)-1);
     }
 
-    if (indicePergunta < MAX_PERGUNTAS) {
+    if (indicePergunta >= 0 && indicePergunta < MAX_PERGUNTAS) {
         notasIA[indicePergunta] = nota;
-        strncpy(relatoriosIA[indicePergunta], relatorio, sizeof(relatoriosIA[indicePergunta])-1);
+        strncpy(relatoriosIA[indicePergunta], relatorio, sizeof(relatoriosIA[indicePergunta]) - 1);
     }
 }
 
-
-static void SelecionarPerguntasAleatorias(void)
+void SelecionarPerguntasAleatorias(void)
 {
     int indices[TOTAL_PERGUNTAS];
     for (int i = 0; i < TOTAL_PERGUNTAS; i++) {
