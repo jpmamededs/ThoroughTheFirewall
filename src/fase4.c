@@ -84,7 +84,7 @@ const char* FalaPorResultado4(const char* name, bool acerto) {
 
 void InitFase4(void)
 {
-    fundo = LoadTexture("src/sprites/empresa3.png");
+    fundo = LoadTexture("src/sprites/empresa4.jpg");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
     sprJoao    = LoadTexture("src/sprites/joaoSprite.png");
     sprJoao2   = LoadTexture("src/sprites/joao2.png");

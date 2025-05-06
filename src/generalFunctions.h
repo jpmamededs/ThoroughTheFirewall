@@ -18,6 +18,7 @@ typedef enum
     APP_FASE2,
     APP_FASE3,
     APP_FASE4,
+    APP_FASE5,
     APP_FASEFINAL,
     INTERROGATORIO,
     APP_DEBUG

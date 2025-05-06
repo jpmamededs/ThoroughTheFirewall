@@ -12,6 +12,7 @@
 #include "generalFunctions.h"
 #include "fase3.h"
 #include "fase4.h"
+#include "fase5.h"
 #include "debug.h" 
 #include <stdlib.h>
 #include <time.h>
@@ -37,6 +38,7 @@ int main(void)
     bool fase2Initialized = false;
     static bool fase3Initialized = false;
     static bool fase4Initialized = false;
+    static bool fase5Initialized = false;
     static bool interrogatorio_Initialized = false;
     static bool faseFinalInitialized = false;
     static bool fase1_2Initialized = false;
@@ -104,6 +106,11 @@ int main(void)
                 UnloadMenu();
                 fase4Initialized = false;
                 state = APP_FASE4;
+            }
+            if (IsKeyPressed(KEY_L)) {
+                UnloadMenu();
+                fase5Initialized = false;
+                state = APP_FASE5;
             }
             // FIM DEBUG
         }
@@ -195,7 +202,17 @@ int main(void)
             }
             UpdateFase4();
             DrawFase4();
-        }   
+        }
+        else if (state == APP_FASE5)
+        {
+            if (!fase5Initialized)
+            {
+                InitFase5();
+                fase5Initialized = true;
+            }
+            UpdateFase5();
+            DrawFase5();
+        }      
         else if (state == APP_FASE2)
         {
             if (!fase2Initialized)
@@ -240,6 +257,8 @@ int main(void)
         UnloadFase3();
     if (state == APP_FASE4)
         UnloadFase4(); 
+    if (state == APP_FASE5)
+        UnloadFase5();
     if (state == INTERROGATORIO)
         UnloadInterrogatorio();
     if (state == APP_FASEFINAL)
