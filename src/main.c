@@ -8,9 +8,10 @@
 #include "gemini.h"
 #include "faseFinal.h"
 #include "pc_screen.h"
+#include "pc_screenFinal.h"
 #include "fase2.h"
 #include "generalFunctions.h"
-#include "debug.h" 
+#include "debug.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -25,15 +26,16 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
     SetWindowPosition(0, 0);
     InitAudioDevice();
-    Music music = LoadMusicStream("src/music/missao-impossivel.mp3");
+    Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
     PlayMusicStream(music);
 
     InitCutscenes();
 
     bool pcScreenInitialized = false;
+    bool pcScreenFinalInitialized = false;
     bool fase2Initialized = false;
-    static bool interrogatorio_Initialized = false;      // Adicionado para a fase1_3
-    static bool faseFinalInitialized = false;     // Adicionado para faseFinal
+    static bool interrogatorio_Initialized = false;
+    static bool faseFinalInitialized = false;
 
     while (!WindowShouldClose())
     {
@@ -63,15 +65,14 @@ int main(void)
                 InitIntro(MenuSelectedCharacterName(), temposIntro);
                 state = APP_INTRO;
             }
-            // APENAS PARA DEBUG
-            if (IsKeyPressed(KEY_P))
-            {
+
+            // DEBUG KEYS
+            if (IsKeyPressed(KEY_P)) {
                 UnloadMenu();
                 fase2Initialized = false;
                 state = APP_FASE2;
             }
-            if (IsKeyPressed(KEY_O))
-            {
+            if (IsKeyPressed(KEY_O)) {
                 UnloadMenu();
                 faseFinalInitialized = false;
                 state = APP_FASEFINAL;
@@ -80,12 +81,17 @@ int main(void)
                 UnloadMenu();
                 InitDebug();
                 state = APP_DEBUG;
-            }if (IsKeyPressed(KEY_T)) {
+            }
+            if (IsKeyPressed(KEY_T)) {
                 UnloadMenu();
                 InitInterrogatorio();
                 state = INTERROGATORIO;
             }
-            // FIM DEBUG
+            if (IsKeyPressed(KEY_K)) {
+                UnloadMenu();
+                pcScreenFinalInitialized = false;
+                state = APP_PC_SCREEN_FINAL;
+            }
         }
         else if (state == APP_INTRO)
         {
@@ -111,14 +117,17 @@ int main(void)
                 InitPcScreen();
                 pcScreenInitialized = true;
             }
+
             AppState previousState = state;
             UpdatePcScreen();
             DrawPcScreen();
+
             if (previousState != state)
             {
                 UnloadPcScreen();
                 pcScreenInitialized = false;
             }
+
             if (IsKeyPressed(KEY_P))
             {
                 UnloadPcScreen();
@@ -169,6 +178,24 @@ int main(void)
             UpdateFaseFinal();
             DrawFaseFinal();
         }
+        else if (state == APP_PC_SCREEN_FINAL)
+        {
+            if (!pcScreenFinalInitialized)
+            {
+                InitPcScreenFinal();
+                pcScreenFinalInitialized = true;
+            }
+
+            UpdatePcScreenFinal();
+            DrawPcScreenFinal();
+
+            if (IsKeyPressed(KEY_ESCAPE))
+            {
+                UnloadPcScreenFinal();
+                pcScreenFinalInitialized = false;
+                state = APP_MENU;
+            }
+        }
         else if (state == APP_DEBUG)
         {
             UpdateDebug();
@@ -176,23 +203,18 @@ int main(void)
         }
     }
 
-    // Limpeza
-    if (state == APP_CUTSCENES)
-        UnloadCutscenes();
-    if (state == APP_MENU)
-        UnloadMenu();
-    if (state == APP_INTRO)
-        UnloadIntro();
-    if (state == APP_FASE1)
-        UnloadFase1();
-    if (state == APP_FASE2)
-        UnloadFase2();
-    if (state == APP_FASE1_2)
-        UnloadFase1_2();
-    if (state == INTERROGATORIO)
-        UnloadInterrogatorio();
-    if (state == APP_FASEFINAL)
-        UnloadFaseFinal();
+    // Limpeza final
+    if (state == APP_CUTSCENES) UnloadCutscenes();
+    if (state == APP_MENU) UnloadMenu();
+    if (state == APP_INTRO) UnloadIntro();
+    if (state == APP_FASE1) UnloadFase1();
+    if (state == APP_FASE2) UnloadFase2();
+    if (state == APP_FASE1_2) UnloadFase1_2();
+    if (state == INTERROGATORIO) UnloadInterrogatorio();
+    if (state == APP_FASEFINAL) UnloadFaseFinal();
+    if (state == APP_PC_SCREEN) UnloadPcScreen();
+    if (state == APP_PC_SCREEN_FINAL) UnloadPcScreenFinal();
+    if (state == APP_DEBUG) UnloadDebug();
 
     UnloadMusicStream(music);
     CloseAudioDevice();
