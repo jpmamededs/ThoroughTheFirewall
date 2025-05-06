@@ -22,6 +22,7 @@ typedef enum
     APP_FASEFINAL,
     APP_PC_SCREEN_FINAL,
     INTERROGATORIO,
+    APP_FASEPCSERVER,
     APP_DEBUG
 } AppState;
 

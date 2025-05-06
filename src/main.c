@@ -15,7 +15,7 @@
 #include "fase3.h"
 #include "fase4.h"
 #include "fase5.h"
-#include "debug.h" 
+#include "fasePcServer.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -25,7 +25,6 @@ int main(void)
 {
     srand(time(NULL));
     SelecionarPerguntasAleatorias();
-
     int screenWidth = GetMonitorWidth(0);
     int screenHeight = GetMonitorHeight(0);
 
@@ -42,14 +41,14 @@ int main(void)
     bool pcScreenInitialized = false;
     bool pcScreenFinalInitialized = false;
     bool fase2Initialized = false;
+    static bool fase1_2Initialized = false;
     static bool fase3Initialized = false;
     static bool fase4Initialized = false;
     static bool fase5Initialized = false;
     static bool interrogatorio_Initialized = false;
     static bool faseFinalInitialized = false;
-    static bool fase3Initialized = false;
-    static bool fase4Initialized = false;
-    static bool fase1_2Initialized = false;
+    static bool fasePCServerInitialized = false; // <--- Flag ESPECÍFICA da PCServer
+
     extern bool interrogatorioFinalizado;
 
     while (!WindowShouldClose())
@@ -60,7 +59,6 @@ int main(void)
         {
             UpdateCutscenes();
             DrawCutscenes();
-
             if (CutscenesEnded())
             {
                 UnloadCutscenes();
@@ -73,7 +71,6 @@ int main(void)
         {
             UpdateMenu();
             DrawMenu();
-
             if (MenuStartGame())
             {
                 PauseMusicStream(music);
@@ -82,7 +79,6 @@ int main(void)
                 InitIntro(MenuSelectedCharacterName(), temposIntro);
                 state = APP_INTRO;
             }
-
             // DEBUG KEYS
             if (IsKeyPressed(KEY_P))
             {
@@ -102,6 +98,24 @@ int main(void)
                 fase3Initialized = false;
                 state = APP_FASE3;
             }
+            if (IsKeyPressed(KEY_K))
+            {
+                UnloadMenu();
+                fase4Initialized = false;
+                state = APP_FASE4;
+            }
+            if (IsKeyPressed(KEY_L))
+            {
+                UnloadMenu();
+                fase5Initialized = false;
+                state = APP_FASE5;
+            }
+            if (IsKeyPressed(KEY_J))
+            {
+                UnloadMenu();
+                fasePCServerInitialized = false;
+                state = APP_FASEPCSERVER;
+            }
             if (IsKeyPressed(KEY_M))
             {
                 UnloadMenu();
@@ -115,21 +129,7 @@ int main(void)
                 interrogatorio_Initialized = true;
                 state = INTERROGATORIO;
             }
-            if (IsKeyPressed(KEY_K))
-            {
-                UnloadMenu();
-                pcScreenFinalInitialized = false;
-                state = APP_PC_SCREEN_FINAL;
-            }
-            if (IsKeyPressed(KEY_L)) {
-                UnloadMenu();
-                fase5Initialized = false;
-                state = APP_FASE5;
-            }
             // FIM DEBUG
-            // Remova essas linhas, pois elas fazem o menu sempre ir para fase 4 imediatamente
-            // fase4Initialized = false;
-            // state = APP_FASE4;
         }
         else if (state == APP_INTRO)
         {
@@ -229,7 +229,17 @@ int main(void)
             }
             UpdateFase5();
             DrawFase5();
-        }      
+        }
+        else if (state == APP_FASEPCSERVER)
+        {
+            if (!fasePCServerInitialized)
+            {
+                InitFasePCServer();
+                fasePCServerInitialized = true;
+            }
+            UpdateFasePCServer();
+            DrawFasePCServer();
+        }
         else if (state == APP_FASE2)
         {
             if (!fase2Initialized)
@@ -271,37 +281,38 @@ int main(void)
             UpdateDebug();
             DrawDebug();
         }
-    } // <-- fechamento do while
+    } // fechamento do while
 
     // Limpeza final (ao sair do loop)
     if (state == APP_CUTSCENES)
         UnloadCutscenes();
-    if (state == APP_MENU)
+    else if (state == APP_MENU)
         UnloadMenu();
-    if (state == APP_INTRO)
+    else if (state == APP_INTRO)
         UnloadIntro();
-    if (state == APP_FASE1)
+    else if (state == APP_FASE1)
         UnloadFase1();
-    if (state == APP_FASE2)
+    else if (state == APP_FASE2)
         UnloadFase2();
-    if (state == APP_FASE1_2)
+    else if (state == APP_FASE1_2)
         UnloadFase1_2();
-    if (state == APP_FASE3)
+    else if (state == APP_FASE3)
         UnloadFase3();
-    if (state == APP_FASE4)
-        UnloadFase4(); 
-    if (state == APP_FASE5)
-        UnloadFase5();
+    else if (state == APP_FASE4)
         UnloadFase4();
-    if (state == INTERROGATORIO)
+    else if (state == APP_FASE5)
+        UnloadFase5();
+    else if (state == INTERROGATORIO)
         UnloadInterrogatorio();
-    if (state == APP_FASEFINAL)
+    else if (state == APP_FASEFINAL)
         UnloadFaseFinal();
-    if (state == APP_PC_SCREEN)
+    else if (state == APP_PC_SCREEN)
         UnloadPcScreen();
-    if (state == APP_PC_SCREEN_FINAL)
+    else if (state == APP_PC_SCREEN_FINAL)
         UnloadPcScreenFinal();
-    if (state == APP_DEBUG)
+    else if (state == APP_FASEPCSERVER)
+        UnloadFasePCServer();
+    else if (state == APP_DEBUG)
         UnloadDebug();
 
     UnloadMusicStream(music);
