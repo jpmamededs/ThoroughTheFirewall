@@ -8,8 +8,10 @@
 #include "gemini.h"
 #include "faseFinal.h"
 #include "pc_screen.h"
+#include "pc_screenFinal.h"
 #include "fase2.h"
 #include "generalFunctions.h"
+#include "debug.h"
 #include "fase3.h"
 #include "fase4.h"
 #include "fase5.h"
@@ -26,21 +28,27 @@ int main(void)
 
     int screenWidth = GetMonitorWidth(0);
     int screenHeight = GetMonitorHeight(0);
+
     InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
     SetWindowPosition(0, 0);
+
     InitAudioDevice();
     Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
     PlayMusicStream(music);
+
     InitCutscenes();
 
     static int perguntaAtual = 0;
     bool pcScreenInitialized = false;
+    bool pcScreenFinalInitialized = false;
     bool fase2Initialized = false;
     static bool fase3Initialized = false;
     static bool fase4Initialized = false;
     static bool fase5Initialized = false;
     static bool interrogatorio_Initialized = false;
     static bool faseFinalInitialized = false;
+    static bool fase3Initialized = false;
+    static bool fase4Initialized = false;
     static bool fase1_2Initialized = false;
     extern bool interrogatorioFinalizado;
 
@@ -52,6 +60,7 @@ int main(void)
         {
             UpdateCutscenes();
             DrawCutscenes();
+
             if (CutscenesEnded())
             {
                 UnloadCutscenes();
@@ -64,6 +73,7 @@ int main(void)
         {
             UpdateMenu();
             DrawMenu();
+
             if (MenuStartGame())
             {
                 PauseMusicStream(music);
@@ -72,7 +82,8 @@ int main(void)
                 InitIntro(MenuSelectedCharacterName(), temposIntro);
                 state = APP_INTRO;
             }
-            // APENAS PARA DEBUG
+
+            // DEBUG KEYS
             if (IsKeyPressed(KEY_P))
             {
                 UnloadMenu();
@@ -91,21 +102,24 @@ int main(void)
                 fase3Initialized = false;
                 state = APP_FASE3;
             }
-            if (IsKeyPressed(KEY_M)) {
+            if (IsKeyPressed(KEY_M))
+            {
                 UnloadMenu();
                 InitDebug();
                 state = APP_DEBUG;
             }
-            if (IsKeyPressed(KEY_T)) {
+            if (IsKeyPressed(KEY_T))
+            {
                 UnloadMenu();
                 InitInterrogatorio(perguntaAtual);
                 interrogatorio_Initialized = true;
                 state = INTERROGATORIO;
             }
-            if (IsKeyPressed(KEY_K)) {
+            if (IsKeyPressed(KEY_K))
+            {
                 UnloadMenu();
-                fase4Initialized = false;
-                state = APP_FASE4;
+                pcScreenFinalInitialized = false;
+                state = APP_PC_SCREEN_FINAL;
             }
             if (IsKeyPressed(KEY_L)) {
                 UnloadMenu();
@@ -113,6 +127,9 @@ int main(void)
                 state = APP_FASE5;
             }
             // FIM DEBUG
+            // Remova essas linhas, pois elas fazem o menu sempre ir para fase 4 imediatamente
+            // fase4Initialized = false;
+            // state = APP_FASE4;
         }
         else if (state == APP_INTRO)
         {
@@ -173,8 +190,8 @@ int main(void)
             }
             UpdateInterrogatorio();
             DrawInterrogatorio();
-            
-            if (interrogatorioFinalizado) {
+            if (interrogatorioFinalizado)
+            {
                 UnloadInterrogatorio();
                 interrogatorio_Initialized = false;
                 perguntaAtual++;
@@ -233,14 +250,30 @@ int main(void)
             UpdateFaseFinal();
             DrawFaseFinal();
         }
+        else if (state == APP_PC_SCREEN_FINAL)
+        {
+            if (!pcScreenFinalInitialized)
+            {
+                InitPcScreenFinal();
+                pcScreenFinalInitialized = true;
+            }
+            UpdatePcScreenFinal();
+            DrawPcScreenFinal();
+            if (IsKeyPressed(KEY_ESCAPE))
+            {
+                UnloadPcScreenFinal();
+                pcScreenFinalInitialized = false;
+                state = APP_MENU;
+            }
+        }
         else if (state == APP_DEBUG)
         {
             UpdateDebug();
             DrawDebug();
         }
-    }
+    } // <-- fechamento do while
 
-    // Limpeza
+    // Limpeza final (ao sair do loop)
     if (state == APP_CUTSCENES)
         UnloadCutscenes();
     if (state == APP_MENU)
@@ -259,13 +292,21 @@ int main(void)
         UnloadFase4(); 
     if (state == APP_FASE5)
         UnloadFase5();
+        UnloadFase4();
     if (state == INTERROGATORIO)
         UnloadInterrogatorio();
     if (state == APP_FASEFINAL)
         UnloadFaseFinal();
+    if (state == APP_PC_SCREEN)
+        UnloadPcScreen();
+    if (state == APP_PC_SCREEN_FINAL)
+        UnloadPcScreenFinal();
+    if (state == APP_DEBUG)
+        UnloadDebug();
 
     UnloadMusicStream(music);
     CloseAudioDevice();
     CloseWindow();
+
     return 0;
 }

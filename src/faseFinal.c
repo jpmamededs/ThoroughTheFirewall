@@ -3,6 +3,7 @@
 #include "generalFunctions.h"
 #include <math.h>
 #include <string.h>
+#include "pc_screenFinal.h"
 
 extern AppState state;
 
@@ -27,7 +28,6 @@ static Vector3 usbWorldPos = {-2.0f, 0.5f, 2.0f};
 static TypeWriter tw;
 static bool mensagemInicialFinalizada = false;
 
-// Funções auxiliares
 static Vector3 Vector3SubtractManual(Vector3 a, Vector3 b) {
     return (Vector3){a.x - b.x, a.y - b.y, a.z - b.z};
 }
@@ -66,7 +66,6 @@ void UpdateFaseFinal(void)
 {
     float delta = GetFrameTime();
 
-    // Atualiza typewriter
     if (!mensagemInicialFinalizada) {
         UpdateTypeWriter(&tw, delta, IsKeyPressed(KEY_SPACE));
         if (tw.done) mensagemInicialFinalizada = true;
@@ -106,14 +105,13 @@ void DrawFaseFinal(void)
     BeginMode3D(camera);
 
     DrawModel(modelo3D, (Vector3){0.0f, -0.5f, -2.0f}, 0.05f, WHITE);
-    DrawModelEx(portaModel, (Vector3){28.0f, -1.0f, -12.0f},
-                (Vector3){0, 1, 0}, 45.0f, (Vector3){0.05f, 0.05f, 0.05f}, WHITE);
+    DrawModelEx(portaModel, (Vector3){28.0f, -1.0f, -12.0f}, (Vector3){0, 1, 0}, 45.0f,
+                (Vector3){0.05f, 0.05f, 0.05f}, WHITE);
 
     if (pendriveSelecionado) {
-        // Pendrive colado à tela (HUD-like 3D fixo)
         Vector3 frenteCamera = Vector3SubtractManual(camera.target, camera.position);
-        float mag = sqrtf(frenteCamera.x*frenteCamera.x + frenteCamera.y*frenteCamera.y + frenteCamera.z*frenteCamera.z);
-        if (mag == 0) mag = 1.0f;  // evitar divisão por zero
+        float mag = sqrtf(frenteCamera.x * frenteCamera.x + frenteCamera.y * frenteCamera.y + frenteCamera.z * frenteCamera.z);
+        if (mag == 0) mag = 1.0f;
 
         Vector3 frenteNorm = {
             frenteCamera.x / mag,
@@ -136,7 +134,6 @@ void DrawFaseFinal(void)
 
     EndMode3D();
 
-    // Texto digitando
     if (!mensagemInicialFinalizada) {
         char buffer[256] = {0};
         strncpy(buffer, tw.text, tw.drawnChars);
@@ -155,7 +152,7 @@ void DrawFaseFinal(void)
 
         Vector2 mouse = GetMousePosition();
         if (CheckCollisionPointRec(mouse, btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            state = INTERROGATORIO;
+            state = APP_PC_SCREEN_FINAL;
         }
     }
 
@@ -171,4 +168,4 @@ void UnloadFaseFinal(void)
     for (int i = 0; i < 4; i++) {
         UnloadTexture(usbTextures[i]);
     }
-}
+} 
