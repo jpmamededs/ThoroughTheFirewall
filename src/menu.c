@@ -91,13 +91,13 @@ static void DrawCharacterButtonContent(CharacterNode *node, Rectangle btn, bool 
 
     bool hasTexture = true;
 
-    if (strcmp(node->name, "Mateus") == 0)
+    if (strcmp(node->name, "Dante") == 0)
         texture = (isHovered || isSelected) ? hacker2 : hacker1;
-    else if (strcmp(node->name, "João")   == 0)
+    else if (strcmp(node->name, "Alice")   == 0)
         texture = (isHovered || isSelected) ? menina2 : menina1;
-    else if (strcmp(node->name, "Mamede") == 0)
+    else if (strcmp(node->name, "Levi") == 0)
         texture = (isHovered || isSelected) ? meninoPdavida2 : meninoPdavida1;
-    else if (strcmp(node->name, "Carlos") == 0)
+    else if (strcmp(node->name, "Jade") == 0)
         texture = (isHovered || isSelected) ? deBone2 : deBone1;
     else
         hasTexture = false;
@@ -122,7 +122,7 @@ static void DrawCharacterButtonContent(CharacterNode *node, Rectangle btn, bool 
 void CreateCharacterList(void)
 {
     if (head) return;
-    const char *names[] = {"João", "Mateus", "Carlos", "Mamede"};
+    const char *names[] = {"Alice", "Dante", "Jade", "Levi"};
     CharacterNode *last = NULL;
     for (int i = 0; i < 4; i++)
     {
@@ -183,16 +183,16 @@ void InitMenu(void)
     CharacterNode *node = head;
     do
     {
-        if (strcmp(node->name, "João") == 0) 
-            node->sfx = LoadSound("src/music/menina-menu.wav");
-        else if (strcmp(node->name, "Mateus") == 0)
-            node->sfx = LoadSound("src/music/hacker-menu.wav");
-        else if (strcmp(node->name, "Carlos") == 0)
-            node->sfx = LoadSound("src/music/deBone-menu.wav");
-        else if (strcmp(node->name, "Mamede") == 0)
-            node->sfx = LoadSound("src/music/meninoPdavida-menu.wav");
+        if (strcmp(node->name, "Alice") == 0) 
+            node->sfx = LoadSound("src/music/menina-menu.mp3");
+        else if (strcmp(node->name, "Dante") == 0)
+            node->sfx = LoadSound("src/music/hacker-menu.mp3");
+        else if (strcmp(node->name, "Jade") == 0)
+            node->sfx = LoadSound("src/music/deBone-menu.mp3");
+        else if (strcmp(node->name, "Levi") == 0)
+            node->sfx = LoadSound("src/music/meninoPdavida-menu.mp3");
 
-        SetSoundVolume(node->sfx, 1.0f);
+        SetSoundVolume(node->sfx, 3.5f);
 
         node = node->next;
     } while (node != head);
@@ -385,7 +385,7 @@ void DrawMenu(void)
 
             // Destaque de borda se for o selecionado
             if (node == selectedChar) {
-                DrawRectangleLinesEx(btn, 6, RED);
+                DrawRectangleLinesEx(btn, 6, DARKGREEN);
             }
         }
         DrawText("Escolha seu personagem", screenWidth / 2 - 180, y - 70, 28, RAYWHITE);
@@ -408,8 +408,6 @@ bool MenuStartGame(void)
 
 int MenuSelectedCharacter(void)
 {
-    // Retorna o índice do personagem selecionado (0=João, 1=Mateus, 2=Carlos, 3=Mamede)
-    // Caso selectedChar seja NULL, retorna 0 (João)
     if (!selectedChar) return 0;
     CharacterNode *node = head;
     int index = 0;
@@ -421,15 +419,14 @@ int MenuSelectedCharacter(void)
             break;
     }
     if (index < 0 || index > 3)
-        index = 0; // fallback de segurança: João
+        index = 0;
     return index;
 }
 
 const char *MenuSelectedCharacterName(void)
 {
-    // Retorna o nome do personagem selecionado, padrão "João" se nenhum (ou inválido)
     if (!selectedChar || !selectedChar->name[0])
-        return "João";
+        return "Alice";
     return selectedChar->name;
 }
 

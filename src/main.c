@@ -33,6 +33,7 @@ int main(void)
 
     InitAudioDevice();
     Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
+    SetMusicVolume(music, 0.9f);
     PlayMusicStream(music);
 
     InitCutscenes();
