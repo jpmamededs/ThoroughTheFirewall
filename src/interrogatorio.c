@@ -196,7 +196,8 @@ static void UpdateFalaHank(float dt)
 
     UpdateSyncDialogue(&dialogue);
 
-    if (SyncDialogueDone(&dialogue) && IsKeyPressed(KEY_ENTER)) 
+    // if (SyncDialogueDone(&dialogue) && IsKeyPressed(KEY_ENTER)) --> depois voltar para original
+    if (SyncDialogueDone(&dialogue) || IsKeyPressed(KEY_P))
     {
         PlaySound(ctx.somFalaDetetive2);  // <- aqui é o momento certo!
         ctx.dialogoFinalizado = true;

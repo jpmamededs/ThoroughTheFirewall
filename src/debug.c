@@ -48,10 +48,14 @@ void DrawDebug(void) {
     BeginDrawing();
     ClearBackground(BLACK);
 
+    // Desenha o nome do jogador no topo da tela
+    DrawText("Nome do Jogador:", 50, 10, 20, LIGHTGRAY);
+    DrawText(gPlayerName, 220, 10, 20, GREEN);  // Nome na cor verde
+
     if (!respostaPronta) {
         DrawText("Carregando resposta da IA...", 50, 50, 20, GRAY);
     } else {
-        int y = 50;
+        int y = 80;
         const int lineHeight = 25;
 
         char respostaTemp[1024];

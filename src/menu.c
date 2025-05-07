@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include <stdlib.h>
 #include <string.h>
+#include "generalFunctions.h"
 
 #define FRAME_COUNT 15
 #define MAX_COLUMNS 64
@@ -10,6 +11,7 @@
 #define SPRITE_SCALE 0.6f
 #define SPRITE_BTN_WIDTH (SPRITE_SRC_WIDTH * SPRITE_SCALE)
 #define SPRITE_BTN_HEIGHT (SPRITE_SRC_HEIGHT * SPRITE_SCALE)
+#define MAX_HOVER_BTNS 32
 
 typedef struct CharacterNode
 {
@@ -21,6 +23,7 @@ typedef struct CharacterNode
 typedef enum
 {
     MENU_MAIN,
+    MENU_INPUT_NAME, 
     MENU_SELECT_CHAR,
     MENU_FINISHED
 } MenuScreen;
@@ -56,7 +59,6 @@ static void PlayCharacterSound(CharacterNode *node)
 static void PlayHoverSound(Rectangle btn, bool hoveredNow)
 {
     // Mantém o estado de hover de cada botão individualmente
-    #define MAX_HOVER_BTNS 32
     typedef struct { Rectangle rect; bool wasHover; } HoverState;
 
     static HoverState states[MAX_HOVER_BTNS] = {0};
@@ -91,13 +93,13 @@ static void DrawCharacterButtonContent(CharacterNode *node, Rectangle btn, bool 
 
     bool hasTexture = true;
 
-    if (strcmp(node->name, "Mateus") == 0)
+    if (strcmp(node->name, "Dante") == 0)
         texture = (isHovered || isSelected) ? hacker2 : hacker1;
-    else if (strcmp(node->name, "João")   == 0)
+    else if (strcmp(node->name, "Alice")   == 0)
         texture = (isHovered || isSelected) ? menina2 : menina1;
-    else if (strcmp(node->name, "Mamede") == 0)
+    else if (strcmp(node->name, "Levi") == 0)
         texture = (isHovered || isSelected) ? meninoPdavida2 : meninoPdavida1;
-    else if (strcmp(node->name, "Carlos") == 0)
+    else if (strcmp(node->name, "Jade") == 0)
         texture = (isHovered || isSelected) ? deBone2 : deBone1;
     else
         hasTexture = false;
@@ -122,7 +124,7 @@ static void DrawCharacterButtonContent(CharacterNode *node, Rectangle btn, bool 
 void CreateCharacterList(void)
 {
     if (head) return;
-    const char *names[] = {"João", "Mateus", "Carlos", "Mamede"};
+    const char *names[] = {"Alice", "Dante", "Jade", "Levi"};
     CharacterNode *last = NULL;
     for (int i = 0; i < 4; i++)
     {
@@ -183,16 +185,16 @@ void InitMenu(void)
     CharacterNode *node = head;
     do
     {
-        if (strcmp(node->name, "João") == 0) 
-            node->sfx = LoadSound("src/music/menina-menu.wav");
-        else if (strcmp(node->name, "Mateus") == 0)
-            node->sfx = LoadSound("src/music/hacker-menu.wav");
-        else if (strcmp(node->name, "Carlos") == 0)
-            node->sfx = LoadSound("src/music/deBone-menu.wav");
-        else if (strcmp(node->name, "Mamede") == 0)
-            node->sfx = LoadSound("src/music/meninoPdavida-menu.wav");
+        if (strcmp(node->name, "Alice") == 0) 
+            node->sfx = LoadSound("src/music/menina-menu.mp3");
+        else if (strcmp(node->name, "Dante") == 0)
+            node->sfx = LoadSound("src/music/hacker-menu.mp3");
+        else if (strcmp(node->name, "Jade") == 0)
+            node->sfx = LoadSound("src/music/deBone-menu.mp3");
+        else if (strcmp(node->name, "Levi") == 0)
+            node->sfx = LoadSound("src/music/meninoPdavida-menu.mp3");
 
-        SetSoundVolume(node->sfx, 1.0f);
+        SetSoundVolume(node->sfx, 3.5f);
 
         node = node->next;
     } while (node != head);
@@ -233,7 +235,44 @@ void UpdateMenu(void)
         if ((hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER))
         {
             PlaySound(clickSound);
+            InitPlayerName();
+            currentScreen = MENU_INPUT_NAME;
+        }
+    }
+
+    /* ----------------------   TELA DIGITAR NOME   ----------------------- */
+    else if (currentScreen == MENU_INPUT_NAME)
+    {
+        int key;
+        while ((key = GetCharPressed()) > 0)
+        {
+            size_t len = strlen(gPlayerName);
+            if (len < MAX_PLAYER_NAME - 1)
+            {
+                if (key >= 32 && key <= 125)
+                {
+                    gPlayerName[len] = (char)key;
+                    gPlayerName[len + 1] = '\0';
+                }
+            }
+        }
+
+        if (IsKeyPressed(KEY_BACKSPACE))
+        {
+            size_t len = strlen(gPlayerName);
+            if (len) gPlayerName[len-1] = '\0';
+        }
+
+        if (strlen(gPlayerName) > 0 && IsKeyPressed(KEY_ENTER))
+        {
+            PlaySound(clickSound);
             currentScreen = MENU_SELECT_CHAR;
+        }
+
+        // Exibe feedback se o nome estiver no limite
+        if (strlen(gPlayerName) == MAX_PLAYER_NAME - 1)
+        {
+            DrawText("Limite de caracteres atingido!", 50, 120, 20, RED);
         }
     }
 
@@ -352,6 +391,7 @@ void DrawMenu(void)
         DrawTexturePro(backgroundMatrix, matrixFrames[currentFrame],
                        (Rectangle){i * spriteW, rainY[i], spriteW, spriteH}, (Vector2){0, 0}, 0.0f, green);
     }
+    
     if (currentScreen == MENU_MAIN)
     {
         float imgScale = 0.2f;
@@ -362,6 +402,42 @@ void DrawMenu(void)
         Color btnColor = CheckCollisionPointRec(GetMousePosition(), startBtn) ? DARKGREEN : GREEN;
         DrawRectangleRec(startBtn, btnColor);
         DrawText("Iniciar Jogo", startBtn.x + 50, startBtn.y + 20, 36, WHITE);
+    }
+
+    else if (currentScreen == MENU_INPUT_NAME)
+    {
+        int screenWidth = GetScreenWidth();
+        int screenHeight = GetScreenHeight();
+
+        const char *title = "Digite seu nome:";
+        int titleFontSize = 36;
+        int titleWidth = MeasureText(title, titleFontSize);
+        int titleX = (screenWidth - titleWidth) / 2;
+        int titleY = screenHeight / 2 - 120;
+
+        DrawText(title, titleX, titleY, titleFontSize, RAYWHITE);
+
+        /* Caixa de texto */
+        int boxW = 560, boxH = 70;
+        Rectangle box = {screenWidth/2 - boxW/2, screenHeight/2 - boxH/2, boxW, boxH};
+        DrawRectangleRec(box, DARKGRAY);
+        DrawRectangleLinesEx(box, 4, GREEN);
+
+        /* Texto digitado + cursor piscante */
+        const int fontSize = 36;
+        int textX = box.x + 20;
+        int textY = box.y + (box.height - fontSize) / 2;
+        DrawText(gPlayerName, textX, textY, fontSize, WHITE);
+
+        /* cursor (“_”) piscando */
+        if (((int)(GetTime()*2) & 1) == 0) {
+            int cursorX = textX + MeasureText(gPlayerName, fontSize) + 4;
+            DrawText("_", cursorX, textY, fontSize, WHITE);
+        }
+
+        /* Dica de confirmação */
+        if (strlen(gPlayerName) > 0)
+            DrawText("Pressione ENTER para confirmar", screenWidth/2 - 190, box.y + box.height + 20, 24, LIGHTGRAY);
     }
     else if (currentScreen == MENU_SELECT_CHAR)
     {
@@ -385,7 +461,7 @@ void DrawMenu(void)
 
             // Destaque de borda se for o selecionado
             if (node == selectedChar) {
-                DrawRectangleLinesEx(btn, 6, RED);
+                DrawRectangleLinesEx(btn, 6, DARKGREEN);
             }
         }
         DrawText("Escolha seu personagem", screenWidth / 2 - 180, y - 70, 28, RAYWHITE);
@@ -408,8 +484,6 @@ bool MenuStartGame(void)
 
 int MenuSelectedCharacter(void)
 {
-    // Retorna o índice do personagem selecionado (0=João, 1=Mateus, 2=Carlos, 3=Mamede)
-    // Caso selectedChar seja NULL, retorna 0 (João)
     if (!selectedChar) return 0;
     CharacterNode *node = head;
     int index = 0;
@@ -421,15 +495,14 @@ int MenuSelectedCharacter(void)
             break;
     }
     if (index < 0 || index > 3)
-        index = 0; // fallback de segurança: João
+        index = 0;
     return index;
 }
 
 const char *MenuSelectedCharacterName(void)
 {
-    // Retorna o nome do personagem selecionado, padrão "João" se nenhum (ou inválido)
     if (!selectedChar || !selectedChar->name[0])
-        return "João";
+        return "Alice";
     return selectedChar->name;
 }
 

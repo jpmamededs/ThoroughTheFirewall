@@ -53,6 +53,9 @@ static bool geminiMouseOver = false;
 static float geminiAnimSpeed = 6.0f;
 #define GEMINI_RECT_PADRAO 550
 #define GEMINI_PAD_X 36
+
+static bool fase2_concluida = false; 
+
 void AtualizaTamanhoGeminiBox(void) {
     float geminiScale = 0.1f;
     float geminiH = sprGemini.height * geminiScale;
@@ -97,6 +100,7 @@ void InitFase2(void)
     AtualizaTamanhoGeminiBox();
     fase2_fazendo_fadeout = false;
     fase2_fadeout_time = 0.0f;
+    fase2_concluida = false;
 }
 const char* FalaPorResultado(const char* name, bool acerto) {
     if (!name || !name[0]) name = "Mateus";
@@ -189,6 +193,7 @@ void UpdateFase2(void)
         float btnY = GetScreenHeight()/2 - 150;
         Rectangle btnBounds = {btnX, btnY, btnW, btnH};
         Vector2 mouse = GetMousePosition();
+
         if (!fase2_fazendo_fadeout) {
             if (CheckCollisionPointRec(mouse, btnBounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 fase2_fazendo_fadeout = true;
@@ -199,10 +204,11 @@ void UpdateFase2(void)
                 fase2_fadeout_time = 0.0f;
             }
         }
+
         if (fase2_fazendo_fadeout) {
             fase2_fadeout_time += delta;
             if (fase2_fadeout_time >= FASE2_FADEOUT_DURACAO) {
-                state = APP_PC_SCREEN;
+                fase2_concluida = true;
             }
         }
     }
@@ -367,6 +373,12 @@ void DrawFase2(void)
     }
     EndDrawing();
 }
+
+bool Fase2Concluida(void)
+{
+    return fase2_concluida;
+}
+
 void UnloadFase2(void)
 {
     UnloadTexture(fundo);

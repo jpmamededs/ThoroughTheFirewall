@@ -6,6 +6,7 @@
 
 int notasIA[MAX_PERGUNTAS] = {0};
 char relatoriosIA[MAX_PERGUNTAS][512] = {0};
+char gPlayerName[MAX_PLAYER_NAME] = {0};
 
 // ====== TYPEWRITER ======
 void InitTypeWriter(TypeWriter* tw, const char* text, float speed) {
@@ -179,4 +180,8 @@ float UpdateFade(float dt, float duration, bool fadeIn)
     }
 
     return alpha;
+}
+
+void InitPlayerName(void) {
+    memset(gPlayerName, 0, sizeof(gPlayerName));
 }
