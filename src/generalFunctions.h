@@ -2,7 +2,8 @@
 #define GENERALFUNCTIONS_H
 
 #include <stdbool.h>
-#include "raylib.h" // Necessário para Tipos Color, Rectangle, etc
+#include "raylib.h"
+#include <string.h>
 
 // =====================
 // ENUM DE ESTADOS GERAIS
@@ -27,8 +28,10 @@ typedef enum
 } AppState;
 
 #define MAX_PERGUNTAS 4
+#define MAX_PLAYER_NAME 26
 extern int notasIA[MAX_PERGUNTAS];
 extern char relatoriosIA[MAX_PERGUNTAS][512];
+extern char gPlayerName[MAX_PLAYER_NAME];
 
 // =====================
 // TYPEWRITER EFFECT (TEXTO DIGITANDO)
@@ -89,5 +92,7 @@ void DrawAllDialogueOptions(const DialogueQuestion* dq, int selected,
     int offsetX, int offsetY,
     int baseWidth, int rectHeight, int spacing, int larguraStep,
     int blinkWrong, bool blink, int blinkCorrect);
+
+void InitPlayerName(void);
 
 #endif // GENERALFUNCTIONS_H
