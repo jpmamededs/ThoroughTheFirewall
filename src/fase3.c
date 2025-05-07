@@ -36,6 +36,8 @@ static float geminiAnimSpeed = 6.0f;
 #define GEMINI_RECT_PADRAO 550
 #define GEMINI_PAD_X 36
 
+static bool fase3_concluida = false; 
+
 static void AtualizaTamanhoGeminiBox(void)
 {
     float geminiScale = 0.1f;
@@ -141,6 +143,7 @@ void InitFase3(void)
     mostrar_feedback = false;
     timer_feedback = 0.0f;
     respostaShowTimer = 0.0f;
+    fase3_concluida = false;
 }
 void UpdateFase3(void)
 {
@@ -270,6 +273,7 @@ void UpdateFase3(void)
             if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) {
                 fase3_fadeout = true;
                 fase3_fadeout_time = 0.0f;
+                fase3_concluida = true;
             }
         }
         if (fase3_fadeout) {
@@ -506,6 +510,12 @@ void DrawFase3(void)
     }
     EndDrawing();
 }
+
+bool Fase3Concluida(void)
+{
+    return fase3_concluida;
+}
+
 void UnloadFase3(void)
 {
     UnloadTexture(fundo);

@@ -20,6 +20,7 @@
 #include <time.h>
 
 AppState state = APP_CUTSCENES;
+AppState proxFasePosInterrogatorio = APP_FASE2;
 
 int main(void)
 {
@@ -164,6 +165,7 @@ int main(void)
                 UnloadPcScreen();
                 pcScreenInitialized = false;
             }
+            // DEBUG -- PULA DIRETO PRA PORTA BATENDO
             if (IsKeyPressed(KEY_P))
             {
                 UnloadPcScreen();
@@ -171,6 +173,7 @@ int main(void)
                 fase2Initialized = false;
                 state = APP_FASE1_2;
             }
+            // FIM DO DEBUG
         }
         else if (state == APP_FASE1_2)
         {
@@ -196,9 +199,23 @@ int main(void)
                 UnloadInterrogatorio();
                 interrogatorio_Initialized = false;
                 perguntaAtual++;
-                // retoma o fluxo do jogo
-                InitMenu();
-                state = APP_MENU;
+                state = proxFasePosInterrogatorio;  // Vai para a fase armazenada
+            }
+        }
+        else if (state == APP_FASE2)
+        {
+            if (!fase2Initialized)
+            {
+                InitFase2();
+                fase2Initialized = true;
+            }
+            UpdateFase2();
+            DrawFase2();
+            if (Fase2Concluida()) {
+                UnloadFase2();
+                fase2Initialized = false;
+                proxFasePosInterrogatorio = APP_FASE3;
+                state = INTERROGATORIO;
             }
         }
         else if (state == APP_FASE3)
@@ -210,6 +227,12 @@ int main(void)
             }
             UpdateFase3();
             DrawFase3();
+            if (Fase3Concluida()) {
+                UnloadFase3();
+                fase3Initialized = false;
+                proxFasePosInterrogatorio = APP_FASE4;
+                state = INTERROGATORIO;
+            }
         }
         else if (state == APP_FASE4)
         {
@@ -220,6 +243,12 @@ int main(void)
             }
             UpdateFase4();
             DrawFase4();
+            if (Fase4Concluida()) {
+                UnloadFase4();
+                fase4Initialized = false;
+                proxFasePosInterrogatorio = APP_FASE5;
+                state = INTERROGATORIO;
+            }
         }
         else if (state == APP_FASE5)
         {
@@ -230,6 +259,11 @@ int main(void)
             }
             UpdateFase5();
             DrawFase5();
+            if (Fase5Concluida()) {
+                UnloadFase5();
+                fase5Initialized = false;
+                state = APP_DEBUG; // Mudar depois
+            }
         }
         else if (state == APP_FASEPCSERVER)
         {
@@ -240,16 +274,6 @@ int main(void)
             }
             UpdateFasePCServer();
             DrawFasePCServer();
-        }
-        else if (state == APP_FASE2)
-        {
-            if (!fase2Initialized)
-            {
-                InitFase2();
-                fase2Initialized = true;
-            }
-            UpdateFase2();
-            DrawFase2();
         }
         else if (state == APP_FASEFINAL)
         {

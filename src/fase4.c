@@ -58,6 +58,8 @@ static float geminiAnimSpeed = 6.0f;
 #define GEMINI_RECT_PADRAO 550
 #define GEMINI_PAD_X 36
 
+static bool fase4_concluida = false; 
+
 void AtualizaTamanhoGeminiBox4(void) {
     float geminiScale = 0.1f;
     float geminiH = sprGemini.height * geminiScale;
@@ -113,6 +115,8 @@ void InitFase4(void)
     AtualizaTamanhoGeminiBox4();
     fase4_fazendo_fadeout = false;
     fase4_fadeout_time = 0.0f;
+    fase4_concluida = false;
+
 }
 
 void UpdateFase4(void)
@@ -206,6 +210,7 @@ void UpdateFase4(void)
             if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) {
                 fase4_fazendo_fadeout = true;
                 fase4_fadeout_time = 0.0f;
+                fase4_concluida = true;
             }
         }
         if (fase4_fazendo_fadeout) {
@@ -379,6 +384,11 @@ void DrawFase4(void)
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0,0,0, alpha});
     }
     EndDrawing();
+}
+
+bool Fase4Concluida(void)
+{
+    return fase4_concluida;
 }
 
 void UnloadFase4(void)
