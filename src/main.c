@@ -124,8 +124,8 @@ int main(void)
             if (IsKeyPressed(KEY_M))
             {
                 UnloadMenu();
-                InitDebug();
-                state = APP_DEBUG;
+                //InitDebug();
+                state = APP_PC_SCREEN;
             }
             if (IsKeyPressed(KEY_T))
             {

@@ -72,7 +72,7 @@ void InitPcScreen(void)
     float geminiAnimScale = 1.0f / 13.5f;
     geminiFinalPos = (Vector2){
         GetScreenWidth() - geminiIcon.width * geminiAnimScale - 20,
-        GetScreenHeight() - geminiIcon.height * geminiAnimScale - 20};
+        GetScreenHeight() - geminiIcon.height * geminiAnimScale - 60};
 
     geminiAnimPos = (Vector2){GetScreenWidth(), geminiFinalPos.y};
 
@@ -239,7 +239,7 @@ void DrawPcScreen(void)
         float geminiAnimScale = 1.0f / 13.5f;
 
         DrawTextureEx(terminalIcon, (Vector2){iconMargin, iconMargin}, 0.0f, terminalScale, WHITE);
-        DrawTextureEx(geminiIcon, (Vector2){iconMargin + 1, iconMargin + terminalIcon.height * terminalScale + 8}, 0.0f, geminiSideScale, WHITE);
+        DrawTextureEx(geminiIcon, (Vector2){iconMargin + 1, iconMargin + terminalIcon.height * terminalScale + 40}, 0.0f, geminiSideScale, WHITE);
 
         if (geminiAnimStarted)
             DrawTextureEx(geminiIcon, geminiAnimPos, 0.0f, geminiAnimScale, WHITE);
@@ -247,7 +247,7 @@ void DrawPcScreen(void)
         if (mostrarCaixaDialogo)
         {
             const char *texto = (estadoCaixa == 0)
-                                    ? "Ola, sou a Gemini. Vou te instruir sempre que precisar."
+                                    ? "Nova tarefa detectada!"
                                 : (estadoCaixa == 1)
                                     ? "Para continuar sua tarefa. Clique no icone do terminal."
                                     : "Parabens, voce terminou suas pendencias.";
@@ -257,8 +257,9 @@ void DrawPcScreen(void)
             Vector2 textSize = MeasureTextEx(geminiFont, texto, fontSize, 1);
             int largura = (int)textSize.x + padding * 2;
             int altura = (int)textSize.y + padding * 2;
+
             int x = geminiFinalPos.x - largura - 20;
-            int y = geminiFinalPos.y + 5 - altura / 2;
+            int y = geminiFinalPos.y - ((altura - 110) / 8);
 
             DrawRectangleRounded((Rectangle){x, y, largura, altura}, 0.3f, 16, WHITE);
             DrawTextEx(geminiFont, texto, (Vector2){x + padding, y + padding}, fontSize, 1, DARKGRAY);
