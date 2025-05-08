@@ -12,12 +12,19 @@
 #define TYPING_SFX_PATH  "src/music/aiSpeaking.mp3"
 #define BACKGROUND_MUSIC  "src/music/soundscrate-hacker.mp3"
 #define TYPING_VOLUME      0.65f
+#define PAUSE_BETWEEN_PARTS 0.5f
 
 static char   *introParts[INTRO_PARTS] = {NULL};
-static float   partDurations[INTRO_PARTS] = {0}; // segundos p/ cada página
 static int     currentPart   = 0;
-static float   partTimer     = 0;                // tempo decorrido na página
+
+typedef enum { INTRO_TYPING, INTRO_ERASING } IntroState;
+static IntroState introState = INTRO_TYPING;
+static float  showDurations [INTRO_PARTS] = {0};   // visível
+static float  eraseDurations[INTRO_PARTS] = {0};   // apagando
 static TypeWriter partWriter;
+static TypeEraser  eraser;
+static float partElapsed = 0.0f;
+static bool pauseAfterErase = false;
 
 static Font      font;
 static Texture2D hackerBg;
@@ -77,14 +84,14 @@ static void PauseTypingSfx(void)
     PauseMusicStream(typingMusic); 
 }
 
-void InitIntro(const char *nomePersonagem, const float tempos[])
+void InitIntro(const char *nomePersonagem, const float temposShow[], const float temposErase[])
 {
     const char *templates[INTRO_PARTS] = {
-        "Você, %s, foi selecionado para integrar um seleto grupo composto pelos melhores desenvolvedores da América, convidados a trabalhar na CyberTech.Inc, a empresa mais renomada do mundo em cibersegurança financeira.\n",
-        "No entanto, ao contrário dos demais colegas, seus interesses são muito mais obscuros. Seu verdadeiro objetivo não é proteger a empresa, mas sim infiltrá-la. O seu desafio será roubar todos os seus dados da CyberTech, instalando um malware sofisticado nos sistemas da companhia, agindo exclusivamente em benefício próprio.\n",
-        "Essa missão, porém, está longe de ser simples. Para alcançar seu plano, será preciso superar inúmeros desafios, enfrentar situações de extremo risco e manter sua fachada durante toda sua estadia na CyberTech.Inc\n",
-        "A tensão aumenta ainda mais quando o investigador cibernético mais competente do mercado, Hank Micucci, também é contratado pela empresa, determinado a descobrir qualquer sinal de traição ou vazamento interno.\n",
-        "A cada decisão, seu disfarce pode ruir e será necessário travar uma batalha mental com Hank e os demais desenvolvedores para ganhar tempo para concluir seu objetivo."
+        "Você, %s, é um jovem talento da cibersegurança e foi selecionado para participar de um processo seletivo ultra secreto do FBI. \n",
+        "A missão é simples: provar que você é o melhor entre os quatro candidatos, completando uma série de desafios práticos relacionados à área de cibersegurança.\n",
+        "O responsável pela seleção é o Agente Hank Miccuci, um especialista rigoroso e exigente, que avaliará não só suas habilidades técnicas, mas também sua ética e responsabilidade durante as provas.\n",
+        "Para conquistar a vaga, você precisará ser rápido, preciso e manter a integridade, pois qualquer atitude antiética pode custar sua chance.\n",
+        "Mostre que você é capaz de defender sistemas críticos e se torne o próximo agente cibernético do FBI\n"
     };
 
     // libera strings antigas
@@ -93,8 +100,10 @@ void InitIntro(const char *nomePersonagem, const float tempos[])
     }
 
     // copia tempos recebidos
-    for (int i = 0; i < INTRO_PARTS; i++)
-        partDurations[i] = tempos ? tempos[i] : 5.0f; // default = 5 s
+    for (int i = 0; i < INTRO_PARTS; i++) {
+        showDurations [i] = temposShow  ? temposShow [i] : 6.0f;
+        eraseDurations[i] = temposErase ? temposErase[i] : 3.0f;
+    }
 
     // formata os textos
     for (int i = 0; i < INTRO_PARTS; i++) {
@@ -105,8 +114,12 @@ void InitIntro(const char *nomePersonagem, const float tempos[])
     }
 
     currentPart = 0;
-    partTimer   = 0;
+    partElapsed = 0.0f;
+    introState  = INTRO_TYPING;
+
     InitTypeWriter(&partWriter, introParts[currentPart], INTRO_TEXT_SPEED);
+    float spd0 = (float)partWriter.length / eraseDurations[currentPart];
+    InitTypeEraser(&eraser, introParts[currentPart], spd0);
 
     font        = GetFontDefault();
     hackerBg    = LoadTexture("src/sprites/hacker-bg.png");
@@ -124,42 +137,61 @@ void InitIntro(const char *nomePersonagem, const float tempos[])
 
 void UpdateIntro(void)
 {
+    float dt = GetFrameTime();
     fadeAlpha = UpdateFade(GetFrameTime(), FADE_DURATION, !fadingOut);
 
-    float dt = GetFrameTime();
+    if (pauseAfterErase) {
+        partElapsed += dt;
+        UpdateMusicStream(bgMusic);
+        if (partElapsed >= PAUSE_BETWEEN_PARTS) {
+            pauseAfterErase = false;
+            InitTypeWriter(&partWriter, introParts[currentPart], INTRO_TEXT_SPEED);
+            float spd = (float)partWriter.length / eraseDurations[currentPart];
+            InitTypeEraser(&eraser, introParts[currentPart], spd);
+            introState  = INTRO_TYPING;
+            partElapsed = 0.0f;
+            StartTypingSfx();
+        }
+        return;  // Pausa, então não faz mais nada
+    }
 
     if (IsKeyPressed(KEY_SPACE)) {
-        currentPart = INTRO_PARTS - 1;
+        currentPart  = INTRO_PARTS - 1;
+        introState   = INTRO_ERASING;
         partWriter.done = true;
-        partWriter.drawnChars = partWriter.length;
-        partTimer = partDurations[currentPart];
-        PauseTypingSfx();
-        return;
+        partElapsed  = showDurations[currentPart];   // força ir pro apagar
+        StartTypingSfx();            // garante som no erase
     }
     
     UpdateMusicStream(typingMusic);
     UpdateMusicStream(bgMusic);
-    UpdateTypeWriter(&partWriter, dt, false);
+    partElapsed += dt;
 
-    // se terminou de digitar, pausa som
-    if (partWriter.done) PauseTypingSfx();
+    switch (introState) {
+    case INTRO_TYPING:
+        UpdateTypeWriter(&partWriter, dt, false);
+        
+        if (partElapsed >= showDurations[currentPart]) {
+            introState = INTRO_ERASING;
+            float spd  = (float)partWriter.length / eraseDurations[currentPart];
+            InitTypeEraser(&eraser, introParts[currentPart], spd);
+            StartTypingSfx();                    // liga som p/ apagar
+        } else if (partWriter.done) {
+            PauseTypingSfx();                    // pausa até chegar a hora do erase
+        }
+        break;
 
-    partTimer += dt;
+    case INTRO_ERASING:
+        UpdateTypeEraser(&eraser, dt, false);
+        if (eraser.done) {
+            PauseTypingSfx();                    // acabou som
+            currentPart++;
+            if (currentPart >= INTRO_PARTS) { fadingOut = true; break; }
 
-    // troca de página automaticamente
-    if (partWriter.done &&
-        partTimer >= partDurations[currentPart] &&
-        currentPart < INTRO_PARTS - 1)
-    {
-        currentPart++;
-        partTimer = 0;
-        InitTypeWriter(&partWriter, introParts[currentPart], INTRO_TEXT_SPEED);
-        StartTypingSfx(); 
-    }
-
-    if (!fadingOut && (currentPart == INTRO_PARTS - 1) && partWriter.done && partTimer >= partDurations[currentPart])
-    {
-        fadingOut = true;
+            pauseAfterErase = true;
+            partElapsed = 0.0f;
+        }
+        break;
     }
 }
 
@@ -193,20 +225,25 @@ void DrawIntro(void)
     Rectangle rec = { boxX + margin, boxY + margin,
                       boxW - 2*margin, boxH - 2*margin };
 
-    if (partWriter.drawnChars > 0) {
-        char *tmp = malloc(partWriter.drawnChars + 1);
-        strncpy(tmp, introParts[currentPart], partWriter.drawnChars);
-        tmp[partWriter.drawnChars] = '\0';
-        DrawTextBoxedSafe(font, tmp, rec, fontSize, 2, WHITE);
-        free(tmp);
+    /* texto */
+    if (introState == INTRO_TYPING && partWriter.drawnChars > 0) {
+        DrawTextBoxedSafe(font,
+            TextSubtext(introParts[currentPart],0,partWriter.drawnChars),
+            rec, fontSize, 2, WHITE);
+    } else if (introState == INTRO_ERASING && eraser.drawnChars > 0) {
+        DrawTextBoxedSafe(font,
+            TextSubtext(introParts[currentPart],0,eraser.drawnChars),
+            rec, fontSize, 2, WHITE);
     }
 
-    float progress = partTimer / partDurations[currentPart];
-    if (progress > 1) progress = 1;
-    DrawRectangleRec((Rectangle){
-        boxX, boxY - 8,
-        boxW * progress, 4
-    }, (Color){255,255,255,200});
+    /* barra */
+    //float totalSlot = showDurations[currentPart] + eraseDurations[currentPart];
+    //if (pauseAfterErase) totalSlot += PAUSE_BETWEEN_PARTS;  // inclui pausa
+    
+    //float prog = partElapsed / totalSlot;
+    //if (pauseAfterErase) prog = 1.0f;
+    //if (prog > 1) prog = 1;
+    //DrawRectangleRec((Rectangle){boxX, boxY-8, boxW*prog, 4}, (Color){255,255,255,200});
 
     if (fadeAlpha > 0.0f) {
         DrawRectangle(0, 0, w, h, (Color){0, 0, 0, (unsigned char)(fadeAlpha * 255)});

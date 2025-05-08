@@ -46,10 +46,23 @@ typedef struct {
     bool done;          // Texto terminou?
 } TypeWriter;
 
+typedef struct {
+    const char* text;
+    int length;
+    int drawnChars;
+    float accum;
+    float speed;
+    bool done;
+} TypeEraser;
+
 void InitTypeWriter(TypeWriter* tw, const char* text, float speed);
 void UpdateTypeWriter(TypeWriter* tw, float deltaTime, bool skip);
 void SkipTypeWriter(TypeWriter* tw);
 float UpdateFade(float dt, float duration, bool fadeIn);
+
+void InitTypeEraser(TypeEraser* te, const char* text, float speed);
+void UpdateTypeEraser(TypeEraser* te, float deltaTime, bool skip);
+void SkipTypeEraser(TypeEraser* te);
 
 // =====================
 // DIALOGUE EQUIPE/QUIZ (OPÇÕES)
