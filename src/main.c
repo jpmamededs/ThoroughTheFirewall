@@ -79,8 +79,9 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                float temposIntro[5] = {8.4f, 12.1f, 9.1f, 8.6f, 7.5f};
-                InitIntro(MenuSelectedCharacterName(), temposIntro);
+                float temposIntroShow[5] = {5.0f, 6.0f, 7.0f, 5.5f, 5.5f};
+                float temposIntroEraser[5] = {1.2f, 1.2f, 1.2f, 1.2f, 1.2f};
+                InitIntro(MenuSelectedCharacterName(), temposIntroShow, temposIntroEraser);
                 state = APP_INTRO;
             }
             // DEBUG KEYS

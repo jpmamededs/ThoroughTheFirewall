@@ -42,6 +42,43 @@ void SkipTypeWriter(TypeWriter* tw) {
     tw->done = true;
 }
 
+// ====== TYPERASER ======
+
+void InitTypeEraser(TypeEraser* te, const char* text, float speed) {
+    if (!te) return;
+    te->text = text;
+    te->length = strlen(text);
+    te->drawnChars = te->length;  // Começa com o texto completo
+    te->accum = 0.0f;
+    te->speed = speed;
+    te->done = false;
+}
+
+void UpdateTypeEraser(TypeEraser* te, float deltaTime, bool skip) {
+    if (!te) return;
+    if (te->drawnChars > 0 && !te->done) {
+        te->accum += deltaTime * te->speed;
+        int nextLen = te->length - (int)te->accum;
+        if (nextLen < te->drawnChars) {
+            te->drawnChars = nextLen;
+            if (te->drawnChars < 0)
+                te->drawnChars = 0;
+        }
+        if (skip) {
+            te->drawnChars = 0;
+            te->done = true;
+        }
+    } else {
+        te->done = true;
+    }
+}
+
+void SkipTypeEraser(TypeEraser* te) {
+    if (!te) return;
+    te->drawnChars = 0;
+    te->done = true;
+}
+
 // ===== DIALOGUE DATA ===== 
 void InitDialogueQuestion(DialogueQuestion* dq, const char* pergunta_txt, DialogueOption* opcoes, int num_opcoes, float timer_total) {
     if (!dq) return;
