@@ -44,6 +44,20 @@ static bool typingLoaded = false;
 static float fadeAlphaFase1 = 2.0f;
 static const float FADEIN_DURATION = 2.0f;
 static bool fase1FadeInDone = false;
+static bool showComputerButton = false;
+
+static Sound somPersonagem;            // áudio do personagem
+static TypeWriter personagemWriter;    // typewriter do personagem
+static bool personagemTypeStarted = false;
+static bool personagemAudioTocado   = false;
+static bool unknownDone        = false;   // texto do desconhecido concluído?
+static float timeAfterUnknown  = -1.0f; 
+static float postUnknownTimer = -1.0f;
+
+static Sound somChamadaAcabada;
+static bool somChamadaTocado = false; 
+static float gapTimer = -1.0f;        // cronômetro entre Fala-1 e Fala-2
+static bool  gapSoundPlayed = false;
 
 const char *GetCurrentText(TypeWriter *writer)
 {
@@ -58,16 +72,20 @@ void InitFase1(void)
 
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
-    somRadio = LoadSound("src/music/phone-guy.mp3");
-
+    somRadio = LoadSound("src/music/chamada-desconhecido.mp3");
+    somPersonagem = LoadSound(""); // se quiser voz no cara, é so colocar o caminho aqui
+    somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
+    
     portaModel = LoadModel("src/models/DOOR.obj");
     portaTexture = LoadTexture("src/models/Garage_Metalness.png");
     portaModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = portaTexture;
 
     SetSoundVolume(somFase1, 1.0f);
     SetSoundVolume(somTelefone, 1.0f);
-    SetSoundVolume(somRadio, 1.0f);
+    SetSoundVolume(somRadio, 3.5f);
+    SetSoundVolume(somPersonagem, 1.0f);    
     SetMasterVolume(1.0f);
+    SetSoundVolume(somChamadaAcabada, 2.0f);
 
     // Reset de estado
     somFase1Tocado = false;
@@ -115,14 +133,21 @@ void UpdateFase1(void)
     }
 
     // Inicia fala digitada após delay
-    if (!typeStarted && delayTexto > 0.0f)
+    if (delayTexto > 0.0f)
     {
         delayTexto -= delta;
-        if (delayTexto <= 0.0f)
+        if (delayTexto <= 0.0f && !somRadioTocado)
         {
+            // Inicia o áudio e a caixa juntos após o delay
+            PlaySound(somRadio);
+            somRadioTocado = true;
+
             const char *fala =
-                "Oi, sobre aquela coisa de hacking, eu tô meio ocupado nesse mês, então vou te mostrar aquela Gemini AI.\n"
-                "Ela vai te guiar nessa nossa missão, então você não ficará perdido, ok? Tome cuidado. Tchau.";
+                "Parabéns, você foi selecionado para um processo ultrassecreto. "
+                "Antes de prosseguirmos, preciso confirmar que suas habilidades\n"
+                "estão à altura. Mostre que é capaz de passar pelo firewall que "
+                "acabei de enviar para o seu computador e faça isso sem ser detectado.";
+
             InitTypeWriter(&fase1Writer, fala, 18.5f);
             typeStarted = true;
         }
@@ -132,6 +157,71 @@ void UpdateFase1(void)
         UpdateTypeWriter(&fase1Writer, delta, IsKeyPressed(KEY_SPACE));
     if (typingLoaded)
         UpdateMusicStream(typingMusicF1);
+
+    if (typeStarted && !unknownDone && fase1Writer.drawnChars >= strlen(GetCurrentText(&fase1Writer)))
+    {
+        unknownDone       = true;
+        timeAfterUnknown  = 0.0f;   // inicia a contagem de 2 s
+    }
+
+    /* 3.2 – contar 2 s e disparar fala do personagem */
+    if (unknownDone && !personagemAudioTocado)
+    {
+        if (!somChamadaTocado) {
+            PlaySound(somChamadaAcabada);
+            somChamadaTocado = true;
+        }
+
+        timeAfterUnknown += delta;
+        if (timeAfterUnknown >= 4.0f)
+        {
+            PlaySound(somPersonagem);
+            personagemAudioTocado = true;
+
+            const char *falaP = "O quê? Uma ligação assim do nada...? Isso parece suspeito... Melhor verificar isso direito.";    // texto do personagem
+            InitTypeWriter(&personagemWriter, falaP, 18.5f);
+            personagemTypeStarted = true;
+        }
+    }
+
+    /********* Fim do texto do DESCONHECIDO *********/
+    if (typeStarted && !unknownDone &&
+        fase1Writer.drawnChars >= (int)strlen(GetCurrentText(&fase1Writer)))
+    {
+        unknownDone       = true;
+        postUnknownTimer  = 0.0f;  
+        gapTimer     = 0.0f;          // começa intervalo
+        gapSoundPlayed = false;        // começa contagem
+    }
+
+    /********* Contagem após término *********/
+    if (unknownDone && postUnknownTimer >= 0.0f)
+    {
+        postUnknownTimer += delta;
+
+        /* 1 s depois: apaga o texto anterior e a caixa */
+        if (postUnknownTimer >= 1.0f && typeStarted)
+        {
+            typeStarted = false;
+            unknownDone = false;
+
+            // Limpeza da string do TypeWriter
+            char *mutableText = (char *)fase1Writer.text;
+            mutableText[0] = '\0';
+            fase1Writer.drawnChars = 0;
+        }
+    }
+
+    // Verifica se a fala 2 terminou para habilitar o botão
+    if (personagemTypeStarted && 
+        personagemWriter.drawnChars >= (int)strlen(GetCurrentText(&personagemWriter)))
+    {
+        showComputerButton = true;
+    }
+
+    /* 3.3 – atualizar o TypeWriter do personagem (se ativo) */
+    if (personagemTypeStarted)
+        UpdateTypeWriter(&personagemWriter, delta, IsKeyPressed(KEY_SPACE));
 
     // Toca telefone automaticamente com cooldown
     if (!interromperTelefone)
@@ -202,11 +292,6 @@ void UpdateFase1(void)
             animandoTelefone = true;
             telefoneSubindo  = false;
             animacaoTelefoneY = 0.0f;
-    
-            if (!somRadioTocado) {
-                PlaySound(somRadio);
-                somRadioTocado = true;
-            }
         }
         else
         {
@@ -258,7 +343,43 @@ void UpdateFase1(void)
     }
 }
 
-void DrawFase1(void)
+static void DrawDialogueBox(const char *speaker,
+                            const TypeWriter *writer,
+                            int fontTitle,
+                            int fontBody)
+{
+    int boxX = 60;
+    int marginBottom = 220;
+    int boxY = GetScreenHeight() - marginBottom;
+    int boxWidth = GetScreenWidth() - 120;
+    int boxHeight = 130;
+    int borderRadius = boxHeight / 2;
+
+    /* retrato + balão */
+    int imgW = 1000;
+    int imgH = pergunta_img.height - 130;
+    int imgX = boxX;
+    int imgY = boxY - imgH;
+    DrawTexturePro(pergunta_img, (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
+                   (Rectangle){imgX, imgY, imgW, imgH}, (Vector2){0, 0}, 0.0f, WHITE);
+
+    DrawText(speaker, imgX + 10, imgY + imgH - 30, fontTitle, WHITE);
+
+    DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight,
+                  (Color){20, 20, 20, 220});
+    DrawCircle(boxX + boxWidth - borderRadius, boxY + borderRadius,
+               borderRadius, (Color){20, 20, 20, 220});
+
+    if (writer->drawnChars > 0)
+    {
+        char tmp[writer->drawnChars + 1];
+        strncpy(tmp, GetCurrentText((TypeWriter *)writer), writer->drawnChars);
+        tmp[writer->drawnChars] = '\0';
+        DrawText(tmp, boxX + 20, boxY + 30, fontBody, WHITE);
+    }
+}
+
+void DrawFase1(const char *nome)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -272,36 +393,18 @@ void DrawFase1(void)
     DrawModelEx(portaModel, portaPos, portaRotAxis, portaRotAngle, portaScale, WHITE);
     EndMode3D();
 
-    // Caixa de fala
-    if (interromperTelefone && typeStarted)
+    // Caixa de fala - Condição corrigida
+    bool drawUnknownNow = (interromperTelefone && typeStarted && !personagemTypeStarted);
+
+    if (drawUnknownNow)
     {
-        int boxX = 60;
-        int marginBottom = 220;
-        int boxY = GetScreenHeight() - marginBottom;
-        int boxWidth = GetScreenWidth() - 120;
-        int boxHeight = 130;
+        DrawDialogueBox("???", &fase1Writer, 24, 24);
+    }
 
-        int imgW = 1000;
-        int imgH = pergunta_img.height - 130;
-        int imgX = boxX;
-        int imgY = boxY - imgH;
-
-        DrawTexturePro(pergunta_img, (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
-                       (Rectangle){imgX, imgY, imgW, imgH}, (Vector2){0, 0}, 0.0f, WHITE);
-
-        DrawText("???", imgX + 10, imgY + imgH - 30, 30, WHITE);
-
-        int borderRadius = boxHeight / 2;
-        DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight, (Color){20, 20, 20, 220});
-        DrawCircle(boxX + boxWidth - borderRadius, boxY + borderRadius, borderRadius, (Color){20, 20, 20, 220});
-
-        if (fase1Writer.drawnChars > 0)
-        {
-            char tmp[fase1Writer.drawnChars + 1];
-            strncpy(tmp, GetCurrentText(&fase1Writer), fase1Writer.drawnChars);
-            tmp[fase1Writer.drawnChars] = '\0';
-            DrawText(tmp, boxX + 20, boxY + 30, 28, WHITE);
-        }
+    // Caixa de fala do personagem
+    if (personagemTypeStarted)
+    {
+        DrawDialogueBox(nome, &personagemWriter, 24, 24);
     }
 
     // Telefone animado
@@ -333,13 +436,14 @@ void DrawFase1(void)
     }
 
     // Botão "Usar Computador"
-    if (interromperTelefone && somRadioTocado && !IsSoundPlaying(somRadio))
+    if (showComputerButton)
     {
         Rectangle btnBounds = {
             GetScreenWidth() / 2 - 100,
             GetScreenHeight() / 2 + 100,
             200,
-            50};
+            50
+        };
 
         DrawRectangleRec(btnBounds, GREEN);
         DrawText("Usar Computador", btnBounds.x + 20, btnBounds.y + 15, 20, BLACK);
@@ -372,4 +476,6 @@ void UnloadFase1(void)
     UnloadSound(somFase1);
     UnloadSound(somTelefone);
     UnloadSound(somRadio);
+    UnloadSound(somPersonagem);
+    UnloadSound(somChamadaAcabada);
 }

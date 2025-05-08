@@ -157,7 +157,7 @@ int main(void)
         else if (state == APP_FASE1)
         {
             UpdateFase1();
-            DrawFase1();
+            DrawFase1(MenuSelectedCharacterName());
         }
         else if (state == APP_PC_SCREEN)
         {

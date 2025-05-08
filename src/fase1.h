@@ -8,7 +8,7 @@ void InitFase1(void);
 void UpdateFase1(void);
 
 // Desenha a Fase 1
-void DrawFase1(void);
+void DrawFase1(const char *nome);
 
 // Libera recursos da Fase 1
 void UnloadFase1(void);
