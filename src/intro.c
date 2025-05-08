@@ -12,7 +12,7 @@
 #define TYPING_SFX_PATH  "src/music/aiSpeaking.mp3"
 #define BACKGROUND_MUSIC  "src/music/soundscrate-hacker.mp3"
 #define TYPING_VOLUME      0.65f
-#define PAUSE_BETWEEN_PARTS 1.5f
+#define PAUSE_BETWEEN_PARTS 0.5f
 
 static char   *introParts[INTRO_PARTS] = {NULL};
 static int     currentPart   = 0;
@@ -140,21 +140,9 @@ void UpdateIntro(void)
     float dt = GetFrameTime();
     fadeAlpha = UpdateFade(GetFrameTime(), FADE_DURATION, !fadingOut);
 
-    if (IsKeyPressed(KEY_SPACE)) {
-        currentPart  = INTRO_PARTS - 1;
-        introState   = INTRO_ERASING;
-        partWriter.done = true;
-        partElapsed  = showDurations[currentPart];   // força ir pro apagar
-        StartTypingSfx();            // garante som no erase
-    }
-    
-    UpdateMusicStream(typingMusic);
-    UpdateMusicStream(bgMusic);
-    partElapsed += dt;
-
-    // Se está na pausa, apenas conta o tempo
     if (pauseAfterErase) {
         partElapsed += dt;
+        UpdateMusicStream(bgMusic);
         if (partElapsed >= PAUSE_BETWEEN_PARTS) {
             pauseAfterErase = false;
             InitTypeWriter(&partWriter, introParts[currentPart], INTRO_TEXT_SPEED);
@@ -166,6 +154,18 @@ void UpdateIntro(void)
         }
         return;  // Pausa, então não faz mais nada
     }
+
+    if (IsKeyPressed(KEY_SPACE)) {
+        currentPart  = INTRO_PARTS - 1;
+        introState   = INTRO_ERASING;
+        partWriter.done = true;
+        partElapsed  = showDurations[currentPart];   // força ir pro apagar
+        StartTypingSfx();            // garante som no erase
+    }
+    
+    UpdateMusicStream(typingMusic);
+    UpdateMusicStream(bgMusic);
+    partElapsed += dt;
 
     switch (introState) {
     case INTRO_TYPING:
@@ -190,14 +190,6 @@ void UpdateIntro(void)
 
             pauseAfterErase = true;
             partElapsed = 0.0f;
-
-            /* próximo bloco */
-            InitTypeWriter(&partWriter, introParts[currentPart], INTRO_TEXT_SPEED);
-            float spd = (float)partWriter.length / eraseDurations[currentPart];
-            InitTypeEraser(&eraser, introParts[currentPart], spd);
-            partElapsed = 0.0f;
-            introState  = INTRO_TYPING;
-            StartTypingSfx();
         }
         break;
     }
