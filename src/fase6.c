@@ -6,17 +6,56 @@
 #include <stdio.h>
 #include <math.h>
 
-// SPRITES E TEXTURAS
+// ------- Estados e recursos --------
+typedef enum {
+    TECLA1 = 0, TECLA2, TECLA3,
+    TECLA4, TECLA5, TECLA6,
+    TECLA7, TECLA8, TECLA9
+} TeclasQuadrado;
+typedef enum {
+    LED1 = 0, LED2, LED3, LED4, LED5, LED6, LED7, LED8
+} LedQuadrado;
+static const TeclasQuadrado SEQUENCIA[] = { TECLA1, TECLA5, TECLA4, TECLA5 };
+#define SEQ_TOTAL_PASSOS (sizeof(SEQUENCIA)/sizeof(SEQUENCIA[0]))
 static Texture2D fundo;
 static Texture2D pergunta_img;
 static Texture2D sprJoao, sprJoao2, sprJoao3;
 static Texture2D sprMateus, sprMateus2, sprMateus3;
 static Texture2D sprCarlos, sprCarlos2, sprCarlos3;
 static Texture2D sprMamede, sprMamede2, sprMamede3;
-static Texture2D sprEnterButton;
 static Texture2D sprGemini;
-
-// Gemini box
+static Texture2D sprEnterButton;
+#define BUTTON_SIZE        80
+#define BUTTON_SPACING     18
+#define BUTTON_ROW_SPACING 16
+#define NUM_BUTTON_COLS    3
+#define NUM_BUTTON_ROWS    3
+static int quadX = 400;
+static int quadY = 300;
+static bool quadButtonPressed[NUM_BUTTON_ROWS][NUM_BUTTON_COLS] = {false};
+static bool quadButtonHovered[NUM_BUTTON_ROWS][NUM_BUTTON_COLS] = {false};
+typedef enum { LED_ESTADO_APAGADO, LED_ESTADO_VERDE, LED_ESTADO_VERMELHO } LedEstadoCor;
+static LedEstadoCor ledStatus[8] = { LED_ESTADO_APAGADO };
+static int passoAtual = 0;
+static int tentativasFalhaCount = 0;
+#define MAX_TENTATIVAS 3
+static bool perdeu_a_fase = false;
+static bool venceu_a_fase = false;
+static bool faz_fadeout = false;
+static float fadeout_time = 0.0f;
+#define FADEOUT_DURACAO 0.8f
+static float derrota_show_timer = 0.0f;
+static float vitoria_show_timer = 0.0f;
+static const float RESPOSTA_MOSTRA_SEG = 3.3f;
+static bool podeAvancarDerrotaOuVitoria = false;
+static float blinkVitoriaTimer = 0.0f;
+typedef enum { SPRITE_NORMAL=0, SPRITE_VITORIA=1, SPRITE_DERROTA=2 } SpriteStatus;
+static SpriteStatus spriteStatus = SPRITE_NORMAL;
+static float animTimer = 0.0f;
+static int piscaVermelho = 0;
+static float piscaVermelhoDelay = 0.0f;
+static int piscaVerde = 0;
+static float piscaVerdeDelay = 0.0f;
 static const char* gemini_help_msg_default = "Clique aqui caso precise de ajuda!";
 static const char* gemini_help_msg_ajuda = "Preste atenção nos detalhes. Só avance quando tiver certeza!";
 static float geminiRectW = 550;
@@ -28,7 +67,6 @@ static bool geminiHelpClicked = false;
 static float geminiAnimSpeed = 6.0f;
 #define GEMINI_RECT_PADRAO 550
 #define GEMINI_PAD_X 36
-
 static void AtualizaTamanhoGeminiBox(void)
 {
     float geminiScale = 0.1f;
@@ -43,37 +81,20 @@ static void AtualizaTamanhoGeminiBox(void)
         geminiRectW = (geminiTextWidth + 2 * GEMINI_PAD_X > maxW) ? maxW : geminiTextWidth + 2 * GEMINI_PAD_X;
     geminiRectH = geminiH * 0.75f;
 }
-
-// FALAS DAS FASES
 #define FALA_NORMAL "O que devo fazer agora? Qualquer passo em falso pode comprometer tudo."
-#define FALA_JOAO_ACERTO "Boa... agi na medida certa. Ninguém percebeu."
-#define FALA_CARLOS_ACERTO "Hahaha, ninguém notou nem um movimento suspeito."
-#define FALA_MAMEDE_ACERTO "Controle total. Plano segue perfeito!"
-#define FALA_MATEUS_ACERTO "Pronto, tudo como planejado. Agora é seguir em frente."
-
+#define FALA_VENCEU "Ufa, acertei toda a sequência da senha! Bora pra próxima!"
+#define FALA_PERDEU "Droga... O tempo acabou! Meu disfarce acabou, preciso fugir!"
 static TypeWriter writer;
 static char fala_exibida[512];
-static bool podeAvancar = false;
-static bool fadeout = false;
-static float fadeout_time = 0.0f;
-#define FADEOUT_DURACAO 0.8f
-#define ESPERA_ANTES_FADE 1.5f
-
-// fala por personagem (apenas fala de acerto conforme padrão de transição)
-static const char* FalaPorResultadoFase6(const char* name)
-{
-    if (!name || !name[0]) name = "Mateus";
-    if (strcmp(name, "João") == 0)    return FALA_JOAO_ACERTO;
-    if (strcmp(name, "Carlos") == 0)  return FALA_CARLOS_ACERTO;
-    if (strcmp(name, "Mamede") == 0)  return FALA_MAMEDE_ACERTO;
-    return FALA_MATEUS_ACERTO;
-}
-
+// ==== CRONÔMETRO ====
+#define FASE6_CHRONO_MAX 60.0f
+static float cronometro = 0.0f;
+static float cronometro_elapsed = 0.0f;
 
 void InitFase6(void)
 {
-    fundo = LoadTexture("src/sprites/password3.png"); // Idêntico ao fase3, mude o arquivo se desejar
-    pergunta_img = LoadTexture("src/sprites/pergunta3.png"); // Idêntico, troque por pergunta6 se quiser
+    fundo = LoadTexture("src/sprites/senhas1.png");
+    pergunta_img = LoadTexture("src/sprites/pergunta3.png");
     sprJoao    = LoadTexture("src/sprites/joaoSprite.png");
     sprJoao2   = LoadTexture("src/sprites/joao2.png");
     sprJoao3   = LoadTexture("src/sprites/joao3.png");
@@ -88,23 +109,60 @@ void InitFase6(void)
     sprMamede3 = LoadTexture("src/sprites/mamede3.png");
     sprEnterButton  = LoadTexture("src/sprites/enter_button.png");
     sprGemini  = LoadTexture("src/sprites/os/gemini.png");
-
     strcpy(fala_exibida, FALA_NORMAL);
     InitTypeWriter(&writer, fala_exibida, 18.5f);
-    podeAvancar = false;
-    fadeout = false;
-    fadeout_time = 0.0f;
     geminiHelpClicked = false;
     geminiRectAnim = 0.0f;
     geminiMouseOver = false;
     AtualizaTamanhoGeminiBox();
+    quadX = 635;
+    quadY = 367;
+    for (int row = 0; row < NUM_BUTTON_ROWS; row++)
+        for (int col = 0; col < NUM_BUTTON_COLS; col++) {
+            quadButtonPressed[row][col] = false;
+            quadButtonHovered[row][col] = false;
+        }
+    for (int i = 0; i < 8; i++) ledStatus[i] = LED_ESTADO_APAGADO;
+    passoAtual = 0;
+    animTimer = 0.0f;
+    piscaVermelho = 0;
+    piscaVermelhoDelay = 0.0f;
+    piscaVerde = 0;
+    piscaVerdeDelay = 0.0f;
+    tentativasFalhaCount = 0;
+    perdeu_a_fase = false;
+    venceu_a_fase = false;
+    faz_fadeout = false;
+    fadeout_time = 0.0f;
+    derrota_show_timer = 0.0f;
+    vitoria_show_timer = 0.0f;
+    podeAvancarDerrotaOuVitoria = false;
+    blinkVitoriaTimer = 0.0f;
+    spriteStatus = SPRITE_NORMAL;
+    cronometro = FASE6_CHRONO_MAX;
+    cronometro_elapsed = 0.0f;
 }
-
 void UpdateFase6(void)
 {
     float delta = GetFrameTime();
-
-    // Gemini logic igual ao fase3
+    if (faz_fadeout) {
+        fadeout_time += delta;
+        return;
+    }
+    // Cronômetro ativo enquanto jogando (só para se perdeu/venceu/fadeando)
+    if (!perdeu_a_fase && !venceu_a_fase) {
+        cronometro_elapsed += delta;
+        cronometro = FASE6_CHRONO_MAX - cronometro_elapsed;
+        if (cronometro <= 0.0f) {
+            perdeu_a_fase = true;
+            cronometro = 0.0f;
+            strcpy(fala_exibida, FALA_PERDEU);
+            InitTypeWriter(&writer, fala_exibida, 18.5f);
+            spriteStatus = SPRITE_DERROTA;
+            derrota_show_timer = 0.0f;
+            podeAvancarDerrotaOuVitoria = false;
+        }
+    }
     float geminiX = 49, geminiY = 67, geminiScale = 0.1f;
     float geminiW = sprGemini.width * geminiScale;
     float geminiH = sprGemini.height * geminiScale;
@@ -121,7 +179,6 @@ void UpdateFase6(void)
     geminiRectAnim += dir * geminiAnimSpeed * delta;
     if (geminiRectAnim > 1.0f) geminiRectAnim = 1.0f;
     if (geminiRectAnim < 0.0f) geminiRectAnim = 0.0f;
-
     if ((mouseOverLogo || mouseOverRect) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         if (!geminiHelpClicked) {
             geminiHelpClicked = true;
@@ -129,52 +186,153 @@ void UpdateFase6(void)
             geminiRectAnim = 1.0f;
         }
     }
-
     UpdateTypeWriter(&writer, delta, IsKeyPressed(KEY_SPACE));
-
-    // Após o TypeWriter acabar, e uma breve pausa, já permite avançar
-    static float timerFalaFinal = 0.0f;
-    if (writer.done) timerFalaFinal += delta;
-    else timerFalaFinal = 0.0f;
-    podeAvancar = (writer.done && timerFalaFinal > ESPERA_ANTES_FADE);
-
-    // Avançar por ENTER ou clique (igual ao botão de continuar no fase3, mas aqui ENTER/click global)
-    if (podeAvancar && !fadeout) {
-        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            fadeout = true;
+    // ----------- DINÂMICA DE FIM: sumir elementos, esperar tempo para liberar avançar -----------
+    if (perdeu_a_fase) {
+        derrota_show_timer += delta;
+        if (derrota_show_timer > RESPOSTA_MOSTRA_SEG)
+            podeAvancarDerrotaOuVitoria = true;
+        if (podeAvancarDerrotaOuVitoria &&
+            (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) {
+            faz_fadeout = true;
             fadeout_time = 0.0f;
         }
+        return;
     }
-    if (fadeout) {
-        fadeout_time += delta;
+    if (venceu_a_fase) {
+        vitoria_show_timer += delta;
+        if (vitoria_show_timer > RESPOSTA_MOSTRA_SEG)
+            podeAvancarDerrotaOuVitoria = true;
+        if (podeAvancarDerrotaOuVitoria &&
+            (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) {
+            faz_fadeout = true;
+            fadeout_time = 0.0f;
+        }
+        return;
+    }
+    int velocidade = 5;
+    if (IsKeyDown(KEY_RIGHT)) quadX += velocidade;
+    if (IsKeyDown(KEY_LEFT))  quadX -= velocidade;
+    if (IsKeyDown(KEY_DOWN))  quadY += velocidade;
+    if (IsKeyDown(KEY_UP))    quadY -= velocidade;
+    if (quadX < 0) quadX = 0;
+    if (quadY < 0) quadY = 0;
+    if (quadX + BUTTON_SIZE > GetScreenWidth()) quadX = GetScreenWidth() - BUTTON_SIZE;
+    if (quadY + BUTTON_SIZE > GetScreenHeight()) quadY = GetScreenHeight() - BUTTON_SIZE;
+    if (piscaVerde) {
+        piscaVerdeDelay -= delta;
+        if (piscaVerdeDelay <= 0) {
+            piscaVerde = 0;
+            if (passoAtual > 0 && (passoAtual-1) < 4) {
+                ledStatus[passoAtual-1] = LED_ESTADO_VERDE;
+                ledStatus[passoAtual-1 + 4] = LED_ESTADO_VERDE;
+            }
+            piscaVerdeDelay = 0;
+        }
+        return;
+    }
+    if (piscaVermelho) {
+        piscaVermelhoDelay -= delta;
+        if (piscaVermelhoDelay <= 0) {
+            piscaVermelho--;
+            int ledAlvo  = passoAtual;
+            int ledAlvo2 = passoAtual + 4;
+            if (piscaVermelho > 0) {
+                piscaVermelhoDelay = 0.18f;
+                LedEstadoCor nextCor = (ledStatus[ledAlvo] == LED_ESTADO_VERMELHO) ? LED_ESTADO_APAGADO : LED_ESTADO_VERMELHO;
+                ledStatus[ledAlvo] = nextCor;
+                ledStatus[ledAlvo2] = nextCor;
+            } else {
+                ledStatus[ledAlvo] = LED_ESTADO_APAGADO;
+                ledStatus[ledAlvo2] = LED_ESTADO_APAGADO;
+                piscaVermelhoDelay = 0;
+            }
+        }
+        return;
+    }
+    Vector2 mouse = GetMousePosition();
+    for (int row = 0; row < NUM_BUTTON_ROWS; row++) {
+        float btnY = quadY + row * (BUTTON_SIZE + BUTTON_ROW_SPACING);
+        for (int col = 0; col < NUM_BUTTON_COLS; col++) {
+            float btnX = quadX + col * (BUTTON_SIZE + BUTTON_SPACING);
+            Rectangle btnRec = { btnX, btnY, BUTTON_SIZE, BUTTON_SIZE };
+            bool mouseOver = CheckCollisionPointRec(mouse, btnRec);
+            quadButtonHovered[row][col] = mouseOver;
+            if (mouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                TeclasQuadrado teclaApertada = (TeclasQuadrado)(row * NUM_BUTTON_COLS + col);
+                const char* name = MenuSelectedCharacterName();
+                char nova_fala[256];
+                snprintf(nova_fala, sizeof(nova_fala), "%s: Cliquei na tecla %d.",
+                        (name && name[0]) ? name : "???",
+                        teclaApertada + 1);
+                strcpy(fala_exibida, nova_fala);
+                InitTypeWriter(&writer, fala_exibida, 18.5f);
+                int ledAlvo = passoAtual;
+                int ledAlvo2 = passoAtual + 4;
+                if (passoAtual < SEQ_TOTAL_PASSOS && ledAlvo < 4) {
+                    if (teclaApertada == SEQUENCIA[passoAtual]) {
+                        ledStatus[ledAlvo] = LED_ESTADO_VERDE;
+                        ledStatus[ledAlvo2] = LED_ESTADO_VERDE;
+                        piscaVerde = 1;
+                        piscaVerdeDelay = 0.22f;
+                        passoAtual++;
+                        if (passoAtual == SEQ_TOTAL_PASSOS) {
+                            venceu_a_fase = true;
+                            strcpy(fala_exibida, FALA_VENCEU);
+                            InitTypeWriter(&writer, fala_exibida, 18.5f);
+                            spriteStatus = SPRITE_VITORIA;
+                            vitoria_show_timer = 0.0f;
+                            blinkVitoriaTimer = 0.0f;
+                            podeAvancarDerrotaOuVitoria = false;
+                        }
+                    } else {
+                        piscaVermelho = 6;
+                        piscaVermelhoDelay = 0.18f;
+                        ledStatus[ledAlvo] = LED_ESTADO_VERMELHO;
+                        ledStatus[ledAlvo2] = LED_ESTADO_VERMELHO;
+                        tentativasFalhaCount++;
+                        if (tentativasFalhaCount >= MAX_TENTATIVAS) {
+                            perdeu_a_fase = true;
+                            strcpy(fala_exibida, FALA_PERDEU);
+                            InitTypeWriter(&writer, fala_exibida, 18.5f);
+                            spriteStatus = SPRITE_DERROTA;
+                            derrota_show_timer = 0.0f;
+                            podeAvancarDerrotaOuVitoria = false;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
-
+static void DrawStylizedLedColor(int cx, int cy, int raio, LedEstadoCor estado)
+{
+    Color apagado = (Color){50,50,50,255};
+    Color cor_preench = apagado;
+    if (estado == LED_ESTADO_VERDE) cor_preench = (Color){41,221,61,255};
+    else if (estado == LED_ESTADO_VERMELHO) cor_preench = (Color){220,40,45,255};
+    else if (estado == LED_ESTADO_APAGADO)  cor_preench = apagado;
+    DrawCircle(cx + raio/4, cy + raio/2, raio * 1.08f, (Color){24,38,23,65});
+    DrawCircle(cx, cy, raio, (Color){10,20,11,255});
+    DrawCircle(cx, cy, raio*0.93f, cor_preench);
+    for(float frac = 0.90; frac>0.22f; frac -= 0.10f)
+    {
+        int r = cor_preench.r + (int)(frac*14);
+        int g = cor_preench.g + (int)(frac*11);
+        int b = cor_preench.b + (int)(frac*9);
+        if(r>255) r=255;
+        if(g>255) g=255;
+        if(b>255) b=255;
+        DrawCircle(cx, cy, raio*frac, (Color){r, g, b, 180});
+    }
+    DrawEllipse(cx-raio/6, cy-raio/3, raio*0.48f, raio*0.24f, (Color){226,236,236,120});
+    DrawCircle(cx-raio/3, cy-raio/2, raio*0.11f, (Color){255,255,255,190});
+    DrawCircleLines(cx, cy, raio*0.93f, (Color){44,85,59,140});
+}
 void DrawFase6(void)
 {
     BeginDrawing();
     ClearBackground(RAYWHITE);
-
-    // Novo método para desenhar o fundo: cobre toda a tela SEM faixas!
-    {
-        float screenRatio = (float)GetScreenWidth() / (float)GetScreenHeight();
-        float imgRatio = (float)fundo.width / (float)fundo.height;
-
-        float scale = (screenRatio > imgRatio)
-            ? (float)GetScreenWidth() / fundo.width
-            : (float)GetScreenHeight() / fundo.height;
-
-        float drawW = fundo.width * scale;
-        float drawH = fundo.height * scale;
-        float drawX = (GetScreenWidth() - drawW) / 2;
-        float drawY = (GetScreenHeight() - drawH) / 2;
-
-        DrawTextureEx(fundo, (Vector2){drawX, drawY}, 0.0f, scale, WHITE);
-    }
-
-    // Resto do seu código, INALTERADO...
-
-    // Alinhamento da zona central/padrão conforme fase3
     int boxX = 60;
     int marginBottom = 220;
     int boxY = GetScreenHeight() - marginBottom;
@@ -184,15 +342,23 @@ void DrawFase6(void)
     int imgH = pergunta_img.height - 130;
     int imgX = boxX;
     int imgY = boxY - imgH;
-
-    // Pergunta visual mesma posição que fase3
+    float delta = GetFrameTime();
+    {
+        float screenRatio = (float)GetScreenWidth() / (float)GetScreenHeight();
+        float imgRatio = (float)fundo.width / (float)fundo.height;
+        float scale = (screenRatio > imgRatio)
+            ? (float)GetScreenWidth() / fundo.width
+            : (float)GetScreenHeight() / fundo.height;
+        float drawW = fundo.width * scale;
+        float drawH = fundo.height * scale;
+        float drawX = (GetScreenWidth() - drawW) / 2;
+        float drawY = (GetScreenHeight() - drawH) / 2;
+        DrawTextureEx(fundo, (Vector2){drawX, drawY}, 0.0f, scale, WHITE);
+    }
+    const char *name = MenuSelectedCharacterName();
     DrawTexturePro(pergunta_img, (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
                    (Rectangle){imgX, imgY, imgW, imgH}, (Vector2){0, 0}, 0.0f, WHITE);
-
-    const char *name = MenuSelectedCharacterName();
     DrawText((name && name[0]) ? name : "???", imgX + 10, imgY + imgH - 30, 30, WHITE);
-
-    // Caixa de fala idêntica
     int borderRadius = boxHeight / 2;
     DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight, (Color){20, 20, 20, 220});
     DrawCircle(boxX + boxWidth - borderRadius, boxY + borderRadius, borderRadius, (Color){20, 20, 20, 220});
@@ -202,35 +368,51 @@ void DrawFase6(void)
         txtbuf[writer.drawnChars] = '\0';
         DrawText(txtbuf, boxX + 20, boxY + 30, 28, WHITE);
     }
-
-    // Personagem igual ao fase3
-    Texture2D spr = sprJoao;
-    float scale = 0.6f;
-    int carlosExtraOffset = 0, mamedeExtraOffset = 0;
-    if(strcmp(name, "Mateus") == 0) {
-        spr = sprMateus;   scale = 1.3f;
-    } else if(strcmp(name, "João") == 0) {
-        spr = sprJoao;     scale = 0.6f;
-    } else if(strcmp(name, "Carlos") == 0) {
-        spr = sprCarlos;   scale = 0.56f; carlosExtraOffset = 0;
-    } else if(strcmp(name, "Mamede") == 0) {
-        spr = sprMamede;   scale = 1.0f;
-    } else if(name[0]=='\0') {
-        spr = sprJoao;     scale = 0.6f;
-    }
-    float tw2 = spr.width * scale;
-    float th  = spr.height * scale;
-    Vector2 pos;
-    pos.x = imgX - 330 + (imgW - tw2)/2.0f;
-    pos.y = imgY - th + 210;
-    if (strcmp(name, "Carlos") == 0)
-        pos.x += 100 + carlosExtraOffset;
-    else if (strcmp(name, "Mamede") == 0)
-        pos.x += mamedeExtraOffset;
-    DrawTextureEx(spr, pos, 0, scale, WHITE);
-
-    // Gemini help, igual ao fase3
+    bool telaFinal = false;
+    float timerFinal = 0;
+    if (perdeu_a_fase)  { telaFinal = true; timerFinal = derrota_show_timer; }
+    if (venceu_a_fase)  { telaFinal = true; timerFinal = vitoria_show_timer; }
     {
+        Texture2D spr = sprJoao;
+        float scale = 0.6f;
+        int carlosExtraOffset = 0, mamedeExtraOffset = 0;
+        if(strcmp(name, "Dante") == 0) {
+            if (spriteStatus == SPRITE_VITORIA)  { spr = sprMateus2; scale = 0.8f; }
+            else if (spriteStatus == SPRITE_DERROTA) { spr = sprMateus3; scale = 0.8f; }
+            else { spr = sprMateus; scale = 1.3f; }
+        } else if(strcmp(name, "Alice") == 0) {
+            if (spriteStatus == SPRITE_VITORIA)  { spr = sprJoao2; scale = 0.95f; }
+            else if (spriteStatus == SPRITE_DERROTA) { spr = sprJoao3; scale = 0.95f; }
+            else { spr = sprJoao; scale = 0.6f;}
+        } else if(strcmp(name, "Jade") == 0) {
+            if (spriteStatus == SPRITE_VITORIA)  { spr = sprCarlos2; scale = 1.02f; carlosExtraOffset = -70;}
+            else if (spriteStatus == SPRITE_DERROTA) { spr = sprCarlos3; scale = 1.0f;   carlosExtraOffset = -44;}
+            else { spr = sprCarlos; scale = 0.56f; carlosExtraOffset = 0;}
+        } else if(strcmp(name, "Carlos") == 0) {
+            if (spriteStatus == SPRITE_VITORIA)  { spr = sprCarlos2; scale = 1.02f; carlosExtraOffset = -70;}
+            else if (spriteStatus == SPRITE_DERROTA) { spr = sprCarlos3; scale = 1.0f;   carlosExtraOffset = -44;}
+            else { spr = sprCarlos; scale = 0.56f; carlosExtraOffset = 0;}
+        } else if(strcmp(name, "Levi") == 0) {
+            if (spriteStatus == SPRITE_VITORIA)  { spr = sprMamede2; scale = 1.0f; }
+            else if (spriteStatus == SPRITE_DERROTA) { spr = sprMamede3; scale = 1.0f; }
+            else { spr = sprMamede; scale = 1.0f;}
+        } else if(name[0]=='\0') {
+            spr = sprJoao; scale = 0.6f;
+        }
+        float tw2 = spr.width * scale;
+        float th  = spr.height * scale;
+        Vector2 pos;
+        pos.x = imgX - 330 + (imgW - tw2)/2.0f;
+        pos.y = imgY - th + 210;
+        if (strcmp(name, "Jade") == 0) pos.x += 24;
+        if (strcmp(name, "Carlos") == 0) pos.x += 30;
+        if ((strcmp(name, "Carlos") == 0) || (strcmp(name, "Jade") == 0)) pos.x += 100 + carlosExtraOffset;
+        else if (strcmp(name, "Mamede") == 0) pos.x += mamedeExtraOffset;
+        DrawTextureEx(spr, pos, 0, scale, WHITE);
+    }
+    if (!telaFinal || timerFinal <= RESPOSTA_MOSTRA_SEG) {
+        if (!perdeu_a_fase && !venceu_a_fase && !faz_fadeout)
+            DrawChronometer(cronometro, FASE6_CHRONO_MAX, GetScreenWidth()-80, 80, 55);
         float geminiX = 49, geminiY = 67, geminiScale = 0.1f;
         float geminiW = sprGemini.width * geminiScale;
         float geminiH = sprGemini.height * geminiScale;
@@ -251,23 +433,89 @@ void DrawFase6(void)
             }
         }
         DrawTextureEx(sprGemini, (Vector2){geminiX, geminiY}, 0.0f, geminiScale, logoCol);
+        Color borderColorNormal = (Color){4, 77, 18, 255};
+        Color borderColorHover  = (Color){18, 130, 49, 255};
+        for (int row = 0; row < NUM_BUTTON_ROWS; row++) {
+            float btnY = quadY + row * (BUTTON_SIZE + BUTTON_ROW_SPACING);
+            for (int col = 0; col < NUM_BUTTON_COLS; col++) {
+                float btnX = quadX + col * (BUTTON_SIZE + BUTTON_SPACING);
+                Rectangle btnRec = { btnX, btnY, BUTTON_SIZE, BUTTON_SIZE };
+                Color cor = quadButtonHovered[row][col] ? borderColorHover : borderColorNormal;
+                DrawRectangleRoundedLines(btnRec, 0.23f, 16, cor);
+            }
+        }
+        int led_centro_x = GetScreenWidth()/2 - 280;
+        int led_centro_y = GetScreenHeight()/2 - 210;
+        int led_raio = 14;
+        int led_espacamento = 40;
+        for (int i = 0; i < 4; i++) {
+            int x = led_centro_x + i * (2*led_raio + led_espacamento);
+            DrawStylizedLedColor(x, led_centro_y, led_raio, ledStatus[i]);
+        }
+        int ultimo_led1_x = led_centro_x + (3) * (2*led_raio + led_espacamento);
+        int bloco2_inicio_x = ultimo_led1_x + 123 + 2*led_raio;
+        for (int i = 0; i < 4; i++) {
+            int x = bloco2_inicio_x + i * (2*led_raio + led_espacamento);
+            DrawStylizedLedColor(x, led_centro_y, led_raio, ledStatus[i+4]);
+        }
     }
-
-    // Botão de continuar (ENTER) após typewriter acabar: visual animado
-    if (podeAvancar) {
-        float pulse = 0.07f * sinf(GetTime() * 5.0f);
-        float btnScaleBase = 0.95f;
-        float btnScale = btnScaleBase + pulse;
-        float btnW = sprEnterButton.width * btnScale;
-        float btnH = sprEnterButton.height * btnScale;
-        float btnX = GetScreenWidth()/2 - btnW/2 + 120;
-        float btnY = GetScreenHeight()/2 - 150;
-        Color sombra = (Color){0, 0, 0, 90};
-        DrawRectangleRounded((Rectangle){btnX + 8, btnY + 8, btnW, btnH}, 0.25f, 10, sombra);
-        Color brilho = (pulse > 0.04f) ? (Color){255,255,255,75} : WHITE;
-        DrawTextureEx(sprEnterButton, (Vector2){btnX, btnY}, 0.0f, btnScale, brilho);
+    if (venceu_a_fase && !faz_fadeout) {
+        blinkVitoriaTimer += delta;
+        int w = GetScreenWidth(), h = GetScreenHeight();
+        int layers = 5, layerThick = 20;
+        int pisca = ((int)(blinkVitoriaTimer * 4.1f))%2;
+        for (int i = 0; i < layers; i++) {
+            int thick = layerThick + i * layerThick;
+            int alpha = pisca ? (38 - i*5) : (25 - i*5);
+            if (alpha < 6) alpha = 6;
+            Color blurGreen = (Color){40, 195, 70, alpha};
+            DrawRectangle(0, 0, w, thick, blurGreen);
+            DrawRectangle(0, h-thick, w, thick, blurGreen);
+            DrawRectangle(0, 0, thick, h, blurGreen);
+            DrawRectangle(w-thick, 0, thick, h, blurGreen);
+        }
+        if (vitoria_show_timer > RESPOSTA_MOSTRA_SEG) {
+            float pulse = 0.07f * sinf(GetTime() * 3.0f);
+            float btnScaleBase = 0.85f;
+            float btnScale = btnScaleBase + pulse;
+            float btnW = sprEnterButton.width * btnScale;
+            float btnH = sprEnterButton.height * btnScale;
+            float btnX = GetScreenWidth()/2 - btnW/2 + 630;
+            float btnY = GetScreenHeight()/2 - 90;
+            Color sombra = (Color){0, 0, 0, 90};
+            DrawRectangleRounded((Rectangle){btnX + 8, btnY + 8, btnW, btnH}, 0.25f, 10, sombra);
+            Color brilho = (pulse > 0.04f) ? (Color){255,255,255,75} : WHITE;
+            DrawTextureEx(sprEnterButton, (Vector2){btnX, btnY}, 0.0f, btnScale, brilho);
+        }
     }
-    if(fadeout) {
+    if(perdeu_a_fase && !faz_fadeout){
+        int w = GetScreenWidth(), h = GetScreenHeight();
+        int layers = 5, layerThick = 20;
+        for (int i = 0; i < layers; i++) {
+            int thick = layerThick + i * layerThick;
+            int alpha = 38 - i*5;
+            if (alpha < 6) alpha = 6;
+            Color blurRed = (Color){255, 32, 32, alpha};
+            DrawRectangle(0, 0, w, thick, blurRed);
+            DrawRectangle(0, h-thick, w, thick, blurRed);
+            DrawRectangle(0, 0, thick, h, blurRed);
+            DrawRectangle(w-thick, 0, thick, h, blurRed);
+        }
+        if (derrota_show_timer > RESPOSTA_MOSTRA_SEG) {
+            float pulse = 0.07f * sinf(GetTime() * 3.0f);
+            float btnScaleBase = 0.85f;
+            float btnScale = btnScaleBase + pulse;
+            float btnW = sprEnterButton.width * btnScale;
+            float btnH = sprEnterButton.height * btnScale;
+            float btnX = GetScreenWidth()/2 - btnW/2 + 630;
+            float btnY = GetScreenHeight()/2 - 90;
+            Color sombra = (Color){0, 0, 0, 90};
+            DrawRectangleRounded((Rectangle){btnX + 8, btnY + 8, btnW, btnH}, 0.25f, 10, sombra);
+            Color brilho = (pulse > 0.04f) ? (Color){255,255,255,75} : WHITE;
+            DrawTextureEx(sprEnterButton, (Vector2){btnX, btnY}, 0.0f, btnScale, brilho);
+        }
+    }
+    if (faz_fadeout) {
         float perc = fadeout_time / FADEOUT_DURACAO;
         if (perc > 1.0f) perc = 1.0f;
         int alpha = (int)(255 * perc);
