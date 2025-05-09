@@ -334,6 +334,11 @@ int main(void)
             }
             UpdateFasePCServer();
             DrawFasePCServer();
+            if (FasePcServerConcluida()) {
+                UnloadFasePCServer();
+                fasePCServerInitialized = false;
+                state = APP_PC_SCREEN_FINAL;
+            }
         }
         else if (state == APP_FASEFINAL)
         {

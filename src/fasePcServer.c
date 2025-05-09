@@ -2,16 +2,6 @@
 #include "raylib.h"
 #include <math.h>
 
-// ————————————————
-// Funções utilitárias 3D
-// ————————————————
-static Vector3 AddVector3(Vector3 a, Vector3 b) {
-    return (Vector3){ a.x + b.x, a.y + b.y, a.z + b.z };
-}
-
-// ————————————————
-// Modelos, Texturas e Sprite HUD
-// ————————————————
 static Model     modelo3D;
 static Model     portaModel;
 static Model     serverModel;
@@ -20,31 +10,117 @@ static Texture2D serverTextures[3];
 static Texture2D pc2dSprite;     // sprite 2D que aparece no HUD
 static Sound     grabbingSound;   // som que toca quando o HUD aparece
 static Music     footstepsMusic;  // som de passos em loop (streamed)
-
-// ————————————————
-// Câmera e Movimento
-// ————————————————
 static Camera3D camera;
 static float    cameraYaw      = 0.0f;
 static Vector3  cameraPosition = { 0.0f, 1.6f, 0.0f };
 static float    moveSpeed      = 10.0f;
-
-// ————————————————
-// Estado de HUD & passos
-// ————————————————
+static float cameraPitch = 0.0f; // Novo: Rotação para cima/baixo
+static float sensitivity = 0.0022f; // Sensibilidade do mouse
 static bool notebookFollow    = false;
 static bool footstepsPlaying  = false;
-
-// ————————————————
-// Notebook inicial em 3D
-// ————————————————
 static const float NOTEBOOK_SCALE = 0.05f;
 static const Vector3 NOTEBOOK_POS = { 0.0f, -0.5f, -2.0f };
-
-// ————————————————
-// Servidor fixo atrás (mais “afundo”)
-// ————————————————
 static Vector3 serverInitialPos;
+static bool fase_concluida = false; 
+
+// ———————————————————
+// Funções utilitárias
+// ———————————————————
+static Vector3 AddVector3(Vector3 a, Vector3 b) {
+    return (Vector3){ a.x + b.x, a.y + b.y, a.z + b.z };
+}
+
+static Vector3 ScaleVector3(Vector3 v, float scale) {
+    return (Vector3){ v.x * scale, v.y * scale, v.z * scale };
+}
+
+static Vector3 NormalizeVector3(Vector3 v) {
+    float length = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+    if (length == 0.0f) return (Vector3){0.0f, 0.0f, 0.0f};
+    return (Vector3){ v.x / length, v.y / length, v.z / length };
+}
+
+void UpdateFootstepsSound(bool moving) {
+    if (moving) {
+        if (!footstepsPlaying) {
+            PlayMusicStream(footstepsMusic);
+            footstepsPlaying = true;
+        }
+    } else {
+        if (footstepsPlaying) {
+            StopMusicStream(footstepsMusic);
+            footstepsPlaying = false;
+        }
+    }
+}
+
+void UpdateCameraPosition() {
+    camera.position = cameraPosition;
+    Vector3 forward = NormalizeVector3((Vector3){
+        cosf(cameraPitch) * sinf(cameraYaw),
+        0.0f,
+       -cosf(cameraPitch) * cosf(cameraYaw)
+    });
+    camera.target = AddVector3(camera.position, forward);
+}
+
+void UpdateCameraWithMouse(void)
+{
+    Vector2 mouseDelta = GetMouseDelta();
+
+    // gira para a DIREITA quando o mouse vai para a direita
+    cameraYaw += mouseDelta.x * sensitivity;
+    // olha para cima/baixo
+    cameraPitch -= mouseDelta.y * sensitivity;
+
+    const float maxPitch = 85.0f * DEG2RAD;
+    if (cameraPitch >  maxPitch) cameraPitch =  maxPitch;
+    if (cameraPitch < -maxPitch) cameraPitch = -maxPitch;
+
+    // forward normalizado  (-Z é “para a frente” no padrão OpenGL/Raylib)
+    Vector3 forward = {
+        cosf(cameraPitch) * sinf(cameraYaw),   // X
+        sinf(cameraPitch),                    // Y
+       -cosf(cameraPitch) * cosf(cameraYaw)    // Z
+    };
+
+    camera.target = AddVector3(camera.position, forward);
+}
+
+void UpdateMovement(float dt) {
+    Vector3 forward = NormalizeVector3((Vector3){
+        cosf(cameraPitch) * sinf(cameraYaw),
+        0.0f,
+       -cosf(cameraPitch) * cosf(cameraYaw)
+    });
+
+    Vector3 right = NormalizeVector3((Vector3){
+        cosf(cameraYaw),
+        0.0f,
+        sinf(cameraYaw)
+    });
+
+    bool moving = false;
+    if (IsKeyDown(KEY_W)) {
+        cameraPosition = AddVector3(cameraPosition, ScaleVector3(forward, moveSpeed * dt));
+        moving = true;
+    }
+    if (IsKeyDown(KEY_S)) {
+        cameraPosition = AddVector3(cameraPosition, ScaleVector3(forward, -moveSpeed * dt));
+        moving = true;
+    }
+    if (IsKeyDown(KEY_A)) {
+        cameraPosition = AddVector3(cameraPosition, ScaleVector3(right, -moveSpeed * dt));
+        moving = true;
+    }
+    if (IsKeyDown(KEY_D)) {
+        cameraPosition = AddVector3(cameraPosition, ScaleVector3(right, moveSpeed * dt));
+        moving = true;
+    }
+
+    UpdateFootstepsSound(moving);
+}
+
 
 void InitFasePCServer(void)
 {
@@ -71,14 +147,20 @@ void InitFasePCServer(void)
     // Carrega sons
     grabbingSound   = LoadSound("src/music/grabbing.mp3");
     footstepsMusic  = LoadMusicStream("src/music/footsteps.mp3");
+    SetMusicVolume(footstepsMusic, 15.0f);
     footstepsMusic.looping = true;
 
     // Configura câmera
+    cameraYaw = 0.0f;
+    cameraPitch = 0.0f; 
     camera.position   = cameraPosition;
     camera.target     = (Vector3){ 0.0f, 1.6f, -1.0f };
     camera.up         = (Vector3){ 0.0f, 1.0f,  0.0f };
     camera.fovy       = 60.0f;
     camera.projection = CAMERA_PERSPECTIVE;
+
+    SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+    DisableCursor();
 
     // Define posição fixa do servidor (mais longe)
     serverInitialPos = (Vector3){
@@ -86,54 +168,31 @@ void InitFasePCServer(void)
         cameraPosition.y - 1.8f,
         cameraPosition.z + 20.0f
     };
+
+    fase_concluida = false;
 }
 
-void UpdateFasePCServer(void)
-{
+void UpdateFasePCServer(void) {
     float dt = GetFrameTime();
 
-    // Atualiza stream de passos
+    UpdateCameraWithMouse();
+    UpdateMovement(dt);
+    UpdateCameraPosition();
     UpdateMusicStream(footstepsMusic);
 
-    // Rotaciona câmera (yaw)
-    if (IsKeyDown(KEY_LEFT)  || IsKeyDown(KEY_A)) cameraYaw -= 3.0f * dt;
-    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) cameraYaw += 3.0f * dt;
-
-    // Calcula forward & right
-    Vector3 forward = { sinf(cameraYaw), 0.0f, -cosf(cameraYaw) };
-    Vector3 right   = { forward.z,      0.0f, -forward.x };
-
-    // Move o jogador (câmera)
-    bool moving = false;
-    if (IsKeyDown(KEY_W)) { cameraPosition = AddVector3(cameraPosition, (Vector3){ forward.x*moveSpeed*dt, 0, forward.z*moveSpeed*dt }); moving = true; }
-    if (IsKeyDown(KEY_S)) { cameraPosition = AddVector3(cameraPosition, (Vector3){-forward.x*moveSpeed*dt, 0,-forward.z*moveSpeed*dt }); moving = true; }
-    if (IsKeyDown(KEY_Q)) { cameraPosition = AddVector3(cameraPosition, (Vector3){ right.x*moveSpeed*dt,   0, right.z*moveSpeed*dt   }); moving = true; }
-    if (IsKeyDown(KEY_E)) { cameraPosition = AddVector3(cameraPosition, (Vector3){-right.x*moveSpeed*dt,   0,-right.z*moveSpeed*dt   }); moving = true; }
-
-    // Controla som de passos em loop
-    if (moving) {
-        if (!footstepsPlaying) {
-            PlayMusicStream(footstepsMusic);
-            footstepsPlaying = true;
-        }
-    } else {
-        if (footstepsPlaying) {
-            StopMusicStream(footstepsMusic);
-            footstepsPlaying = false;
-        }
+    // Ativa HUD e toca som ao coletar notebook
+    if (!notebookFollow && (IsKeyDown(KEY_W) || IsKeyDown(KEY_S) || IsKeyDown(KEY_A) || IsKeyDown(KEY_D))) {
+        notebookFollow = true;
+        PlaySound(grabbingSound);
     }
 
-    // Atualiza posição da câmera
-    camera.position = cameraPosition;
-    camera.target   = (Vector3){
-        cameraPosition.x + forward.x,
-        cameraPosition.y,
-        cameraPosition.z + forward.z
-    };
+    bool dentroAreaServidor =
+        fabsf(cameraPosition.z - serverInitialPos.z) <= 5.0f &&
+        fabsf(cameraPosition.x - serverInitialPos.x) <= 5.0f;
 
-    // Ativa HUD e toca grabbing na primeira movimentação
-    if (!notebookFollow && moving) {
-        notebookFollow = true;
+    if (dentroAreaServidor && IsKeyPressed(KEY_ENTER)) {
+        fase_concluida = true;
+        EnableCursor();
         PlaySound(grabbingSound);
     }
 }
@@ -175,17 +234,28 @@ void DrawFasePCServer(void)
         DrawTextureEx(pc2dSprite, (Vector2){(float)x, (float)y}, 5.0f, 1.0f, WHITE);
     }
 
-    // Se o jogador estiver em z <= -20 e x entre -6 e 6, mostra botão
-    if (cameraPosition.z <= -20.0f && cameraPosition.x >= -6.0f && cameraPosition.x <= 6.0f) {
-        const int bw = 180, bh = 40;
-        int bx = (GetScreenWidth() - bw)/2 - 200;
-        int by = GetScreenHeight()/2 - bh/2;
+    // BOTÃO server
+    const char *lbl = "Configurar Proxy [ENTER]";
+    int fw = MeasureText(lbl, 20);
+    int bw = fw + 20;         // padding 10px cada lado
+    int bh = 48;              // um pouco mais alto p/ caber texto
+    int bx = (GetScreenWidth()  - bw) / 2;
+    int by = (GetScreenHeight() - bh) / 2;
+
+    if (fabsf(cameraPosition.z - serverInitialPos.z) <= 5.0f &&
+        fabsf(cameraPosition.x - serverInitialPos.x) <= 5.0f) {
+
         DrawRectangle(bx, by, bw, bh, DARKGRAY);
         DrawRectangleLines(bx, by, bw, bh, BLACK);
-        DrawText("Configurar Proxy", bx + 10, by + 10, 20, WHITE);
+        DrawText(lbl, bx + 10, by + (bh - 20)/2, 20, WHITE);
     }
 
     EndDrawing();
+}
+
+bool FasePcServerConcluida(void)
+{
+    return fase_concluida;
 }
 
 void UnloadFasePCServer(void)
