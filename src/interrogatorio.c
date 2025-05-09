@@ -29,6 +29,8 @@ static struct
     InterrogatorioStage stage;
     float fadeWhiteAlpha;
     bool  fadeWhiteIn, fadeWhiteOut;
+    const char *falaAudio;
+    const char *falaTexto;
 
     // ---------- Apresentacao ----------
     Vector2 posNome, posBustup;
@@ -39,6 +41,7 @@ static struct
     // ---------- Fala Hank ----------
     bool   mostrarConfiante, dialogoFinalizado;
     bool   syncIniciado;
+    bool   syncConcluido;
 
     // ---------- Fala Interrogatorio ----------
     char  respostaBuf[128];
@@ -65,19 +68,15 @@ Question perguntas[TOTAL_PERGUNTAS] =
     { "Se você fosse inocente, o que esperaria que acontecesse agora com a investigação?" }
 };
 
-static const char *INTRO_TEXTO =
-    "Então, basicamente, você e... mais 3 pessoas estão sendo interrogados "
-    "por crimes cibernéticos... Eu sou o investigador desse caso, e vou te "
-    "fazer algumas perguntas, ok? [ENTER]";
-
 static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateApresentacao, UpdateFalaHank, UpdateFalaInterrogatorio };
 static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawApresentacao,  DrawFalaHank,  DrawFalaInterrogatorio  };
 
 int perguntasSelecionadas[MAX_PERGUNTAS];
 bool interrogatorioFinalizado = false;
 static SyncDialogue dialogue;
+static bool semPergunta = false; 
 
-void InitInterrogatorio(int perguntaIndex)
+void InitInterrogatorio(int perguntaIndex, const char *audio, const char *texto)
 {
     // Carregar recursos --------------------------------------------------
     ctx.background        = LoadTexture("src/sprites/background_outside.png");
@@ -87,6 +86,8 @@ void InitInterrogatorio(int perguntaIndex)
     ctx.interrogationMusic= LoadMusicStream("src/music/interrogationThemeA.mp3");
     ctx.somSurpresa       = LoadSound("src/music/surprise.mp3");
     ctx.somFalaDetetive2  = LoadSound("src/music/detectiveSpeaking2.mp3");
+    ctx.falaAudio  = audio;
+    ctx.falaTexto  = texto;
     SetMusicVolume(ctx.interrogationMusic, 1.0f);
     PlayMusicStream(ctx.interrogationMusic);
 
@@ -95,6 +96,7 @@ void InitInterrogatorio(int perguntaIndex)
     interrogatorioFinalizado = false;
     ctx.fadeWhiteAlpha = 0.0f;
     ctx.fadeWhiteIn = ctx.fadeWhiteOut = false;
+    semPergunta = (perguntaIndex < 0);
 
     // ETAPA 1 ------------------------------------------------------------
     ctx.posNome   = (Vector2){ GetScreenWidth(), GetScreenHeight() - ctx.spriteNome.height - 50 };
@@ -108,12 +110,13 @@ void InitInterrogatorio(int perguntaIndex)
     // ETAPA 2 ------------------------------------------------------------
     ctx.mostrarConfiante = ctx.dialogoFinalizado = false;
     ctx.syncIniciado = false;
+    ctx.syncConcluido = false;
 
     // ETAPA 3 ------------------------------------------------------------
     ctx.respostaLen   = 0;
     ctx.respostaBuf[0]= '\0';
     ctx.aguardandoInput = false;
-    ctx.perguntaID = perguntasSelecionadas[perguntaIndex];
+    ctx.perguntaID = semPergunta ? -1 : perguntasSelecionadas[perguntaIndex];
     ctx.slot       = perguntaIndex;
 }
 
@@ -190,31 +193,35 @@ static void UpdateFalaHank(float dt)
     }
 
     if (!ctx.syncIniciado) {
-        InitSyncDialogue(&dialogue, "src/music/detectiveSpeaking.mp3", INTRO_TEXTO);
+        InitSyncDialogue(&dialogue, ctx.falaAudio, ctx.falaTexto);
         ctx.syncIniciado = true;
     }
 
     UpdateSyncDialogue(&dialogue);
 
-    // if (SyncDialogueDone(&dialogue) && IsKeyPressed(KEY_ENTER)) --> depois voltar para original
-    if (SyncDialogueDone(&dialogue) || IsKeyPressed(KEY_P))
-    {
-        PlaySound(ctx.somFalaDetetive2);  // <- aqui é o momento certo!
+    bool syncDone = SyncDialogueDone(&dialogue);
+
+    if (syncDone && !ctx.syncConcluido) {
+        PlaySound(ctx.somFalaDetetive2);
+        ctx.syncConcluido = true;
+    }
+
+    if (ctx.syncConcluido && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_P))) {
         ctx.dialogoFinalizado = true;
     }
 
-    if (SyncDialogueDone(&dialogue) && IsKeyPressed(KEY_ENTER)) 
-    {
-        ctx.dialogoFinalizado = true;
-    }
-
-    if (ctx.dialogoFinalizado && IsKeyPressed(KEY_ENTER)) {
-        ctx.stage = PERGUNTA_INTERROGATORIO;
-        ctx.respostaLen = 0;
-        ctx.respostaBuf[0] = '\0';
-        ctx.aguardandoInput = true;
+    if (ctx.dialogoFinalizado) {
+        if (semPergunta) {
+            interrogatorioFinalizado = true;
+        } else {
+            ctx.stage = PERGUNTA_INTERROGATORIO;
+            ctx.respostaLen = 0;
+            ctx.respostaBuf[0] = '\0';
+            ctx.aguardandoInput = true;
+        }
     }
 }
+
 
 static void UpdateFalaInterrogatorio(float dt)
 {
@@ -275,7 +282,10 @@ static void DrawFalaHank(void)
 
     if (!ctx.dialogoFinalizado) {
         char buf[512] = {0};
-        strncpy(buf, dialogue.writer.text, dialogue.writer.drawnChars);
+
+        size_t len = ctx.syncConcluido ? strlen(ctx.falaTexto)
+                                       : (size_t)dialogue.writer.drawnChars;
+        strncpy(buf, ctx.falaTexto, len);
 
         const int fs = 24;
         const int maxW = GetScreenWidth() - 140;
@@ -287,23 +297,23 @@ static void DrawFalaHank(void)
         while (*line) {
             const char* p = line;
             int lastSp = -1, c = 0, w = 0;
-
             while (*p && w < maxW) {
                 if (*p == ' ') lastSp = c;
-                ++p; ++c;
                 char tmp[256] = {0};
-                strncpy(tmp, line, c);
+                strncpy(tmp, line, c + 1);
                 w = MeasureText(tmp, fs);
+                ++p; ++c;
             }
-
             if (w >= maxW && lastSp >= 0) c = lastSp;
 
             char out[256] = {0};
             strncpy(out, line, c);
             DrawText(out, x0, y, fs, WHITE);
+
             line += c;
             while (*line == ' ') ++line;
             y += lineH;
+            if (y + lineH > boxY + boxH - 10) break;
         }
     }
 }

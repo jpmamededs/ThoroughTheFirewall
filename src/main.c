@@ -21,7 +21,40 @@
 #include <time.h>
 
 AppState state = APP_CUTSCENES;
-AppState proxFasePosInterrogatorio = APP_FASE2;
+AppState proxFasePosInterrogatorio;
+
+typedef struct { const char *audio; const char *texto; } RoteiroHank;
+static const RoteiroHank roteiros[] = {
+    {
+        "src/music/detectiveSpeaking.mp3",
+        "Impressionante... Não é todo dia que alguém ultrapassa meu firewall tão rápido. Sou Hank, "
+        "agente do FBI e responsável pelo processo seletivo. Você foi escolhido para integrar uma unidade "
+        "cibernética especial, mas há outros três candidatos igualmente habilidosos na disputa. Para provar "
+        "que é o melhor, complete cinco desafios práticos que envolvem as diversas áreas da cibersegurança. "
+        "Farei visitas periódicas para avaliar não só sua técnica, mas também como lida com pressão e ética. "
+        "Então, vamos começar pelo primeiro desafio. [ENTER]"
+    },
+    { 
+        "src/music/surprise.mp3",
+        "Bom trabalho na criptografia… Agora responda:"
+    },
+    { 
+        "src/music/surprise.mp3",
+        "Sua varredura de portas foi rápida, mas percebeu os falsos-positivos? Então me diga:"
+    },
+    {
+        "src/music/surprise.mp3",
+        "Interessante… Explorou bem aquele exploit zero-day. Agora responda:" 
+    },
+    { 
+        "src/music/surprise.mp3",
+        "Análise de logs impecável. Mas preciso saber:" 
+    },
+    { 
+        "src/music/surprise.mp3",
+        "Firewall interno contornado com elegância. Última pergunta:" 
+    }
+};
 
 int main(void)
 {
@@ -34,7 +67,7 @@ int main(void)
     SetWindowPosition(0, 0);
 
     InitAudioDevice();
-    Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
+    Music music = LoadMusicStream("");
     SetMusicVolume(music, 0.9f);
     PlayMusicStream(music);
 
@@ -130,8 +163,9 @@ int main(void)
             if (IsKeyPressed(KEY_T))
             {
                 UnloadMenu();
-                InitInterrogatorio(perguntaAtual);
+                InitInterrogatorio(-1, roteiros[perguntaAtual].audio, roteiros[perguntaAtual].texto);
                 interrogatorio_Initialized = true;
+                proxFasePosInterrogatorio = APP_FASE2;
                 state = INTERROGATORIO;
             }
             if (IsKeyPressed(KEY_H))
@@ -193,12 +227,19 @@ int main(void)
             }
             UpdateFase1_2();
             DrawFase1_2();
+            if (Fase_PortaBatendo_Concluida())
+            {
+                InitInterrogatorio(-1, roteiros[perguntaAtual].audio, roteiros[perguntaAtual].texto);
+                interrogatorio_Initialized = true;
+                proxFasePosInterrogatorio = APP_FASE2;
+                state = INTERROGATORIO;
+            }
         }
         else if (state == INTERROGATORIO)
         {
             if (!interrogatorio_Initialized)
             {
-                InitInterrogatorio(perguntaAtual);
+                InitInterrogatorio(perguntaAtual, roteiros[perguntaAtual].audio, roteiros[perguntaAtual].texto);
                 interrogatorio_Initialized = true;
             }
             UpdateInterrogatorio();
@@ -208,7 +249,7 @@ int main(void)
                 UnloadInterrogatorio();
                 interrogatorio_Initialized = false;
                 perguntaAtual++;
-                state = proxFasePosInterrogatorio;  // Vai para a fase armazenada
+                state = proxFasePosInterrogatorio;
             }
         }
         else if (state == APP_FASE2)

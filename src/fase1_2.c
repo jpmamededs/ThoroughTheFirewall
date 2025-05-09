@@ -26,6 +26,9 @@ static float tempoDesdeFadeCompleto = 0.0f;
 static bool fadeCompleto = false;
 static bool somAbrindoTocado = false; // NOVO
 
+static bool fase_concluida = false; 
+
+
 void InitFase1_2(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
@@ -34,7 +37,7 @@ void InitFase1_2(void)
     portaTexture = LoadTexture("src/models/Garage_Metalness.png");
     portaModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = portaTexture;
 
-    somBaterPorta = LoadMusicStream("src/music/doorKnock.mp3");
+    somBaterPorta = LoadMusicStream("src/music/batida-de-porta.mp3");
     somAbrindoPorta = LoadSound("src/music/doorOpening.mp3"); // NOVO
 
     tempoDesdeInicio = 0.0f;
@@ -46,6 +49,8 @@ void InitFase1_2(void)
     fadeCompleto = false;
     tempoDesdeFadeCompleto = 0.0f;
     somAbrindoTocado = false;
+    fase_concluida = false;
+
 
     camera.position = (Vector3){0.0f, 1.6f, 0.0f};
     camera.target = (Vector3){0.0f, 1.6f, -1.0f};
@@ -113,7 +118,7 @@ void UpdateFase1_2(void)
                 tempoDesdeFadeCompleto += delta;
                 if (tempoDesdeFadeCompleto >= 2.0f)
                 {
-                    state = INTERROGATORIO;
+                    fase_concluida = true;
                 }
             }
         }
@@ -165,6 +170,11 @@ void DrawFase1_2(void)
     }
 
     EndDrawing();
+}
+
+bool Fase_PortaBatendo_Concluida(void)
+{
+    return fase_concluida;
 }
 
 void UnloadFase1_2(void)

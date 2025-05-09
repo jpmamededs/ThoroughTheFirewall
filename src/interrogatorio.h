@@ -14,7 +14,7 @@ typedef enum {
     ETAPA_TOTAL 
 } InterrogatorioStage;
 
-void InitInterrogatorio(int perguntaIndex);
+void InitInterrogatorio(int perguntaIndex, const char *audio, const char *texto);
 void UpdateInterrogatorio(void);
 void DrawInterrogatorio(void);
 void UnloadInterrogatorio(void);
