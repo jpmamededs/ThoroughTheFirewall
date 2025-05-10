@@ -7,7 +7,6 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include "typewriter_sync.h"
 
 static void UpdateApresentacao(float dt);
 static void UpdateFalaHank(float dt);
@@ -24,13 +23,15 @@ static struct
     Texture2D background, spriteNome, spriteBustup, spriteConfiante;
     Music     interrogationMusic;
     Sound     somSurpresa, somFalaDetetive2;
+    Sound     falaAudio;
+    const char *falaTexto;
+    const char *falaTextoExtra;
+    bool        usandoExtra; 
 
     // Controle geral
     InterrogatorioStage stage;
     float fadeWhiteAlpha;
     bool  fadeWhiteIn, fadeWhiteOut;
-    const char *falaAudio;
-    const char *falaTexto;
 
     // ---------- Apresentacao ----------
     Vector2 posNome, posBustup;
@@ -39,9 +40,9 @@ static struct
     bool    bustupChegou, somSurpresaTocado;
 
     // ---------- Fala Hank ----------
-    bool   mostrarConfiante, dialogoFinalizado;
-    bool   syncIniciado;
-    bool   syncConcluido;
+    TypeWriter writer;
+    bool mostrarConfiante, dialogoFinalizado;
+    bool falaSomTocado;
 
     // ---------- Fala Interrogatorio ----------
     char  respostaBuf[128];
@@ -49,8 +50,8 @@ static struct
     int   perguntaAtual;
     bool  aguardandoInput;
     bool  respostaConfirmada;
-    int perguntaID;
-    int slot; 
+    int   perguntaID;
+    int   slot; 
 
 } ctx;
 
@@ -68,12 +69,20 @@ Question perguntas[TOTAL_PERGUNTAS] =
     { "Se você fosse inocente, o que esperaria que acontecesse agora com a investigação?" }
 };
 
+static const char *INTRO_FALA1 =
+        "Impressionante... Não é todo dia que alguém ultrapassa meu firewall tão rápido. Sou Hank, "
+        "agente do FBI e responsável pelo processo seletivo. Você foi escolhido para integrar uma unidade "
+        "cibernética especial. No entanto, há outros três candidatos [ENTER]"; 
+
+static const char *INTRO_FALA2 =
+        "Para provar que é o melhor, complete cinco desafios práticos que envolvem áreas da cibersegurança. "
+        "Avaliarei sua técnica, resistência à pressão e ética. Vamos começar pelo primeiro desafio. [ENTER]";
+
 static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateApresentacao, UpdateFalaHank, UpdateFalaInterrogatorio };
 static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawApresentacao,  DrawFalaHank,  DrawFalaInterrogatorio  };
 
 int perguntasSelecionadas[MAX_PERGUNTAS];
 bool interrogatorioFinalizado = false;
-static SyncDialogue dialogue;
 static bool semPergunta = false; 
 
 void InitInterrogatorio(int perguntaIndex, const char *audio, const char *texto)
@@ -86,9 +95,9 @@ void InitInterrogatorio(int perguntaIndex, const char *audio, const char *texto)
     ctx.interrogationMusic= LoadMusicStream("src/music/interrogationThemeA.mp3");
     ctx.somSurpresa       = LoadSound("src/music/surprise.mp3");
     ctx.somFalaDetetive2  = LoadSound("src/music/detectiveSpeaking2.mp3");
-    ctx.falaAudio  = audio;
-    ctx.falaTexto  = texto;
-    SetMusicVolume(ctx.interrogationMusic, 1.0f);
+    ctx.falaAudio         = LoadSound(audio);
+    SetMusicVolume(ctx.interrogationMusic, 0.7f);
+    SetSoundVolume(ctx.falaAudio, 4.0f);
     PlayMusicStream(ctx.interrogationMusic);
 
     // Estado geral -------------------------------------------------------
@@ -97,6 +106,18 @@ void InitInterrogatorio(int perguntaIndex, const char *audio, const char *texto)
     ctx.fadeWhiteAlpha = 0.0f;
     ctx.fadeWhiteIn = ctx.fadeWhiteOut = false;
     semPergunta = (perguntaIndex < 0);
+    
+    if (semPergunta) {
+        ctx.falaTexto      = INTRO_FALA1;
+        ctx.falaAudio      = LoadSound("src/music/fala_apresentacao_1.mp3");
+        SetSoundVolume(ctx.falaAudio, 4.0f);
+        ctx.falaTextoExtra = INTRO_FALA2;
+    } else { 
+        ctx.falaTexto      = texto;
+        ctx.falaTextoExtra = NULL;  
+    }
+    ctx.usandoExtra   = false;
+    ctx.falaSomTocado = false;
 
     // ETAPA 1 ------------------------------------------------------------
     ctx.posNome   = (Vector2){ GetScreenWidth(), GetScreenHeight() - ctx.spriteNome.height - 50 };
@@ -108,9 +129,8 @@ void InitInterrogatorio(int perguntaIndex, const char *audio, const char *texto)
     ctx.bustupChegou = ctx.somSurpresaTocado = false;
 
     // ETAPA 2 ------------------------------------------------------------
+    InitTypeWriter(&ctx.writer, ctx.falaTexto, 16.0f);
     ctx.mostrarConfiante = ctx.dialogoFinalizado = false;
-    ctx.syncIniciado = false;
-    ctx.syncConcluido = false;
 
     // ETAPA 3 ------------------------------------------------------------
     ctx.respostaLen   = 0;
@@ -150,8 +170,8 @@ void UnloadInterrogatorio(void)
     UnloadTexture(ctx.spriteConfiante);
     UnloadMusicStream(ctx.interrogationMusic);
     UnloadSound(ctx.somSurpresa);
+    UnloadSound(ctx.falaAudio);
     UnloadSound(ctx.somFalaDetetive2);
-    UnloadSyncDialogue(&dialogue);
     interrogatorioFinalizado = true;
 }
 
@@ -192,21 +212,30 @@ static void UpdateFalaHank(float dt)
         if (ctx.fadeWhiteAlpha <= 0.f) { ctx.fadeWhiteAlpha = 0.f; ctx.fadeWhiteOut = false; }
     }
 
-    if (!ctx.syncIniciado) {
-        InitSyncDialogue(&dialogue, ctx.falaAudio, ctx.falaTexto);
-        ctx.syncIniciado = true;
+    UpdateTypeWriter(&ctx.writer, dt, false);
+
+    if (!ctx.falaSomTocado) {
+        PlaySound(ctx.falaAudio);
+        ctx.falaSomTocado = true;
     }
 
-    UpdateSyncDialogue(&dialogue);
+    //if(ctx.writer.done && !ctx.dialogoFinalizado){
+    //    PlaySound(ctx.somFalaDetetive2);
+    //    /* agora espera ENTER/P para prosseguir */
+    //}
 
-    bool syncDone = SyncDialogueDone(&dialogue);
+    if(ctx.writer.done && IsKeyPressed(KEY_ENTER)) {
 
-    if (syncDone && !ctx.syncConcluido) {
-        PlaySound(ctx.somFalaDetetive2);
-        ctx.syncConcluido = true;
-    }
+        if (semPergunta && !ctx.usandoExtra && ctx.falaTextoExtra) {
+            ctx.usandoExtra = true;
+            ctx.falaTexto   = ctx.falaTextoExtra;
+            InitTypeWriter(&ctx.writer, ctx.falaTexto, 16.0f);
+            ctx.falaAudio = LoadSound("src/music/fala_apresentacao_2.mp3");
+            SetSoundVolume(ctx.falaAudio, 4.0f);
+            ctx.falaSomTocado = false;
+            return;
+        }
 
-    if (ctx.syncConcluido && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_P))) {
         ctx.dialogoFinalizado = true;
     }
 
@@ -243,7 +272,6 @@ static void UpdateFalaInterrogatorio(float dt)
         ctx.respostaConfirmada = true;
         ctx.aguardandoInput = false;
 
-        // Envia a resposta atual para a IA antes de avançar
         AvaliarRespostaComIA(
             ctx.slot,
             perguntas[ctx.perguntaID].pergunta,
@@ -283,8 +311,8 @@ static void DrawFalaHank(void)
     if (!ctx.dialogoFinalizado) {
         char buf[512] = {0};
 
-        size_t len = ctx.syncConcluido ? strlen(ctx.falaTexto)
-                                       : (size_t)dialogue.writer.drawnChars;
+        size_t len = ctx.writer.done ? strlen(ctx.falaTexto)
+                                     : (size_t)ctx.writer.drawnChars;
         strncpy(buf, ctx.falaTexto, len);
 
         const int fs = 24;

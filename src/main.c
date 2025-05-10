@@ -26,13 +26,8 @@ AppState proxFasePosInterrogatorio;
 typedef struct { const char *audio; const char *texto; } RoteiroHank;
 static const RoteiroHank roteiros[] = {
     {
-        "src/music/detectiveSpeaking.mp3",
-        "Impressionante... Não é todo dia que alguém ultrapassa meu firewall tão rápido. Sou Hank, "
-        "agente do FBI e responsável pelo processo seletivo. Você foi escolhido para integrar uma unidade "
-        "cibernética especial, mas há outros três candidatos igualmente habilidosos na disputa. Para provar "
-        "que é o melhor, complete cinco desafios práticos que envolvem as diversas áreas da cibersegurança. "
-        "Farei visitas periódicas para avaliar não só sua técnica, mas também como lida com pressão e ética. "
-        "Então, vamos começar pelo primeiro desafio. [ENTER]"
+        "src/music/fala_apresentacao_1.mp3",
+        NULL
     },
     { 
         "src/music/surprise.mp3",
@@ -67,7 +62,7 @@ int main(void)
     SetWindowPosition(0, 0);
 
     InitAudioDevice();
-    Music music = LoadMusicStream("src/music/EisenfunkPong-[AudioTrimmer.com] (1).mp3");
+    Music music = LoadMusicStream("src/music/musica_tema.mp3");
     SetMusicVolume(music, 0.9f);
     PlayMusicStream(music);
 
@@ -222,7 +217,7 @@ int main(void)
         {
             if (!fase1_2Initialized)
             {
-                InitFase1_2();
+                InitFase1_2(MenuSelectedCharacterName());
                 fase1_2Initialized = true;
             }
             UpdateFase1_2();

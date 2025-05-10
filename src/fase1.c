@@ -72,7 +72,7 @@ void InitFase1(void)
 
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
-    somRadio = LoadSound("src/music/chamada-desconhecido.mp3");
+    somRadio = LoadSound("src/music/voz-grosa.mp3");
     somPersonagem = LoadSound(""); // se quiser voz no cara, é so colocar o caminho aqui
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
     
@@ -143,12 +143,12 @@ void UpdateFase1(void)
             somRadioTocado = true;
 
             const char *fala =
-                "Parabéns, você foi selecionado para um processo ultrassecreto. "
+                "Atenção! você foi selecionado para um processo ultrassecreto. "
                 "Antes de prosseguirmos, preciso confirmar que suas habilidades\n"
                 "estão à altura. Mostre que é capaz de passar pelo firewall que "
                 "acabei de enviar para o seu computador e faça isso sem ser detectado.";
 
-            InitTypeWriter(&fase1Writer, fala, 18.5f);
+            InitTypeWriter(&fase1Writer, fala, 16.5f);
             typeStarted = true;
         }
     }
@@ -173,7 +173,7 @@ void UpdateFase1(void)
         }
 
         timeAfterUnknown += delta;
-        if (timeAfterUnknown >= 4.0f)
+        if (timeAfterUnknown >= 5.0f)
         {
             PlaySound(somPersonagem);
             personagemAudioTocado = true;
@@ -398,13 +398,13 @@ void DrawFase1(const char *nome)
 
     if (drawUnknownNow)
     {
-        DrawDialogueBox("???", &fase1Writer, 24, 24);
+        DrawDialogueBox("???", &fase1Writer, 24, 26);
     }
 
     // Caixa de fala do personagem
     if (personagemTypeStarted)
     {
-        DrawDialogueBox(nome, &personagemWriter, 24, 24);
+        DrawDialogueBox(nome, &personagemWriter, 24, 26);
     }
 
     // Telefone animado
