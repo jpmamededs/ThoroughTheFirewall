@@ -25,11 +25,63 @@ static float fadeAlpha = 0.0f;
 static float tempoDesdeFadeCompleto = 0.0f;
 static bool fadeCompleto = false;
 static bool somAbrindoTocado = false; // NOVO
+static const char *introSpeaker = "";
 
 static bool fase_concluida = false; 
 
+// --- introdução “3 dias depois” ---
+static bool  introActive   = true;
+static float introTimer    = 0.0f;   // cronômetro
+static float introAlpha    = 0.0f;   // 0‥1
+static const float INTRO_FADE = 1.5f;   // seg. de fade-in / fade-out
+static const float INTRO_HOLD = 2.5f;   // seg. texto cheio na tela
 
-void InitFase1_2(void)
+// --- diálogo pré-intro ---
+static Texture2D pergunta_img;             // mesma arte da Fase1
+static TypeWriter introWriter;
+static bool  introBoxActive   = true;      // mostra primeiro
+static bool  introTypeStarted = false;
+static float introBoxTimer    = 0.0f;      // cronômetro
+static bool  introTextDone   = false;   // texto completo?
+static float postIntroTimer  = 0.0f;    // cronômetro de espera (2 s)
+static const float POST_INTRO_DELAY = 6.0f;
+
+static void DrawDialogueBoxIntro(const TypeWriter *writer)
+{
+    int boxX = 60;
+    int marginBottom = 220;
+    int boxY = GetScreenHeight() - marginBottom;
+    int boxWidth = GetScreenWidth() - 120;
+    int boxHeight = 130;
+    int borderRadius = boxHeight / 2;
+
+    int imgW = 1000;
+    int imgH = pergunta_img.height - 130;
+    int imgX = boxX;
+    int imgY = boxY - imgH;
+    DrawTexturePro(pergunta_img,
+                   (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
+                   (Rectangle){imgX, imgY, imgW, imgH},
+                   (Vector2){0, 0}, 0.0f, WHITE);
+
+    // Sem “speaker”: usa string vazia para não aparecer nada
+    DrawText(introSpeaker, imgX + 10, imgY + imgH - 30, 26, WHITE);
+
+    DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight,
+                  (Color){20, 20, 20, 220});
+    DrawCircle(boxX + boxWidth - borderRadius, boxY + borderRadius,
+               borderRadius, (Color){20, 20, 20, 220});
+
+    if (writer->drawnChars > 0)
+    {
+        char tmp[writer->drawnChars + 1];
+        strncpy(tmp, writer->text, writer->drawnChars);
+        tmp[writer->drawnChars] = '\0';
+        DrawText(tmp, boxX + 20, boxY + 30, 26, WHITE);
+    }
+}
+
+void InitFase1_2(const char *nome)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
 
@@ -51,6 +103,15 @@ void InitFase1_2(void)
     somAbrindoTocado = false;
     fase_concluida = false;
 
+    introSpeaker = nome; 
+    pergunta_img = LoadTexture("src/sprites/pergunta3.png");
+    InitTypeWriter(&introWriter, "Isso foi fácil demais!", 18.5f);
+    introTypeStarted = true;
+    introBoxActive   = true;
+    introBoxTimer    = 0.0f;
+    introActive      = false;
+    introTimer       = 0.0f;
+    introAlpha  = 0.0f;
 
     camera.position = (Vector3){0.0f, 1.6f, 0.0f};
     camera.target = (Vector3){0.0f, 1.6f, -1.0f};
@@ -65,6 +126,54 @@ void UpdateFase1_2(void)
     const float minYaw = -45.0f * DEG2RAD;
 
     float delta = GetFrameTime();
+
+    /* ---------- Caixa “O que será que isso vai dar?” ---------- */
+    if (introBoxActive)
+    {
+        float delta = GetFrameTime();
+        UpdateTypeWriter(&introWriter, delta, IsKeyPressed(KEY_SPACE));
+
+        if (!introTextDone &&
+            introWriter.drawnChars >= (int)strlen(introWriter.text))
+        {
+            introTextDone  = true;
+            postIntroTimer = 0.0f;
+        }
+
+        if (introTextDone)
+        {
+            postIntroTimer += delta;
+            if (postIntroTimer >= POST_INTRO_DELAY)
+            {
+                introBoxActive = false;
+                introActive    = true;
+                introTimer     = 0.0f;
+            }
+        }
+
+        return;
+    }
+
+
+    if (introActive)
+    {
+        introTimer += delta;
+
+        if (introTimer <= INTRO_FADE)                         // fade-in
+            introAlpha = introTimer / INTRO_FADE;
+        else if (introTimer <= INTRO_FADE + INTRO_HOLD)       // mantém 100 %
+            introAlpha = 1.0f;
+        else if (introTimer <= INTRO_FADE*2 + INTRO_HOLD)     // fade-out
+            introAlpha = 1.0f - (introTimer - INTRO_FADE - INTRO_HOLD) / INTRO_FADE;
+        else                                                  // termina
+        {
+            introActive = false;
+            introAlpha  = 0.0f;
+        }
+
+        if (introActive) return;
+    }
+
     tempoDesdeInicio += delta;
 
     // Rotação da câmera
@@ -169,6 +278,22 @@ void DrawFase1_2(void)
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0, 0, 0, (unsigned char)(fadeAlpha * 255)});
     }
 
+    /* ---------- INTRO “3 dias depois” ---------- */
+    if (introActive || introAlpha > 0.0f)
+    {
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                      Fade(BLACK, introAlpha));
+
+        const char *msg = "3 dias depois";
+        int fSize = 40;
+        int txtW  = MeasureText(msg, fSize);
+
+        DrawText(msg, (GetScreenWidth() - txtW) / 2, GetScreenHeight() / 2 - fSize / 2, fSize, Fade(WHITE, introAlpha));
+    }
+
+    if (introBoxActive)
+        DrawDialogueBoxIntro(&introWriter);
+
     EndDrawing();
 }
 
@@ -183,5 +308,6 @@ void UnloadFase1_2(void)
     UnloadModel(portaModel);
     UnloadTexture(portaTexture);
     UnloadMusicStream(somBaterPorta);
-    UnloadSound(somAbrindoPorta); // NOVO
+    UnloadSound(somAbrindoPorta);
+    UnloadTexture(pergunta_img);
 }

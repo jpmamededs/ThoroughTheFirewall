@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-void InitFase1_2(void);
+void InitFase1_2(const char *nome);
 void UpdateFase1_2(void);
 void DrawFase1_2(void);
 void UnloadFase1_2(void);
