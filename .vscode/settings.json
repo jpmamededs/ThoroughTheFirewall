@@ -1,7 +1,9 @@
 {
     "files.associations": {
         "generalfunctions.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "fase7.h": "c",
+        "fasepcserver.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

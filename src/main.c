@@ -16,6 +16,7 @@
 #include "fase4.h"
 #include "fase5.h"
 #include "fase6.h"
+#include "fase7.h"
 #include "fasePcServer.h"
 #include <stdlib.h>
 #include <time.h>
@@ -49,6 +50,7 @@ int main(void)
     static bool fase4Initialized = false;
     static bool fase5Initialized = false;
     static bool fase6Initialized = false;
+    static bool fase7Initialized = false;
     static bool interrogatorio_Initialized = false;
     static bool faseFinalInitialized = false;
     static bool fasePCServerInitialized = false; // <--- Flag ESPECÍFICA da PCServer
@@ -139,6 +141,12 @@ int main(void)
                 UnloadMenu();
                 fase6Initialized = false;
                 state = APP_FASE6;
+            }
+            if (IsKeyPressed(KEY_N))
+            {
+                UnloadMenu();
+                fase7Initialized = false;
+                state = APP_FASE7;
             }
             // FIM DEBUG
         }
@@ -284,6 +292,16 @@ int main(void)
             UpdateFase6();
             DrawFase6();
         }
+        else if (state == APP_FASE7)
+        {
+            if (!fase7Initialized)
+            {
+                InitFase7();
+                fase7Initialized = true;
+            }
+            UpdateFase7();
+            DrawFase7();
+        }
         else if (state == APP_FASEPCSERVER)
         {
             if (!fasePCServerInitialized)
@@ -348,6 +366,8 @@ int main(void)
         UnloadFase5();
     else if (state == APP_FASE6)
         UnloadFase6();
+    else if (state == APP_FASE7)
+        UnloadFase7();
     else if (state == INTERROGATORIO)
         UnloadInterrogatorio();
     else if (state == APP_FASEFINAL)
