@@ -447,7 +447,7 @@ void Draw_Desafio_02(void)
                 float btnX = quadX + col * (BUTTON_SIZE + BUTTON_SPACING);
                 Rectangle btnRec = { btnX, btnY, BUTTON_SIZE, BUTTON_SIZE };
                 Color cor = quadButtonHovered[row][col] ? borderColorHover : borderColorNormal;
-                DrawRectangleRoundedLines(btnRec, 0.23f, 16, cor); // 2.0f é a espessura da linha
+                DrawRectangleRoundedLines(btnRec, 0.23f, 16, 2.0f, cor);
             }
         }
         int led_centro_x = GetScreenWidth()/2 - 280;
