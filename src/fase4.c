@@ -216,7 +216,7 @@ void UpdateFase4(void)
         if (fase4_fazendo_fadeout) {
             fase4_fadeout_time += delta;
             if (fase4_fadeout_time >= FASE4_FADEOUT_DURACAO) {
-                state = APP_PC_SCREEN;
+                state = APP_FIREWALL;
             }
         }
     }

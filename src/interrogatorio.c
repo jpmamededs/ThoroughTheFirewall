@@ -85,7 +85,7 @@ int perguntasSelecionadas[MAX_PERGUNTAS];
 bool interrogatorioFinalizado = false;
 static bool semPergunta = false; 
 
-void InitInterrogatorio(int perguntaIndex, const char *audio, const char *texto)
+void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto)
 {
     // Carregar recursos --------------------------------------------------
     ctx.background        = LoadTexture("src/sprites/background_outside.png");
@@ -140,14 +140,14 @@ void InitInterrogatorio(int perguntaIndex, const char *audio, const char *texto)
     ctx.slot       = perguntaIndex;
 }
 
-void UpdateInterrogatorio(void)
+void Update_Interrogatorio(void)
 {
     UpdateMusicStream(ctx.interrogationMusic);
     float dt = GetFrameTime();
     stageUpdates[ctx.stage](dt);
 }
 
-void DrawInterrogatorio(void)
+void Draw_Interrogatorio(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -162,7 +162,7 @@ void DrawInterrogatorio(void)
     EndDrawing();
 }
 
-void UnloadInterrogatorio(void)
+void Unload_Interrogatorio(void)
 {
     UnloadTexture(ctx.background);
     UnloadTexture(ctx.spriteNome);

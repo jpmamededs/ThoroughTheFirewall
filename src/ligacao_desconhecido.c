@@ -1,4 +1,4 @@
-#include "fase1.h"
+#include "ligacao_desconhecido.h"
 #include "raylib.h"
 #include "generalFunctions.h"
 #include <string.h>
@@ -64,7 +64,7 @@ const char *GetCurrentText(TypeWriter *writer)
     return writer->text;
 }
 
-void InitFase1(void)
+void Init_Ligacao_Desconhecido(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
@@ -110,7 +110,7 @@ void InitFase1(void)
     camera.projection = CAMERA_PERSPECTIVE;
 }
 
-void UpdateFase1(void)
+void Update_Ligacao_Desconhecido(void)
 {
     float delta = GetFrameTime();
     tempoDesdeInicio += delta;
@@ -379,7 +379,7 @@ static void DrawDialogueBox(const char *speaker,
     }
 }
 
-void DrawFase1(const char *nome)
+void Draw_Ligacao_Desconhecido(const char *nome)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -455,7 +455,7 @@ void DrawFase1(const char *nome)
             StopSound(somTelefone);
             StopSound(somRadio);
 
-            state = APP_PC_SCREEN;
+            state = APP_FIREWALL;
         }
     }
 
@@ -468,7 +468,7 @@ void DrawFase1(const char *nome)
     EndDrawing();
 }
 
-void UnloadFase1(void)
+void Unload_Ligacao_Desconhecido(void)
 {
     UnloadModel(modelo3D);
     UnloadTexture(pergunta_img);

@@ -1,5 +1,5 @@
 #include "raylib.h"
-#include "fase1.h"
+#include "ligacao_desconhecido.h"
 #include "generalFunctions.h"
 #include <math.h>
 
@@ -81,7 +81,7 @@ static void DrawDialogueBoxIntro(const TypeWriter *writer)
     }
 }
 
-void InitFase1_2(const char *nome)
+void Init_PORTA_BATENDO(const char *nome)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
 
@@ -120,7 +120,7 @@ void InitFase1_2(const char *nome)
     camera.projection = CAMERA_PERSPECTIVE;
 }
 
-void UpdateFase1_2(void)
+void Update_PORTA_BATENDO(void)
 {
     const float maxYaw = 45.0f * DEG2RAD;
     const float minYaw = -45.0f * DEG2RAD;
@@ -234,7 +234,7 @@ void UpdateFase1_2(void)
     }
 }
 
-void DrawFase1_2(void)
+void Draw_PORTA_BATENDO(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -297,12 +297,12 @@ void DrawFase1_2(void)
     EndDrawing();
 }
 
-bool Fase_PortaBatendo_Concluida(void)
+bool Fase_PORTA_BATENDO_Concluida(void)
 {
     return fase_concluida;
 }
 
-void UnloadFase1_2(void)
+void Unload_PORTA_BATENDO(void)
 {
     UnloadModel(modelo3D);
     UnloadModel(portaModel);

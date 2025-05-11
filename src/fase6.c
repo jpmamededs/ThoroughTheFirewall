@@ -67,6 +67,9 @@ static bool geminiHelpClicked = false;
 static float geminiAnimSpeed = 6.0f;
 #define GEMINI_RECT_PADRAO 550
 #define GEMINI_PAD_X 36
+
+static bool fase6_concluida = false; 
+
 static void AtualizaTamanhoGeminiBox(void)
 {
     float geminiScale = 0.1f;
@@ -141,6 +144,8 @@ void InitFase6(void)
     spriteStatus = SPRITE_NORMAL;
     cronometro = FASE6_CHRONO_MAX;
     cronometro_elapsed = 0.0f;
+
+    fase6_concluida = false;
 }
 void UpdateFase6(void)
 {
@@ -207,6 +212,7 @@ void UpdateFase6(void)
             (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) {
             faz_fadeout = true;
             fadeout_time = 0.0f;
+            fase6_concluida = true;
         }
         return;
     }
@@ -523,6 +529,12 @@ void DrawFase6(void)
     }
     EndDrawing();
 }
+
+bool Fase6Concluida(void)
+{
+    return fase6_concluida;
+}
+
 void UnloadFase6(void)
 {
     UnloadTexture(fundo);

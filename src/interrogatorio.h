@@ -14,10 +14,10 @@ typedef enum {
     ETAPA_TOTAL 
 } InterrogatorioStage;
 
-void InitInterrogatorio(int perguntaIndex, const char *audio, const char *texto);
-void UpdateInterrogatorio(void);
-void DrawInterrogatorio(void);
-void UnloadInterrogatorio(void);
+void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto);
+void Update_Interrogatorio(void);
+void Draw_Interrogatorio(void);
+void Unload_Interrogatorio(void);
 void SelecionarPerguntasAleatorias(void);
 
 #define TOTAL_PERGUNTAS 10

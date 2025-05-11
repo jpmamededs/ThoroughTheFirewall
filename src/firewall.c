@@ -1,4 +1,4 @@
-#include "pc_screen.h"
+#include "firewall.h"
 #include "generalFunctions.h"
 #include "raylib.h"
 #include <math.h>
@@ -52,7 +52,7 @@ static const float tempoMensagemFinalDelay = 2.0f;
 
 extern AppState state;
 
-void InitPcScreen(void)
+void Init_Firewall(void)
 {
     wallpaper = LoadTexture("src/sprites/os/wallpaper.png");
     background = LoadTexture("src/sprites/os/background.jpg");
@@ -91,7 +91,7 @@ void InitPcScreen(void)
     aguardandoMensagemFinal = false;
 }
 
-void UpdatePcScreen(void)
+void Update_Firewall(void)
 {
     float dt = GetFrameTime();
     fadeTimer += dt;
@@ -205,13 +205,13 @@ void UpdatePcScreen(void)
             tempoAposFade += dt;
             if (tempoAposFade >= esperaPreta)
             {
-                state = APP_FASE1_2;
+                state = APP_PORTA_BATENDO;
             }
         }
     }
 }
 
-void DrawPcScreen(void)
+void Draw_Firewall(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -276,7 +276,7 @@ void DrawPcScreen(void)
     EndDrawing();
 }
 
-void UnloadPcScreen(void)
+void Unload_Firewall(void)
 {
     UnloadTexture(wallpaper);
     UnloadTexture(background);
