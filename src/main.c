@@ -57,7 +57,7 @@ int main(void)
     SetWindowPosition(0, 0);
 
     InitAudioDevice();
-    Music music = LoadMusicStream("");
+    Music music = LoadMusicStream("src/music/musica_tema.mp3");
     SetMusicVolume(music, 0.9f);
     PlayMusicStream(music);
 
