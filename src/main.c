@@ -15,9 +15,7 @@
 #include "desafio_01.h"
 #include "fase4.h"
 #include "fase5.h"
-#include "fase6.h"
 #include "fase7.h"
-#include "fasePcServer.h"
 #include "desafio_02.h"
 #include "servidor_proxy.h"
 #include <stdlib.h>
@@ -75,7 +73,6 @@ int main(void)
     static bool desafio_01_Initialized = false;
     static bool fase4Initialized = false;
     static bool fase5Initialized = false;
-    static bool fase6Initialized = false;
     static bool fase7Initialized = false;
     static bool desafio_02_Initialized = false;
     static bool interrogatorio_Initialized = false;
@@ -353,16 +350,6 @@ int main(void)
                 state = INTERROGATORIO;
             }
         }
-        else if (state == APP_FASE6)
-        {
-            if (!fase6Initialized)
-            {
-                InitFase6();
-                fase6Initialized = true;
-            }
-            UpdateFase6();
-            DrawFase6();
-        }
         else if (state == APP_FASE7)
         {
             if (!fase7Initialized)
@@ -372,16 +359,6 @@ int main(void)
             }
             UpdateFase7();
             DrawFase7();
-        }
-        else if (state == APP_FASEPCSERVER)
-        {
-            if (!fasePCServerInitialized)
-            {
-                InitFasePCServer();
-                fasePCServerInitialized = true;
-            }
-            UpdateFasePCServer();
-            DrawFasePCServer();
         }
         else if (state == APP_FASEFINAL)
         {
@@ -435,8 +412,6 @@ int main(void)
         UnloadFase4();
     else if (state == APP_FASE5)
         UnloadFase5();
-    else if (state == APP_FASE6)
-        UnloadFase6();
     else if (state == APP_FASE7)
         UnloadFase7();
     else if (state == APP_DESAFIO_02)

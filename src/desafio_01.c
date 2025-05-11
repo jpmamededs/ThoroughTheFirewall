@@ -350,7 +350,8 @@ void Draw_Desafio_01(void)
             };
             DrawRectangle(entregaX_final, entregaY + i, entregaW_final, 1, row);
         }
-        DrawRectangleRoundedLines(entregaBtnFinal, 0.32f, 8, 2.0f, corVerdeBorder);
+        DrawRectangleRoundedLines(entregaBtnFinal, 0.32f, 8, corVerdeBorder);
+//      (Rectangle)        (float)    (int)   (Color)
         if (!hover)
             DrawRectangleRounded((Rectangle){entregaX_final+6, entregaY+6, entregaW_final-12, entregaH*0.28f}, 0.34f, 6, (Color){255,255,255,31});
         int fonte = 28;

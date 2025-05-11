@@ -5,7 +5,8 @@
         "fase7.h": "c",
         "fasepcserver.h": "c",
         "ligacao_desconhecido.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "desafio_02.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
