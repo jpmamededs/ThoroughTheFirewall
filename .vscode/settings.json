@@ -2,13 +2,10 @@
     "files.associations": {
         "generalfunctions.h": "c",
         "stdlib.h": "c",
-<<<<<<< HEAD
         "fase7.h": "c",
-        "fasepcserver.h": "c"
-=======
+        "fasepcserver.h": "c",
         "ligacao_desconhecido.h": "c",
         "stdbool.h": "c"
->>>>>>> 722c1a07a5c281aa95bdc49d76ebae3318c3eb7b
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
