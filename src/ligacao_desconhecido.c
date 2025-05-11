@@ -4,8 +4,6 @@
 #include <string.h>
 #include <math.h>
 
-extern AppState state;
-
 static Model modelo3D;
 static Texture2D pergunta_img;
 static Texture2D telefone_sprite;
@@ -59,12 +57,15 @@ static bool somChamadaTocado = false;
 static float gapTimer = -1.0f;        // cronômetro entre Fala-1 e Fala-2
 static bool  gapSoundPlayed = false;
 
+static bool fase_concluida = false;
+static const char *characterName = "";
+
 const char *GetCurrentText(TypeWriter *writer)
 {
     return writer->text;
 }
 
-void Init_Ligacao_Desconhecido(void)
+void Init_Ligacao_Desconhecido(const char *nome)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
@@ -75,6 +76,7 @@ void Init_Ligacao_Desconhecido(void)
     somRadio = LoadSound("src/music/voz-grosa.mp3");
     somPersonagem = LoadSound(""); // se quiser voz no cara, é so colocar o caminho aqui
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
+    characterName = nome;
     
     portaModel = LoadModel("src/models/DOOR.obj");
     portaTexture = LoadTexture("src/models/Garage_Metalness.png");
@@ -101,6 +103,7 @@ void Init_Ligacao_Desconhecido(void)
     delayTexto = 0.0f;
     typeStarted = false;
     hangUpCooldown = -1.0f;
+    fase_concluida = false;
 
     // Câmera
     camera.position = (Vector3){0.0f, 1.6f, 0.0f};
@@ -379,7 +382,7 @@ static void DrawDialogueBox(const char *speaker,
     }
 }
 
-void Draw_Ligacao_Desconhecido(const char *nome)
+void Draw_Ligacao_Desconhecido()
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -404,7 +407,7 @@ void Draw_Ligacao_Desconhecido(const char *nome)
     // Caixa de fala do personagem
     if (personagemTypeStarted)
     {
-        DrawDialogueBox(nome, &personagemWriter, 24, 26);
+        DrawDialogueBox(characterName, &personagemWriter, 24, 26);
     }
 
     // Telefone animado
@@ -455,7 +458,7 @@ void Draw_Ligacao_Desconhecido(const char *nome)
             StopSound(somTelefone);
             StopSound(somRadio);
 
-            state = APP_FIREWALL;
+            fase_concluida = true;
         }
     }
 
@@ -466,6 +469,11 @@ void Draw_Ligacao_Desconhecido(const char *nome)
     }
 
     EndDrawing();
+}
+
+bool Fase_Ligacao_Desconhecido_Concluida(void)
+{
+    return fase_concluida;
 }
 
 void Unload_Ligacao_Desconhecido(void)

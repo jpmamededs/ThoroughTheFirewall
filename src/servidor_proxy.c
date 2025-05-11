@@ -1,4 +1,4 @@
-#include "fasePCServer.h"
+#include "servidor_proxy.h"
 #include "raylib.h"
 #include <math.h>
 
@@ -122,7 +122,7 @@ void UpdateMovement(float dt) {
 }
 
 
-void InitFasePCServer(void)
+void Init_ServidorProxy(void)
 {
     // Carrega notebook 3D
     modelo3D = LoadModel("src/models/old-computer.obj");
@@ -172,7 +172,7 @@ void InitFasePCServer(void)
     fase_concluida = false;
 }
 
-void UpdateFasePCServer(void) {
+void Update_ServidorProxy(void) {
     float dt = GetFrameTime();
 
     UpdateCameraWithMouse();
@@ -197,7 +197,7 @@ void UpdateFasePCServer(void) {
     }
 }
 
-void DrawFasePCServer(void)
+void Draw_ServidorProxy(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -253,12 +253,12 @@ void DrawFasePCServer(void)
     EndDrawing();
 }
 
-bool FasePcServerConcluida(void)
+bool Fase_ServidorProxy_Concluida(void)
 {
     return fase_concluida;
 }
 
-void UnloadFasePCServer(void)
+void Unload_ServidorProxy(void)
 {
     UnloadModel(modelo3D);
     UnloadModel(portaModel);

@@ -1,4 +1,4 @@
-#include "fase3.h"
+#include "desafio_01.h"
 #include "generalFunctions.h"
 #include "menu.h"
 #include "raylib.h"
@@ -103,7 +103,7 @@ static const char* FalaPorResultadoFase3(const char* name, bool acerto)
     if (strcmp(name, "Mamede") == 0)    return acerto ? FALA_MAMEDE_ACERTO : FALA_MAMEDE_ERRO;
     return acerto ? FALA_ACERTO : FALA_ERRO;
 }
-void InitFase3(void)
+void Init_Desafio_01(void)
 {
     fundo = LoadTexture("src/sprites/empresa3.png");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
@@ -145,7 +145,7 @@ void InitFase3(void)
     respostaShowTimer = 0.0f;
     fase3_concluida = false;
 }
-void UpdateFase3(void)
+void Update_Desafio_01(void)
 {
     float delta = GetFrameTime();
     float geminiX = 49, geminiY = 67, geminiScale = 0.1f;
@@ -281,7 +281,7 @@ void UpdateFase3(void)
         }
     }
 }
-void DrawFase3(void)
+void Draw_Desafio_01(void)
 {
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -350,7 +350,7 @@ void DrawFase3(void)
             };
             DrawRectangle(entregaX_final, entregaY + i, entregaW_final, 1, row);
         }
-        DrawRectangleRoundedLines(entregaBtnFinal, 0.32f, 8, 2.0f, corVerdeBorder); // 2.0f é a espessura da linha
+        DrawRectangleRoundedLines(entregaBtnFinal, 0.32f, 8, corVerdeBorder); // 2.0f é a espessura da linha
         if (!hover)
             DrawRectangleRounded((Rectangle){entregaX_final+6, entregaY+6, entregaW_final-12, entregaH*0.28f}, 0.34f, 6, (Color){255,255,255,31});
         int fonte = 28;
@@ -511,12 +511,12 @@ void DrawFase3(void)
     EndDrawing();
 }
 
-bool Fase3Concluida(void)
+bool Fase_Desafio_01_Concluida(void)
 {
     return fase3_concluida;
 }
 
-void UnloadFase3(void)
+void Unload_Desafio_01(void)
 {
     UnloadTexture(fundo);
     UnloadTexture(pergunta_img);

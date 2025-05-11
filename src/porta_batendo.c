@@ -81,7 +81,7 @@ static void DrawDialogueBoxIntro(const TypeWriter *writer)
     }
 }
 
-void Init_PORTA_BATENDO(const char *nome)
+void Init_Porta_Batendo(const char *nome)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
 
@@ -120,7 +120,7 @@ void Init_PORTA_BATENDO(const char *nome)
     camera.projection = CAMERA_PERSPECTIVE;
 }
 
-void Update_PORTA_BATENDO(void)
+void Update_Porta_Batendo(void)
 {
     const float maxYaw = 45.0f * DEG2RAD;
     const float minYaw = -45.0f * DEG2RAD;
@@ -234,7 +234,7 @@ void Update_PORTA_BATENDO(void)
     }
 }
 
-void Draw_PORTA_BATENDO(void)
+void Draw_Porta_Batendo(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -297,12 +297,12 @@ void Draw_PORTA_BATENDO(void)
     EndDrawing();
 }
 
-bool Fase_PORTA_BATENDO_Concluida(void)
+bool Fase_Porta_Batendo_Concluida(void)
 {
     return fase_concluida;
 }
 
-void Unload_PORTA_BATENDO(void)
+void Unload_Porta_Batendo(void)
 {
     UnloadModel(modelo3D);
     UnloadModel(portaModel);

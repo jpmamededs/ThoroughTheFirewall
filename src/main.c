@@ -12,11 +12,11 @@
 #include "fase2.h"
 #include "generalFunctions.h"
 #include "debug.h"
-#include "fase3.h"
+#include "desafio_01.h"
 #include "fase4.h"
 #include "fase5.h"
-#include "fase6.h"
-#include "fasePcServer.h"
+#include "desafio_02.h"
+#include "servidor_proxy.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -64,14 +64,15 @@ int main(void)
     bool firewall_Initialized = false;
     bool pcScreenFinalInitialized = false;
     bool fase2Initialized = false;
-    static bool fase_porta_batendo_Initialized = false;
-    static bool fase3Initialized = false;
+    bool ligacao_desconhecido_Initialized = false;
+    static bool porta_batendo_Initialized = false;
+    static bool desafio_01_Initialized = false;
     static bool fase4Initialized = false;
     static bool fase5Initialized = false;
-    static bool fase6Initialized = false;
+    static bool desafio_02_Initialized = false;
     static bool interrogatorio_Initialized = false;
     static bool faseFinalInitialized = false;
-    static bool fasePCServerInitialized = false; // <--- Flag ESPECÍFICA da PCServer
+    static bool servidorProxy_Initialized = false; // <--- Flag ESPECÍFICA da PCServer
 
     extern bool interrogatorioFinalizado;
 
@@ -120,7 +121,7 @@ int main(void)
             if (IsKeyPressed(KEY_I))
             {
                 UnloadMenu();
-                fase3Initialized = false;
+                desafio_01_Initialized = false;
                 state = APP_DESAFIO_01;
             }
             if (IsKeyPressed(KEY_K))
@@ -138,7 +139,7 @@ int main(void)
             if (IsKeyPressed(KEY_J))
             {
                 UnloadMenu();
-                fasePCServerInitialized = false;
+                servidorProxy_Initialized = false;
                 state = APP_SERVIDOR_PROXY;
             }
             if (IsKeyPressed(KEY_M))
@@ -158,7 +159,7 @@ int main(void)
             if (IsKeyPressed(KEY_H))
             {
                 UnloadMenu();
-                fase6Initialized = false;
+                desafio_02_Initialized = false;
                 state = APP_DESAFIO_02;
             }
             // FIM DEBUG
@@ -170,15 +171,24 @@ int main(void)
             if (IntroEnded())
             {
                 UnloadIntro();
-                Init_Ligacao_Desconhecido();
                 state = APP_LIGACAO_DESCONHECIDO;
-                firewall_Initialized = false;
             }
         }
         else if (state == APP_LIGACAO_DESCONHECIDO)
         {
+            if (!ligacao_desconhecido_Initialized)
+            {
+                Init_Ligacao_Desconhecido(MenuSelectedCharacterName());
+                ligacao_desconhecido_Initialized = true;
+            }
             Update_Ligacao_Desconhecido();
-            Draw_Ligacao_Desconhecido(MenuSelectedCharacterName());
+            Draw_Ligacao_Desconhecido();
+            if (Fase_Ligacao_Desconhecido_Concluida())
+            {
+                Unload_Ligacao_Desconhecido();
+                ligacao_desconhecido_Initialized = false;
+                state = APP_FIREWALL;
+            }
         }
         else if (state == APP_FIREWALL)
         {
@@ -187,25 +197,25 @@ int main(void)
                 Init_Firewall();
                 firewall_Initialized = true;
             }
-            AppState previousState = state;
             Update_Firewall();
             Draw_Firewall();
-            if (previousState != state)
+            if (Fase_Firewall_Concluida())
             {
                 Unload_Firewall();
                 firewall_Initialized = false;
+                state = APP_PORTA_BATENDO;
             }
         }
         else if (state == APP_PORTA_BATENDO)
         {
-            if (!fase_porta_batendo_Initialized)
+            if (!porta_batendo_Initialized)
             {
-                Init_PORTA_BATENDO(MenuSelectedCharacterName());
-                fase_porta_batendo_Initialized = true;
+                Init_Porta_Batendo(MenuSelectedCharacterName());
+                porta_batendo_Initialized = true;
             }
-            Update_PORTA_BATENDO();
-            Draw_PORTA_BATENDO();
-            if (Fase_PORTA_BATENDO_Concluida())
+            Update_Porta_Batendo();
+            Draw_Porta_Batendo();
+            if (Fase_Porta_Batendo_Concluida())
             {
                 Init_Interrogatorio(-1, NULL, NULL);
                 interrogatorio_Initialized = true;
@@ -230,6 +240,56 @@ int main(void)
                 state = proxFasePosInterrogatorio;
             }
         }
+        else if (state == APP_DESAFIO_01)
+        {
+            if (!desafio_01_Initialized)
+            {
+                Init_Desafio_01();
+                desafio_01_Initialized = true;
+            }
+            Update_Desafio_01();
+            Draw_Desafio_01();
+            if (Fase_Desafio_01_Concluida()) 
+            {
+                Unload_Desafio_01();
+                desafio_01_Initialized = false;
+                proxFasePosInterrogatorio = APP_SERVIDOR_PROXY;
+                state = INTERROGATORIO;
+            }
+        }
+        else if (state == APP_SERVIDOR_PROXY)
+        {
+            if (!servidorProxy_Initialized)
+            {
+                Init_ServidorProxy();
+                servidorProxy_Initialized = true;
+            }
+            Update_ServidorProxy();
+            Draw_ServidorProxy();
+            if (Fase_ServidorProxy_Concluida()) 
+            {
+                Unload_ServidorProxy();
+                servidorProxy_Initialized = false;
+                state = APP_DESAFIO_02;
+            }
+        }
+        else if (state == APP_DESAFIO_02)
+        {
+            if (!desafio_02_Initialized)
+            {
+                Init_Desafio_02();
+                desafio_02_Initialized = true;
+            }
+            Update_Desafio_02();
+            Draw_Desafio_02();
+            if (Fase_Desafio_02_Concluida()) 
+            {
+                Unload_Desafio_02();
+                desafio_02_Initialized = false;
+                proxFasePosInterrogatorio = APP_PROVISORIO; // mudar depois!
+                state = INTERROGATORIO;
+            }
+        }
         else if (state == APP_PROVISORIO)
         {
             if (!fase2Initialized)
@@ -243,22 +303,6 @@ int main(void)
                 UnloadFase2();
                 fase2Initialized = false;
                 proxFasePosInterrogatorio = APP_DESAFIO_01;
-                state = INTERROGATORIO;
-            }
-        }
-        else if (state == APP_DESAFIO_01)
-        {
-            if (!fase3Initialized)
-            {
-                InitFase3();
-                fase3Initialized = true;
-            }
-            UpdateFase3();
-            DrawFase3();
-            if (Fase3Concluida()) {
-                UnloadFase3();
-                fase3Initialized = false;
-                proxFasePosInterrogatorio = APP_SERVIDOR_PROXY;
                 state = INTERROGATORIO;
             }
         }
@@ -292,37 +336,6 @@ int main(void)
                 fase5Initialized = false;
                 proxFasePosInterrogatorio = APP_DESAFIO_02;
                 state = INTERROGATORIO;
-            }
-        }
-        else if (state == APP_DESAFIO_02)
-        {
-            if (!fase6Initialized)
-            {
-                InitFase6();
-                fase6Initialized = true;
-            }
-            UpdateFase6();
-            DrawFase6();
-            if (Fase6Concluida()) {
-                UnloadFase6();
-                fase6Initialized = false;
-                proxFasePosInterrogatorio = APP_PROVISORIO;
-                state = INTERROGATORIO;
-            }
-        }
-        else if (state == APP_SERVIDOR_PROXY)
-        {
-            if (!fasePCServerInitialized)
-            {
-                InitFasePCServer();
-                fasePCServerInitialized = true;
-            }
-            UpdateFasePCServer();
-            DrawFasePCServer();
-            if (FasePcServerConcluida()) {
-                UnloadFasePCServer();
-                fasePCServerInitialized = false;
-                state = APP_DESAFIO_02; // o fluxo perde o sentido aqui, mas, na frente ele volta ao normal
             }
         }
         else if (state == APP_FASEFINAL)
@@ -370,15 +383,15 @@ int main(void)
     else if (state == APP_PROVISORIO)
         UnloadFase2();
     else if (state == APP_PORTA_BATENDO)
-        Unload_PORTA_BATENDO();
+        Unload_Porta_Batendo();
     else if (state == APP_DESAFIO_01)
-        UnloadFase3();
+        Unload_Desafio_01();
     else if (state == APP_FASE4)
         UnloadFase4();
     else if (state == APP_FASE5)
         UnloadFase5();
     else if (state == APP_DESAFIO_02)
-        UnloadFase6();
+        Unload_Desafio_02();
     else if (state == INTERROGATORIO)
         Unload_Interrogatorio();
     else if (state == APP_FASEFINAL)
@@ -388,7 +401,7 @@ int main(void)
     else if (state == APP_PC_SCREEN_FINAL)
         UnloadPcScreenFinal();
     else if (state == APP_SERVIDOR_PROXY)
-        UnloadFasePCServer();
+        Unload_ServidorProxy();
     else if (state == APP_DEBUG)
         UnloadDebug();
 

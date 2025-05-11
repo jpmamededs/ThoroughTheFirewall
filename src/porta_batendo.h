@@ -3,10 +3,10 @@
 
 #include <stdbool.h>
 
-void Init_PORTA_BATENDO(const char *nome);
-void Update_PORTA_BATENDO(void);
-void Draw_PORTA_BATENDO(void);
-void Unload_PORTA_BATENDO(void);
-bool Fase_PORTA_BATENDO_Concluida(void);
+void Init_Porta_Batendo(const char *nome);
+void Update_Porta_Batendo(void);
+void Draw_Porta_Batendo(void);
+void Unload_Porta_Batendo(void);
+bool Fase_Porta_Batendo_Concluida(void);
 
 #endif

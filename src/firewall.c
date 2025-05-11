@@ -50,7 +50,7 @@ static bool aguardandoMensagemFinal = false;
 static const float esperaPreta = 2.0f;
 static const float tempoMensagemFinalDelay = 2.0f;
 
-extern AppState state;
+static bool fase_concluida = false;
 
 void Init_Firewall(void)
 {
@@ -68,6 +68,7 @@ void Init_Firewall(void)
     showBackground = false;
     bootSoundPlayed = false;
     terminalChamado = false;
+    fase_concluida = false;
 
     float geminiAnimScale = 1.0f / 13.5f;
     geminiFinalPos = (Vector2){
@@ -205,7 +206,7 @@ void Update_Firewall(void)
             tempoAposFade += dt;
             if (tempoAposFade >= esperaPreta)
             {
-                state = APP_PORTA_BATENDO;
+                fase_concluida = true;
             }
         }
     }
@@ -274,6 +275,11 @@ void Draw_Firewall(void)
     }
 
     EndDrawing();
+}
+
+bool Fase_Firewall_Concluida(void)
+{
+    return fase_concluida;
 }
 
 void Unload_Firewall(void)
