@@ -1,10 +1,8 @@
-#include "fase1.h"
+#include "ligacao_desconhecido.h"
 #include "raylib.h"
 #include "generalFunctions.h"
 #include <string.h>
 #include <math.h>
-
-extern AppState state;
 
 static Model modelo3D;
 static Texture2D pergunta_img;
@@ -59,12 +57,15 @@ static bool somChamadaTocado = false;
 static float gapTimer = -1.0f;        // cronômetro entre Fala-1 e Fala-2
 static bool  gapSoundPlayed = false;
 
+static bool fase_concluida = false;
+static const char *characterName = "";
+
 const char *GetCurrentText(TypeWriter *writer)
 {
     return writer->text;
 }
 
-void InitFase1(void)
+void Init_Ligacao_Desconhecido(const char *nome)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
@@ -72,9 +73,10 @@ void InitFase1(void)
 
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
-    somRadio = LoadSound("src/music/chamada-desconhecido.mp3");
+    somRadio = LoadSound("src/music/voz-grosa.mp3");
     somPersonagem = LoadSound(""); // se quiser voz no cara, é so colocar o caminho aqui
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
+    characterName = nome;
     
     portaModel = LoadModel("src/models/DOOR.obj");
     portaTexture = LoadTexture("src/models/Garage_Metalness.png");
@@ -101,6 +103,7 @@ void InitFase1(void)
     delayTexto = 0.0f;
     typeStarted = false;
     hangUpCooldown = -1.0f;
+    fase_concluida = false;
 
     // Câmera
     camera.position = (Vector3){0.0f, 1.6f, 0.0f};
@@ -110,7 +113,7 @@ void InitFase1(void)
     camera.projection = CAMERA_PERSPECTIVE;
 }
 
-void UpdateFase1(void)
+void Update_Ligacao_Desconhecido(void)
 {
     float delta = GetFrameTime();
     tempoDesdeInicio += delta;
@@ -143,12 +146,12 @@ void UpdateFase1(void)
             somRadioTocado = true;
 
             const char *fala =
-                "Parabéns, você foi selecionado para um processo ultrassecreto. "
+                "Atenção! você foi selecionado para um processo ultrassecreto. "
                 "Antes de prosseguirmos, preciso confirmar que suas habilidades\n"
                 "estão à altura. Mostre que é capaz de passar pelo firewall que "
                 "acabei de enviar para o seu computador e faça isso sem ser detectado.";
 
-            InitTypeWriter(&fase1Writer, fala, 18.5f);
+            InitTypeWriter(&fase1Writer, fala, 16.5f);
             typeStarted = true;
         }
     }
@@ -173,7 +176,7 @@ void UpdateFase1(void)
         }
 
         timeAfterUnknown += delta;
-        if (timeAfterUnknown >= 4.0f)
+        if (timeAfterUnknown >= 5.0f)
         {
             PlaySound(somPersonagem);
             personagemAudioTocado = true;
@@ -379,7 +382,7 @@ static void DrawDialogueBox(const char *speaker,
     }
 }
 
-void DrawFase1(const char *nome)
+void Draw_Ligacao_Desconhecido()
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -398,13 +401,13 @@ void DrawFase1(const char *nome)
 
     if (drawUnknownNow)
     {
-        DrawDialogueBox("???", &fase1Writer, 24, 24);
+        DrawDialogueBox("???", &fase1Writer, 24, 26);
     }
 
     // Caixa de fala do personagem
     if (personagemTypeStarted)
     {
-        DrawDialogueBox(nome, &personagemWriter, 24, 24);
+        DrawDialogueBox(characterName, &personagemWriter, 24, 26);
     }
 
     // Telefone animado
@@ -455,7 +458,7 @@ void DrawFase1(const char *nome)
             StopSound(somTelefone);
             StopSound(somRadio);
 
-            state = APP_PC_SCREEN;
+            fase_concluida = true;
         }
     }
 
@@ -468,7 +471,12 @@ void DrawFase1(const char *nome)
     EndDrawing();
 }
 
-void UnloadFase1(void)
+bool Fase_Ligacao_Desconhecido_Concluida(void)
+{
+    return fase_concluida;
+}
+
+void Unload_Ligacao_Desconhecido(void)
 {
     UnloadModel(modelo3D);
     UnloadTexture(pergunta_img);

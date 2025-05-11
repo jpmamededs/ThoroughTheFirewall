@@ -1,4 +1,4 @@
-#include "fase6.h"
+#include "desafio_02.h"
 #include "generalFunctions.h"
 #include "menu.h"
 #include "raylib.h"
@@ -67,6 +67,9 @@ static bool geminiHelpClicked = false;
 static float geminiAnimSpeed = 6.0f;
 #define GEMINI_RECT_PADRAO 550
 #define GEMINI_PAD_X 36
+
+static bool fase6_concluida = false; 
+
 static void AtualizaTamanhoGeminiBox(void)
 {
     float geminiScale = 0.1f;
@@ -91,7 +94,7 @@ static char fala_exibida[512];
 static float cronometro = 0.0f;
 static float cronometro_elapsed = 0.0f;
 
-void InitFase6(void)
+void Init_Desafio_02(void)
 {
     fundo = LoadTexture("src/sprites/senhas1.png");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
@@ -141,8 +144,10 @@ void InitFase6(void)
     spriteStatus = SPRITE_NORMAL;
     cronometro = FASE6_CHRONO_MAX;
     cronometro_elapsed = 0.0f;
+
+    fase6_concluida = false;
 }
-void UpdateFase6(void)
+void Update_Desafio_02(void)
 {
     float delta = GetFrameTime();
     if (faz_fadeout) {
@@ -207,6 +212,7 @@ void UpdateFase6(void)
             (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) {
             faz_fadeout = true;
             fadeout_time = 0.0f;
+            fase6_concluida = true;
         }
         return;
     }
@@ -329,7 +335,7 @@ static void DrawStylizedLedColor(int cx, int cy, int raio, LedEstadoCor estado)
     DrawCircle(cx-raio/3, cy-raio/2, raio*0.11f, (Color){255,255,255,190});
     DrawCircleLines(cx, cy, raio*0.93f, (Color){44,85,59,140});
 }
-void DrawFase6(void)
+void Draw_Desafio_02(void)
 {
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -441,7 +447,7 @@ void DrawFase6(void)
                 float btnX = quadX + col * (BUTTON_SIZE + BUTTON_SPACING);
                 Rectangle btnRec = { btnX, btnY, BUTTON_SIZE, BUTTON_SIZE };
                 Color cor = quadButtonHovered[row][col] ? borderColorHover : borderColorNormal;
-                DrawRectangleRoundedLines(btnRec, 0.23f, 16, cor);
+                DrawRectangleRoundedLines(btnRec, 0.23f, 16, 2.0f, cor);
             }
         }
         int led_centro_x = GetScreenWidth()/2 - 280;
@@ -523,7 +529,13 @@ void DrawFase6(void)
     }
     EndDrawing();
 }
-void UnloadFase6(void)
+
+bool Fase_Desafio_02_Concluida(void)
+{
+    return fase6_concluida;
+}
+
+void Unload_Desafio_02(void)
 {
     UnloadTexture(fundo);
     UnloadTexture(pergunta_img);

@@ -1,4 +1,4 @@
-#include "pc_screen.h"
+#include "firewall.h"
 #include "generalFunctions.h"
 #include "raylib.h"
 #include <math.h>
@@ -50,9 +50,9 @@ static bool aguardandoMensagemFinal = false;
 static const float esperaPreta = 2.0f;
 static const float tempoMensagemFinalDelay = 2.0f;
 
-extern AppState state;
+static bool fase_concluida = false;
 
-void InitPcScreen(void)
+void Init_Firewall(void)
 {
     wallpaper = LoadTexture("src/sprites/os/wallpaper.png");
     background = LoadTexture("src/sprites/os/background.jpg");
@@ -68,6 +68,7 @@ void InitPcScreen(void)
     showBackground = false;
     bootSoundPlayed = false;
     terminalChamado = false;
+    fase_concluida = false;
 
     float geminiAnimScale = 1.0f / 13.5f;
     geminiFinalPos = (Vector2){
@@ -91,7 +92,7 @@ void InitPcScreen(void)
     aguardandoMensagemFinal = false;
 }
 
-void UpdatePcScreen(void)
+void Update_Firewall(void)
 {
     float dt = GetFrameTime();
     fadeTimer += dt;
@@ -205,13 +206,13 @@ void UpdatePcScreen(void)
             tempoAposFade += dt;
             if (tempoAposFade >= esperaPreta)
             {
-                state = APP_FASE1_2;
+                fase_concluida = true;
             }
         }
     }
 }
 
-void DrawPcScreen(void)
+void Draw_Firewall(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -276,7 +277,12 @@ void DrawPcScreen(void)
     EndDrawing();
 }
 
-void UnloadPcScreen(void)
+bool Fase_Firewall_Concluida(void)
+{
+    return fase_concluida;
+}
+
+void Unload_Firewall(void)
 {
     UnloadTexture(wallpaper);
     UnloadTexture(background);

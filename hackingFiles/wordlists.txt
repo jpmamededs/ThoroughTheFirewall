@@ -1,0 +1,21 @@
+users wordlist:
+
+admin
+user123
+hankmicucci
+usertest
+superuser
+hank_123
+usradm
+cybertechinc
+
+passwords wordlist:
+
+@Password
+passkey
+19021986.Hank
+hank123
+cybertech@1
+admin
+passwd#Su123
+passwd

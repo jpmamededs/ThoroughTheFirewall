@@ -5,7 +5,7 @@
 #include "raylib.h"
 #include <string.h>
 
-// =====================
+// ======================
 // ENUM DE ESTADOS GERAIS
 // =====================
 typedef enum
@@ -13,19 +13,20 @@ typedef enum
     APP_CUTSCENES,
     APP_MENU,
     APP_INTRO,
-    APP_FASE1,
-    APP_FASE1_2,
-    APP_PC_SCREEN,
-    APP_FASE2,
-    APP_FASE3,
+    APP_LIGACAO_DESCONHECIDO,
+    APP_FIREWALL,
+    APP_PORTA_BATENDO,
+    INTERROGATORIO,
+    APP_DESAFIO_01,
+    APP_SERVIDOR_PROXY,
+    APP_DESAFIO_02,
+    APP_PROVISORIO,
     APP_FASE4,
     APP_FASE5,
     APP_FASE6,
     APP_FASE7,
     APP_FASEFINAL,
     APP_PC_SCREEN_FINAL,
-    INTERROGATORIO,
-    APP_FASEPCSERVER,
     APP_DEBUG
 } AppState;
 

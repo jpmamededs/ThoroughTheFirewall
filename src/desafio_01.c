@@ -1,4 +1,4 @@
-#include "fase3.h"
+#include "desafio_01.h"
 #include "generalFunctions.h"
 #include "menu.h"
 #include "raylib.h"
@@ -25,7 +25,7 @@ static Texture2D sprGemini;
 static Texture2D sprCadeadoFechadoCortado; // CADEADO FECHADO
 static Texture2D sprCadeadoAbertoCortado;  // CADEADO ABERTO  // NOVO!
 static const char* gemini_help_msg_default = "Clique aqui caso precise de ajuda!";
-static const char* gemini_help_msg_ajuda = "Não desligue a energia, cameras e rede, isso pode alertar os outros.";
+static const char* gemini_help_msg_ajuda = "Certifique-se de manter ativos: energia, firewall, antivírus, rede.";
 static float geminiRectW = 550;
 static float geminiRectH = 0;
 static int   geminiTextWidth = 0;
@@ -64,9 +64,9 @@ static float minY, maxY;
 static bool fase3_fadeout = false;
 static float fase3_fadeout_time = 0.0f;
 #define FASE3_FADEOUT_DURACAO 0.8f
-#define FALA_NORMAL "O'que eu devo desligar agora? Qualquer passo errado aqui vai ser muito perigoso, não posso chamar atenção."
-#define FALA_ACERTO "Ufa! Desativei só o que devia. Posso continuar sem levantar suspeitas."
-#define FALA_ERRO "Merda! Algo errado, desliguei demais, vai soar o alarme ou vão perceber!"
+#define FALA_NORMAL "Preciso ajustar os recursos para manter os sistemas críticos ativos. Não posso desligar os essenciais!"
+#define FALA_ACERTO "Consegui! Os sistemas prioritários permanecem ativos e estáveis."
+#define FALA_ERRO "Algo deu errado... Desativei algum sistema crítico! Isso pode comprometer toda a operação!"
 #define FALA_JOAO_ACERTO "Muito bem... liguei só o necessário. O Hank não percebeu nada!"
 #define FALA_JOAO_ERRO "Não era para desligar tudo! O Hank vai desconfiar disso!! Preciso fugir!"
 #define FALA_CARLOS_ACERTO "Hehehe, ninguém percebeu um movimento sequer..."
@@ -103,7 +103,7 @@ static const char* FalaPorResultadoFase3(const char* name, bool acerto)
     if (strcmp(name, "Mamede") == 0)    return acerto ? FALA_MAMEDE_ACERTO : FALA_MAMEDE_ERRO;
     return acerto ? FALA_ACERTO : FALA_ERRO;
 }
-void InitFase3(void)
+void Init_Desafio_01(void)
 {
     fundo = LoadTexture("src/sprites/empresa3.png");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
@@ -145,7 +145,7 @@ void InitFase3(void)
     respostaShowTimer = 0.0f;
     fase3_concluida = false;
 }
-void UpdateFase3(void)
+void Update_Desafio_01(void)
 {
     float delta = GetFrameTime();
     float geminiX = 49, geminiY = 67, geminiScale = 0.1f;
@@ -192,11 +192,11 @@ void UpdateFase3(void)
             resposta_entregue = true;
             bool condicaoGanhei = true;
             for (int i = 0; i < NUM_SWITCHES; i++) {
-                if ((i == 0 || i == 3 || i == 7)) {
+                if (i == 0 || i == 1 || i == 5 || i == 7) {
                     if (switchY[i] != minY) condicaoGanhei = false;
                 } else {
                     if (switchY[i] != maxY) condicaoGanhei = false;
-                }
+                }                
             }
             acertou_resposta = condicaoGanhei;
             mostrar_feedback = !acertou_resposta;
@@ -234,11 +234,11 @@ void UpdateFase3(void)
             resposta_entregue = true;
             bool condicaoGanhei = true;
             for (int i = 0; i < NUM_SWITCHES; i++) {
-                if ((i == 0 || i == 3 || i == 7)) {
+                if (i == 0 || i == 1 || i == 5 || i == 7) {
                     if (switchY[i] != minY) condicaoGanhei = false;
                 } else {
                     if (switchY[i] != maxY) condicaoGanhei = false;
-                }
+                }                
             }
             acertou_resposta = condicaoGanhei;
             mostrar_feedback = !acertou_resposta;
@@ -281,7 +281,7 @@ void UpdateFase3(void)
         }
     }
 }
-void DrawFase3(void)
+void Draw_Desafio_01(void)
 {
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -350,7 +350,7 @@ void DrawFase3(void)
             };
             DrawRectangle(entregaX_final, entregaY + i, entregaW_final, 1, row);
         }
-        DrawRectangleRoundedLines(entregaBtnFinal, 0.32f, 8, corVerdeBorder);
+        DrawRectangleRoundedLines(entregaBtnFinal, 0.32f, 8, 2.0f, corVerdeBorder);
         if (!hover)
             DrawRectangleRounded((Rectangle){entregaX_final+6, entregaY+6, entregaW_final-12, entregaH*0.28f}, 0.34f, 6, (Color){255,255,255,31});
         int fonte = 28;
@@ -511,12 +511,12 @@ void DrawFase3(void)
     EndDrawing();
 }
 
-bool Fase3Concluida(void)
+bool Fase_Desafio_01_Concluida(void)
 {
     return fase3_concluida;
 }
 
-void UnloadFase3(void)
+void Unload_Desafio_01(void)
 {
     UnloadTexture(fundo);
     UnloadTexture(pergunta_img);
