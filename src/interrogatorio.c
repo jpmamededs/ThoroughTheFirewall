@@ -129,7 +129,7 @@ void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto
     ctx.bustupChegou = ctx.somSurpresaTocado = false;
 
     // ETAPA 2 ------------------------------------------------------------
-    InitTypeWriter(&ctx.writer, ctx.falaTexto, 16.0f);
+    InitTypeWriter(&ctx.writer, ctx.falaTexto, 19.0f);
     ctx.mostrarConfiante = ctx.dialogoFinalizado = false;
 
     // ETAPA 3 ------------------------------------------------------------
@@ -229,7 +229,7 @@ static void UpdateFalaHank(float dt)
         if (semPergunta && !ctx.usandoExtra && ctx.falaTextoExtra) {
             ctx.usandoExtra = true;
             ctx.falaTexto   = ctx.falaTextoExtra;
-            InitTypeWriter(&ctx.writer, ctx.falaTexto, 16.0f);
+            InitTypeWriter(&ctx.writer, ctx.falaTexto, 19.0f);
             ctx.falaAudio = LoadSound("src/music/fala_apresentacao_2.mp3");
             SetSoundVolume(ctx.falaAudio, 4.0f);
             ctx.falaSomTocado = false;

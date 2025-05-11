@@ -26,8 +26,11 @@ AppState proxFasePosInterrogatorio;
 typedef struct { const char *audio; const char *texto; } RoteiroHank;
 static const RoteiroHank roteiros[] = {
     { 
-        "src/music/surprise.mp3",
-        "Bom trabalho na criptografia… Agora responda:"
+        "src/music/fala_hank_desafio01.mp3",
+        "Impressionante! Você conseguiu identificar as prioridades do sistema sob pressão e realocar os recursos de forma "
+        "eficiente, mantendo a calma e controlando a situação da melhor forma possivel. Isso demonstra uma capacidade de "
+        "tomada de decisão rápida e precisa e essa habilidade é fundamental para garantir a integridade dos sistemas em "
+        "situações de crise. [ENTER]"
     },
     { 
         "src/music/surprise.mp3",
@@ -54,7 +57,7 @@ int main(void)
     SetWindowPosition(0, 0);
 
     InitAudioDevice();
-    Music music = LoadMusicStream("src/music/musica_tema.mp3");
+    Music music = LoadMusicStream("");
     SetMusicVolume(music, 0.9f);
     PlayMusicStream(music);
 
@@ -145,13 +148,14 @@ int main(void)
             if (IsKeyPressed(KEY_M))
             {
                 UnloadMenu();
-                //InitDebug();
-                state = APP_FIREWALL;
+                InitDebug();
+                state = APP_DEBUG;
             }
             if (IsKeyPressed(KEY_T))
             {
                 UnloadMenu();
-                Init_Interrogatorio(-1, NULL, NULL);
+                perguntaAtual++;
+                Init_Interrogatorio(perguntaAtual, roteiros[perguntaAtual].audio, roteiros[perguntaAtual].texto);
                 interrogatorio_Initialized = true;
                 proxFasePosInterrogatorio = APP_DESAFIO_01;
                 state = INTERROGATORIO;

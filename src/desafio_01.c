@@ -25,7 +25,7 @@ static Texture2D sprGemini;
 static Texture2D sprCadeadoFechadoCortado; // CADEADO FECHADO
 static Texture2D sprCadeadoAbertoCortado;  // CADEADO ABERTO  // NOVO!
 static const char* gemini_help_msg_default = "Clique aqui caso precise de ajuda!";
-static const char* gemini_help_msg_ajuda = "Não desligue a energia, cameras e rede, isso pode alertar os outros.";
+static const char* gemini_help_msg_ajuda = "Certifique-se de manter ativos: energia, firewall, antivírus, rede.";
 static float geminiRectW = 550;
 static float geminiRectH = 0;
 static int   geminiTextWidth = 0;
@@ -64,9 +64,9 @@ static float minY, maxY;
 static bool fase3_fadeout = false;
 static float fase3_fadeout_time = 0.0f;
 #define FASE3_FADEOUT_DURACAO 0.8f
-#define FALA_NORMAL "O'que eu devo desligar agora? Qualquer passo errado aqui vai ser muito perigoso, não posso chamar atenção."
-#define FALA_ACERTO "Ufa! Desativei só o que devia. Posso continuar sem levantar suspeitas."
-#define FALA_ERRO "Merda! Algo errado, desliguei demais, vai soar o alarme ou vão perceber!"
+#define FALA_NORMAL "Preciso ajustar os recursos para manter os sistemas críticos ativos. Não posso desligar os essenciais!"
+#define FALA_ACERTO "Consegui! Os sistemas prioritários permanecem ativos e estáveis."
+#define FALA_ERRO "Algo deu errado... Desativei algum sistema crítico! Isso pode comprometer toda a operação!"
 #define FALA_JOAO_ACERTO "Muito bem... liguei só o necessário. O Hank não percebeu nada!"
 #define FALA_JOAO_ERRO "Não era para desligar tudo! O Hank vai desconfiar disso!! Preciso fugir!"
 #define FALA_CARLOS_ACERTO "Hehehe, ninguém percebeu um movimento sequer..."
@@ -192,11 +192,11 @@ void Update_Desafio_01(void)
             resposta_entregue = true;
             bool condicaoGanhei = true;
             for (int i = 0; i < NUM_SWITCHES; i++) {
-                if ((i == 0 || i == 3 || i == 7)) {
+                if (i == 0 || i == 1 || i == 5 || i == 7) {
                     if (switchY[i] != minY) condicaoGanhei = false;
                 } else {
                     if (switchY[i] != maxY) condicaoGanhei = false;
-                }
+                }                
             }
             acertou_resposta = condicaoGanhei;
             mostrar_feedback = !acertou_resposta;
@@ -234,11 +234,11 @@ void Update_Desafio_01(void)
             resposta_entregue = true;
             bool condicaoGanhei = true;
             for (int i = 0; i < NUM_SWITCHES; i++) {
-                if ((i == 0 || i == 3 || i == 7)) {
+                if (i == 0 || i == 1 || i == 5 || i == 7) {
                     if (switchY[i] != minY) condicaoGanhei = false;
                 } else {
                     if (switchY[i] != maxY) condicaoGanhei = false;
-                }
+                }                
             }
             acertou_resposta = condicaoGanhei;
             mostrar_feedback = !acertou_resposta;
