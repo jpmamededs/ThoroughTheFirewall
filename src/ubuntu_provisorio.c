@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <dirent.h>
 
+// ESSE ARQUIVO DEVE SER MUDADO PARA ubuntuPenDrive.c
+
 static Texture2D wallpaper;
 static Texture2D background;
 static Texture2D terminalIcon;
