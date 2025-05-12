@@ -40,6 +40,7 @@ typedef enum
 extern int notasIA[MAX_PERGUNTAS];
 extern char relatoriosIA[MAX_PERGUNTAS][512];
 extern char gPlayerName[MAX_PLAYER_NAME];
+extern char relatorioGeralIA[1024];
 
 // =====================
 // TYPEWRITER EFFECT (TEXTO DIGITANDO)
@@ -116,5 +117,7 @@ void DrawAllDialogueOptions(const DialogueQuestion* dq, int selected,
 
 void InitPlayerName(void);
 void DrawDica(float posX, float posY, const char *text);
+int SomarNotasIA(void);
+void GerarRelatorioGeralIA(char *relatorioGeral, size_t tamanho);
 
 #endif // GENERALFUNCTIONS_H

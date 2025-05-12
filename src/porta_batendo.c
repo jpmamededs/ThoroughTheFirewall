@@ -313,4 +313,5 @@ void Unload_Porta_Batendo(void)
     UnloadMusicStream(somBaterPorta);
     UnloadSound(somAbrindoPorta);
     UnloadTexture(pergunta_img);
+    EnableCursor();
 }
