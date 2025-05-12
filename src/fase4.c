@@ -3,6 +3,8 @@
 #include "generalFunctions.h"
 #include <math.h>
 
+// Esse arquivo é o 3D de 
+
 extern AppState state;
 
 static Model modelo3D;
