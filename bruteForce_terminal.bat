@@ -1,4 +1,5 @@
 @echo off
+setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
 color 0a
 title Terminal de Teste - FBI
@@ -13,47 +14,62 @@ echo ██████  █████   ██    ██ ██████  
 echo ██   ██ ██      ██    ██ ██   ██ ██      ██      ██   ██.
 echo ██████  ██       ██████  ██   ██  ██████ ███████ ██   ██ .
 echo.
-echo.
-echo Iniciando...
-timeout /t 2 >nul
 
-:inicio
-set /p comando=Insira os usernames da wordlist: 
+:: Solicita e valida URL do site antes de prosseguir
+:AskURL
+set /p siteURL=Insira a URL do site: 
+if /i not "!siteURL!"=="https://cybertechinc.vercel.app/" (
+    echo [ERRO] URL invalida. Tente novamente.
+    goto AskURL
+)
 
-:: Lista de usernames válidos
-set usernames=admin user123 hankmicucci usertest superuser hank_123 usradm cybertechinc
+:: Solicita path de users.txt até ser válido
+:AskUsers
+set /p usersFile=Insira o caminho para users.txt: 
+set "usersFile=!usersFile:"=!"
+if not exist "!usersFile!" (
+    echo [ERRO] Arquivo "!usersFile!" nao encontrado.
+    goto AskUsers
+)
 
-:: Verificar se o username está na lista
-for %%u in (%usernames%) do if /i "%%u"=="%comando%" goto senha
+:: Solicita path de passwords.txt até ser válido
+:AskPasswords
+set /p passFile=Insira o caminho para passwords.txt: 
+set "passFile=!passFile:"=!"
+if not exist "!passFile!" (
+    echo [ERRO] Arquivo "!passFile!" nao encontrado.
+    goto AskPasswords
+)
 
-echo [ERRO] Username nao reconhecido. Tente novamente.
-goto inicio
-
-:senha
-set /p senha=Insira as senhas da wordlist: 
-
-:: Lista de senhas válidas
-set senhas=@Password passkey 19021986.Hank hank123 cybertech@1 admin passwd#Su123 passwd
-
-:: Simulação de tentativa
-set max=64
+:: Inicializa contadores e barra
 set tentativa=0
+set "bar="
+
 cls
 echo [INFO] Iniciando brute-force...
-for %%a in (%usernames%) do for %%b in (%senhas%) do (
-    set /a tentativa+=1
-    set /a progress=(tentativa*100)/max
-    cls
-    echo [INFO] Tentativa %%a / %%b
-    echo [INFO] Progresso: !progress!%%
-    if "%%a"=="superuser" if "%%b"=="passwd#Su123" (
-        echo.
-        echo [SUCESSO] Acesso concedido com username: superuser e senha: passwd#Su123
-        timeout /t 3 >nul
-        exit
+echo.
+
+:: Loop de brute-force com contagem, barra visual e delay
+for /f "usebackq delims=" %%u in ("!usersFile!") do (
+    for /f "usebackq delims=" %%p in ("!passFile!") do (
+        set /a tentativa+=1
+        set "bar=!bar!#"
+        cls
+        echo [INFO] [!bar!]
+        echo [INFO] Tentativa !tentativa!: %%u / %%p
+
+        :: Pequeno delay para visualizar cada "frame"
+        ping 127.0.0.1 -n 1 >nul
+
+        :: Verifica credenciais corretas
+        if /i "%%u"=="superuser" if "%%p"=="passwd#Su123" (
+            echo.
+            echo credentials found: superuser ^& passwd#Su123
+            goto End
+        )
     )
 )
 
-echo [FALHA] Nenhuma combinacao encontrada.
-timeout /t 2 >nul
-exit
+:End
+endlocal
+exit /b
