@@ -16,8 +16,8 @@ static Model portaModel;
 static Texture2D portaTexture;
 
 static float cameraYaw = 0.0f;
-static const float maxYaw = 45.0f * DEG2RAD;
-static const float minYaw = -45.0f * DEG2RAD;
+static const float maxYaw = PI / 4.0f;
+static const float minYaw = -PI / 4.0f;
 
 static bool somFase1Tocado = false;
 static bool somRadioTocado = false;
@@ -32,17 +32,14 @@ static float cooldownTelefone = -5.0f;
 static Rectangle telefoneBounds = {0};
 static float delayTexto = 0.0f;
 static float hangUpCooldown = -1.0f;
-static Rectangle btnHangUpBounds = {0};  
 
 static TypeWriter fase1Writer;
 static bool typeStarted = false;
-static Music typingMusicF1 = {0};
-static bool typingLoaded = false;
-
 static float fadeAlphaFase1 = 2.0f;
 static const float FADEIN_DURATION = 2.0f;
 static bool fase1FadeInDone = false;
 static bool showComputerButton = false;
+static bool telefoneAtendido = false;
 
 static Sound somPersonagem;            // áudio do personagem
 static TypeWriter personagemWriter;    // typewriter do personagem
@@ -56,9 +53,16 @@ static Sound somChamadaAcabada;
 static bool somChamadaTocado = false; 
 static float gapTimer = -1.0f;        // cronômetro entre Fala-1 e Fala-2
 static bool  gapSoundPlayed = false;
+#define RING_GAP 0.40f
 
 static bool fase_concluida = false;
 static const char *characterName = "";
+
+static bool dicaVisivel = false;
+static float dicaTimer = 0.0f;
+static bool dicaAnimando = false;
+static float posicaoDicaX = -300.0f;  // Começa fora da tela
+static const float velocidadeDica = 300.0f;  // Pixels por segundo
 
 const char *GetCurrentText(TypeWriter *writer)
 {
@@ -104,6 +108,7 @@ void Init_Ligacao_Desconhecido(const char *nome)
     typeStarted = false;
     hangUpCooldown = -1.0f;
     fase_concluida = false;
+    telefoneAtendido = false;
 
     // Câmera
     camera.position = (Vector3){0.0f, 1.6f, 0.0f};
@@ -111,6 +116,15 @@ void Init_Ligacao_Desconhecido(const char *nome)
     camera.up = (Vector3){0.0f, 1.0f, 0.0f};
     camera.fovy = 60.0f;
     camera.projection = CAMERA_PERSPECTIVE;
+
+    SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+    DisableCursor();
+
+    // Dica
+    dicaVisivel = false;
+    dicaTimer = 0.0f;
+    dicaAnimando = false;
+    posicaoDicaX = -300.0f;
 }
 
 void Update_Ligacao_Desconhecido(void)
@@ -156,10 +170,7 @@ void Update_Ligacao_Desconhecido(void)
         }
     }
 
-    if (typeStarted)
-        UpdateTypeWriter(&fase1Writer, delta, IsKeyPressed(KEY_SPACE));
-    if (typingLoaded)
-        UpdateMusicStream(typingMusicF1);
+    if (typeStarted) UpdateTypeWriter(&fase1Writer, delta, IsKeyPressed(KEY_SPACE));
 
     if (typeStarted && !unknownDone && fase1Writer.drawnChars >= strlen(GetCurrentText(&fase1Writer)))
     {
@@ -227,39 +238,34 @@ void Update_Ligacao_Desconhecido(void)
         UpdateTypeWriter(&personagemWriter, delta, IsKeyPressed(KEY_SPACE));
 
     // Toca telefone automaticamente com cooldown
-    if (!interromperTelefone)
+    if (!interromperTelefone && !telefoneAtendido)
     {
-        cooldownTelefone += delta;
-        if (!IsSoundPlaying(somTelefone) && cooldownTelefone >= 0.0f)
+        if (IsSoundPlaying(somTelefone))
         {
-            PlaySound(somTelefone);
-            cooldownTelefone = -9999.0f;
-            telefoneVisivel = true;
-            if (!animacaoFeita)
+            cooldownTelefone = 0.0f;
+        }
+        else 
+        {
+            cooldownTelefone += delta;
+            if (cooldownTelefone >= RING_GAP)
             {
-                animandoTelefone = true;
-                telefoneSubindo = true;
-                animacaoTelefoneY = 1.0f;
+                PlaySound(somTelefone);
+                telefoneVisivel = true;
+
+                if (!animacaoFeita)
+                {
+                    animandoTelefone   = true;
+                    telefoneSubindo    = true;
+                    animacaoTelefoneY  = 1.0f;
+                }
+
+                cooldownTelefone = 0.0f;
             }
         }
     }
     else
     {
-        Vector2 mouse = GetMousePosition();
-
-        int boxX = 60;
-        int marginBottom = 220;
-        int boxY = GetScreenHeight() - marginBottom;
-        int boxWidth = GetScreenWidth() - 120;
-        int btnW = 48, btnH = 48;
-        btnHangUpBounds = (Rectangle){
-            boxX + boxWidth - btnW - 20,   // canto direito da caixa
-            boxY - btnH - 10,              // um pouco acima
-            btnW, btnH
-        };
-
-        if (CheckCollisionPointRec(mouse, btnHangUpBounds) &&
-            IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        if (!telefoneAtendido && IsKeyPressed(KEY_D))
         {
             StopSound(somRadio);
             StopSound(somTelefone);
@@ -276,36 +282,29 @@ void Update_Ligacao_Desconhecido(void)
         }
     }
 
-    Vector2 mouse = GetMousePosition();
-
-    if (telefoneVisivel &&
-        CheckCollisionPointRec(mouse, telefoneBounds) &&
-        IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_A))
     {
-        bool clicouEsquerda = (mouse.x < telefoneBounds.x + telefoneBounds.width * 0.5f);
-    
-        if (clicouEsquerda)
-        {
-            interromperTelefone = true;
-    
-            if (!typeStarted) delayTexto = 2.3f;
-    
-            StopSound(somTelefone);
-    
-            animandoTelefone = true;
-            telefoneSubindo  = false;
-            animacaoTelefoneY = 0.0f;
-        }
-        else
-        {
-            StopSound(somTelefone);
-            telefoneVisivel  = false;
-            animacaoFeita    = false;
-            animandoTelefone = false;
-    
-            hangUpCooldown   = 0.0f;
-            cooldownTelefone = -1.0f;
-        }
+        telefoneVisivel  = false;
+        interromperTelefone = true;
+        telefoneAtendido = true;
+
+        if (!typeStarted) delayTexto = 2.3f;
+
+        StopSound(somTelefone);
+
+        animandoTelefone = true;
+        telefoneSubindo  = false;
+        animacaoTelefoneY = 0.0f;
+    }
+    else if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_D))
+    {
+        StopSound(somTelefone);
+        telefoneVisivel  = false;
+        animacaoFeita    = false;
+        animandoTelefone = false;
+
+        hangUpCooldown   = 0.0f;
+        cooldownTelefone = -1.0f;
     }
 
     if (tempoDesdeInicio >= 4.0f && !somFase1Tocado)
@@ -314,16 +313,43 @@ void Update_Ligacao_Desconhecido(void)
         somFase1Tocado = true;
     }
 
-    // Rotação da câmera
-    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
-        cameraYaw -= 0.0018f;
-    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
-        cameraYaw += 0.0018f;
+    if (tempoDesdeInicio >= 2.0f && !dicaVisivel) 
+    {
+        dicaVisivel = true;
+        dicaAnimando = true;
+    }
 
-    if (cameraYaw > maxYaw)
-        cameraYaw = maxYaw;
-    if (cameraYaw < minYaw)
-        cameraYaw = minYaw;
+    if (dicaVisivel) 
+    {
+        dicaTimer += delta;
+
+        if (dicaAnimando && dicaTimer < 1.0f) 
+        {
+            posicaoDicaX += velocidadeDica * delta;
+            if (posicaoDicaX >= 20.0f) 
+            {
+                posicaoDicaX = 20.0f;
+                dicaAnimando = false;
+            }
+        }
+
+        if (dicaTimer >= 5.0f && dicaTimer < 7.0f) 
+        {
+            dicaAnimando = true;
+            posicaoDicaX -= velocidadeDica * delta;
+            if (posicaoDicaX <= -420.0f) 
+            {
+                posicaoDicaX = -422.0f;
+                dicaVisivel = false;
+            }
+        }
+    }
+
+    float mouseDeltaX = GetMouseDelta().x;
+    cameraYaw += mouseDeltaX * 0.002f;
+
+    if (cameraYaw > maxYaw) cameraYaw = maxYaw;
+    if (cameraYaw < minYaw) cameraYaw = minYaw;
 
     float distance = 1.0f;
     camera.target.x = camera.position.x + sinf(cameraYaw) * distance;
@@ -441,18 +467,23 @@ void Draw_Ligacao_Desconhecido()
     // Botão "Usar Computador"
     if (showComputerButton)
     {
+        int fontSize = 20;
+        const char* text = "Usar Computador [SPACE]";
+        int textWidth = MeasureText(text, fontSize);
+        int padding = 20;
+
         Rectangle btnBounds = {
-            GetScreenWidth() / 2 - 100,
+            GetScreenWidth() / 2 - (textWidth / 2) - padding,
             GetScreenHeight() / 2 + 100,
-            200,
-            50
+            textWidth + (2 * padding),
+            fontSize + 20
         };
 
         DrawRectangleRec(btnBounds, GREEN);
-        DrawText("Usar Computador", btnBounds.x + 20, btnBounds.y + 15, 20, BLACK);
+        DrawText(text, btnBounds.x + (btnBounds.width - textWidth) / 2,
+                btnBounds.y + (btnBounds.height - fontSize) / 2, fontSize, BLACK);
 
-        Vector2 mouse = GetMousePosition();
-        if (CheckCollisionPointRec(mouse, btnBounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        if (IsKeyPressed(KEY_SPACE))
         {
             StopSound(somFase1);
             StopSound(somTelefone);
@@ -466,6 +497,11 @@ void Draw_Ligacao_Desconhecido()
     {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                     (Color){0, 0, 0, (unsigned char)(fadeAlphaFase1 * 255)});
+    }
+
+    if (dicaVisivel) 
+    {
+        DrawDica(posicaoDicaX, 20, "Dica: mova o mouse para olhar ao redor");
     }
 
     EndDrawing();
@@ -486,4 +522,5 @@ void Unload_Ligacao_Desconhecido(void)
     UnloadSound(somRadio);
     UnloadSound(somPersonagem);
     UnloadSound(somChamadaAcabada);
+    EnableCursor();
 }

@@ -222,3 +222,33 @@ float UpdateFade(float dt, float duration, bool fadeIn)
 void InitPlayerName(void) {
     memset(gPlayerName, 0, sizeof(gPlayerName));
 }
+
+void DrawDica(float posX, float posY, const char *text)
+{
+    int dicaWidth = 420;
+    int dicaHeight = 50;
+    int iconSize = 20;
+    int padding = 15;
+
+    DrawRectangleRounded((Rectangle){posX, posY, dicaWidth, dicaHeight}, 0.3f, 12, (Color){30, 30, 30, 200});
+    DrawRectangleRoundedLines((Rectangle){posX, posY, dicaWidth, dicaHeight}, 0.3f, 12, (Color){255, 255, 255, 100});
+
+    int iconPosX = posX + padding;
+    int iconPosY = posY + dicaHeight / 2;
+
+    DrawCircle(iconPosX, iconPosY, iconSize / 2, (Color){100, 100, 255, 200});
+    DrawText("i", iconPosX, iconPosY - 10, 20, WHITE);
+
+    int fontSize = 18;
+    int textPosX = iconPosX + iconSize + padding;
+    int textPosY = posY + dicaHeight / 2 - fontSize / 2;
+    int textWidth = MeasureText(text, fontSize);
+
+    if (textWidth > dicaWidth - (2 * padding + iconSize))
+    {
+        fontSize = 16;
+        textWidth = MeasureText(text, fontSize);
+    }
+
+    DrawText(text, textPosX, textPosY, fontSize, WHITE);
+}

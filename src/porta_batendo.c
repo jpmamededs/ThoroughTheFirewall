@@ -90,7 +90,8 @@ void Init_Porta_Batendo(const char *nome)
     portaModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = portaTexture;
 
     somBaterPorta = LoadMusicStream("src/music/batida-de-porta.mp3");
-    somAbrindoPorta = LoadSound("src/music/doorOpening.mp3"); // NOVO
+    somAbrindoPorta = LoadSound("src/music/doorOpening.mp3");
+    SetMusicVolume(somBaterPorta, 3.0f);
 
     tempoDesdeInicio = 0.0f;
     somTocado = false;
@@ -118,12 +119,15 @@ void Init_Porta_Batendo(const char *nome)
     camera.up = (Vector3){0.0f, 1.0f, 0.0f};
     camera.fovy = 60.0f;
     camera.projection = CAMERA_PERSPECTIVE;
+
+    SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+    DisableCursor();
 }
 
 void Update_Porta_Batendo(void)
 {
-    const float maxYaw = 45.0f * DEG2RAD;
-    const float minYaw = -45.0f * DEG2RAD;
+    const float maxYaw = PI / 4.0f;
+    const float minYaw = -PI / 4.0f;
 
     float delta = GetFrameTime();
 
@@ -150,10 +154,8 @@ void Update_Porta_Batendo(void)
                 introTimer     = 0.0f;
             }
         }
-
         return;
     }
-
 
     if (introActive)
     {
@@ -176,16 +178,11 @@ void Update_Porta_Batendo(void)
 
     tempoDesdeInicio += delta;
 
-    // Rotação da câmera
-    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
-        cameraYaw -= 0.0018f;
-    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
-        cameraYaw += 0.0018f;
+    float mouseDeltaX = GetMouseDelta().x;
+    cameraYaw += mouseDeltaX * 0.002f;
 
-    if (cameraYaw > maxYaw)
-        cameraYaw = maxYaw;
-    if (cameraYaw < minYaw)
-        cameraYaw = minYaw;
+    if (cameraYaw > maxYaw) cameraYaw = maxYaw;
+    if (cameraYaw < minYaw) cameraYaw = minYaw;
 
     float distance = 1.0f;
     camera.target.x = camera.position.x + sinf(cameraYaw) * distance;
@@ -252,19 +249,25 @@ void Draw_Porta_Batendo(void)
 
     EndMode3D();
 
-    if (!portaAtendida && cameraYaw >= 30.0f * DEG2RAD && somTocado)
+    if (!portaAtendida && cameraYaw >= 41.0f * DEG2RAD && somTocado)
     {
-        Rectangle btn = {
-            GetScreenWidth() / 2 - 100,
-            GetScreenHeight() - 100,
-            200,
-            40};
+        int fontSize = 20;
+        const char* text = "Atender Porta [SPACE]";
+        int textWidth = MeasureText(text, fontSize);
+        int padding = 20;
 
-        DrawRectangleRec(btn, DARKGREEN);
-        DrawText("Atender Porta", btn.x + 20, btn.y + 10, 20, WHITE);
+        Rectangle btnBounds = {
+            GetScreenWidth() / 2 - (textWidth / 2) - padding,
+            GetScreenHeight() / 2 + 100,
+            textWidth + (2 * padding),
+            fontSize + 20
+        };
 
-        Vector2 mouse = GetMousePosition();
-        if (CheckCollisionPointRec(mouse, btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        DrawRectangleRec(btnBounds, GREEN);
+        DrawText(text, btnBounds.x + (btnBounds.width - textWidth) / 2,
+                btnBounds.y + (btnBounds.height - fontSize) / 2, fontSize, BLACK);
+
+        if (IsKeyPressed(KEY_SPACE))
         {
             StopMusicStream(somBaterPorta);
             somParado = true;

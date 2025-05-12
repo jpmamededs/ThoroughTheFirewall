@@ -115,5 +115,6 @@ void DrawAllDialogueOptions(const DialogueQuestion* dq, int selected,
     int blinkWrong, bool blink, int blinkCorrect);
 
 void InitPlayerName(void);
+void DrawDica(float posX, float posY, const char *text);
 
 #endif // GENERALFUNCTIONS_H
