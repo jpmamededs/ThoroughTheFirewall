@@ -333,7 +333,7 @@ void Draw_Desafio_01(void)
         bool hover = CheckCollisionPointRec(mouse, entregaBtnFinal);
         Color corVerdeA = (Color){22, 61, 30, 232};
         Color corVerdeB = (Color){38, 96, 47, 232};
-        Color corVerdeBorder = (Color){33, 126, 63, 255};
+        //Color corVerdeBorder = (Color){33, 126, 63, 255};
         Color corVerdeHoverA = (Color){34, 72, 41, 255};
         Color corVerdeHoverB = (Color){52, 120, 67, 255};
         Color corSombra = (Color){0, 0, 0, 60};
@@ -350,7 +350,7 @@ void Draw_Desafio_01(void)
             };
             DrawRectangle(entregaX_final, entregaY + i, entregaW_final, 1, row);
         }
-        DrawRectangleRoundedLines(entregaBtnFinal, 0.32f, 8, 2.0f, corVerdeBorder);  
+        //DrawRectangleRoundedLines(entregaBtnFinal, 0.32f, 8, 2.0f, corVerdeBorder);  
 //      (Rectangle)        (float)    (int)   (Color)
         if (!hover)
             DrawRectangleRounded((Rectangle){entregaX_final+6, entregaY+6, entregaW_final-12, entregaH*0.28f}, 0.34f, 6, (Color){255,255,255,31});
