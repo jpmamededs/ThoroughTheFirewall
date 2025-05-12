@@ -22,6 +22,8 @@ typedef enum
     APP_DESAFIO_02,
     // Ta certo só a parte de cima (ordem das fases)
     APP_PROVISORIO,
+    APP_TEMPLATE_UBUNTU_01,
+    APP_TEMPLATE_UBUNTU_02,
     APP_FASE4,
     APP_UBUNTU_PROVISORIO,
     APP_FASE6,
