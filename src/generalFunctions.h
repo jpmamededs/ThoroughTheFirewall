@@ -5,7 +5,7 @@
 #include "raylib.h"
 #include <string.h>
 
-// ======================
+// ========================
 // ENUM DE ESTADOS GERAIS
 // =====================
 typedef enum
