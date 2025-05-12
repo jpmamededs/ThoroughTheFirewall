@@ -236,11 +236,9 @@ void Draw_Firewall(void)
     {
         int iconMargin = 10;
         float terminalScale = 1.3f;
-        float geminiSideScale = 0.06f;
         float geminiAnimScale = 1.0f / 13.5f;
 
         DrawTextureEx(terminalIcon, (Vector2){iconMargin, iconMargin}, 0.0f, terminalScale, WHITE);
-        DrawTextureEx(geminiIcon, (Vector2){iconMargin + 1, iconMargin + terminalIcon.height * terminalScale + 40}, 0.0f, geminiSideScale, WHITE);
 
         if (geminiAnimStarted)
             DrawTextureEx(geminiIcon, geminiAnimPos, 0.0f, geminiAnimScale, WHITE);
