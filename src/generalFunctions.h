@@ -20,8 +20,10 @@ typedef enum
     APP_DESAFIO_01,
     APP_SERVIDOR_PROXY,
     APP_DESAFIO_02,
-    // Ta certo só a parte de cima (ordem das fases)
-    APP_PROVISORIO,
+    APP_DESAFIO_03,
+    APP_PENDRIVE,
+    APP_BRUTEFORCE,
+    APP_FRUITNINJA,
     APP_TEMPLATE_UBUNTU_01,
     APP_TEMPLATE_UBUNTU_02,
     APP_TEMPLATE_3D_01,
@@ -29,9 +31,6 @@ typedef enum
     APP_FASE4,
     APP_UBUNTU_PROVISORIO,
     APP_FASE6,
-    APP_FASE7,
-    APP_FASEFINAL,
-    APP_PC_SCREEN_FINAL,
     APP_DEBUG
 } AppState;
 
