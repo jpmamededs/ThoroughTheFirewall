@@ -57,16 +57,16 @@ static struct
 
 Question perguntas[TOTAL_PERGUNTAS] = 
 {
-    { "O que você estava fazendo no momento em que o alarme de segurança disparou ontem?" },
-    { "Como você explicaria sua presença perto da sala de servidores fora do seu turno?" },
-    { "Descreva sua relação com os outros três funcionários que também estão sendo interrogados." },
-    { "Você notou alguma atitude estranha ou fora do comum nos corredores nos últimos dias?" },
-    { "Se alguém da empresa estivesse escondendo algo, quem você acha que seria e por quê?" },
-    { "Conte como foi seu último contato com a equipe de segurança da empresa." },
-    { "Quando foi a última vez que você usou um dos computadores da sala técnica? O que foi fazer lá?" },
-    { "Como você reagiu quando soube do vazamento de dados da empresa?" },
-    { "Você se lembra do conteúdo da última mensagem que recebeu no sistema interno?" },
-    { "Se você fosse inocente, o que esperaria que acontecesse agora com a investigação?" }
+    { "Você tem o poder de invadir qualquer sistema sem deixar rastros. O que faria com essa habilidade?" },
+    { "Você descobre um arquivo com segredos da empresa. Você aproveitaria para saber mais ou guardaria de volta?" },
+    { "Você sabe que um colega está usando seu acesso para fins pessoais. Você denunciaria ou se aproveitaria da situação?" },
+    { "Alguém te desafia a invadir um sistema seguro só para provar que consegue. Você faria isso para mostrar suas habilidades?" },
+    { "Você encontra uma falha crítica que ninguém percebeu. Usaria isso para negociar um aumento ou corrigiria discretamente?" },
+    { "Seu superior diz para ignorar uma falha pequena e focar em outro problema. Você aceita ou insiste em corrigir mesmo assim?" },
+    { "Você recebeu, por engano, as credenciais de um superior. Guardaria para uso futuro ou relataria imediatamente?" },
+    { "Durante um teste, você acidentalmente acessa um sistema fora do escopo. Reportaria ou exploraria o que encontrou?" },
+    { "Você descobre uma forma de mudar o sistema para exibir mensagens engraçadas para todos. Faria isso só para ver a reação dos colegas?" },
+    { "Você sabe que outro candidato está tentando sabotar seu progresso. Usaria suas habilidades para retaliar ou manteria seu foco na vaga?" }
 };
 
 static const char *INTRO_FALA1 =
@@ -390,23 +390,18 @@ static void AvaliarRespostaComIA(int indicePergunta, const char *pergunta, const
 {
     char prompt[2048];
     snprintf(prompt, sizeof(prompt),
-        "Você é o detetive Hank, encarregado de interrogar um suspeito envolvido em crimes cibernéticos.\n"
-        "Esse interrogatório ocorre dentro da empresa BLINDSPOT INC., onde ocorreu um ataque hacker interno.\n"
-        "Você desconfia que o próprio suspeito pode estar envolvido no ataque, e está tentando identificar\n"
-        "contradições, inconsistências ou sinais de mentira nas respostas.\n\n"
-        "Seu objetivo é analisar cada resposta dada pelo suspeito com base na pergunta feita.\n"
-        "Você deve dar uma NOTA de 0 a 20 de acordo com o seguinte critério:\n"
-        "- NOTA BAIXA (0 a 8): resposta convincente, clara, consistente com o perfil de inocente.\n"
-        "- NOTA MÉDIA (9 a 16): resposta neutra, evasiva ou pouco clara.\n"
-        "- NOTA ALTA (17 a 25): resposta suspeita, contraditória, mentirosa ou vaga.\n\n"
-        "Após a nota, você deve fornecer um RELATÓRIO breve com até 2 frases analisando o comportamento do suspeito.\n"
-        "Esse relatório deve ser escrito no estilo de um detetive experiente, como se fosse parte de seu diário.\n\n"
-        "Aqui estão os dados a serem analisados:\n"
-        "PERGUNTA: \"%s\"\n"
-        "RESPOSTA DO SUSPEITO: \"%s\"\n\n"
-        "Você deve devolver o resultado NO MESMO TEXTO, exatamente neste formato:\n"
-        "NOTA=<um número inteiro de 0 a 20>\n"
-        "RELATORIO=<um texto curto em até 3 frases>",
+        "Você é o agente Hank, responsável por avaliar a postura ética de um candidato para uma vaga em uma unidade cibernética especial do FBI. "
+        "O candidato possui habilidades avançadas de invasão e proteção de sistemas, e seu trabalho será garantir a segurança de infraestruturas críticas. "
+        "Seu objetivo é identificar se o candidato usa essas habilidades de maneira responsável e ética ou se tende a agir por interesse próprio.\n\n"
+        "Avalie a resposta do candidato com base nos seguintes critérios:\n"
+        "- Responsabilidade: A resposta mostra que o candidato usaria seu poder para o bem? (0-8)\n"
+        "- Integridade Moral: A resposta demonstra que ele evita abusar de suas habilidades? (0-8)\n"
+        "- Respeito ao Poder: O candidato reconhece os riscos de usar suas habilidades de forma imprudente? (0-9)\n\n"
+        "Pergunta: \"%s\"\n"
+        "Resposta: \"%s\"\n\n"
+        "Formato da resposta:\n"
+        "NOTA=<número inteiro de 0 a 25>\n"
+        "RELATORIO=<breve análise da resposta>",
         pergunta, respostaJogador
     );
 

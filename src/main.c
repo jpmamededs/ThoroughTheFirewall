@@ -275,6 +275,7 @@ int main(void)
             Draw_Porta_Batendo();
             if (Fase_Porta_Batendo_Concluida())
             {
+                Unload_Porta_Batendo();
                 Init_Interrogatorio(-1, NULL, NULL);
                 interrogatorio_Initialized = true;
                 proxFasePosInterrogatorio = APP_DESAFIO_01;

@@ -1,5 +1,6 @@
 // generalFunctions.c
 #include "generalFunctions.h"
+#include "gemini.h"
 #include "raylib.h"
 #include <string.h>
 #include <stdio.h>
@@ -7,6 +8,7 @@
 int notasIA[MAX_PERGUNTAS] = {0};
 char relatoriosIA[MAX_PERGUNTAS][512] = {0};
 char gPlayerName[MAX_PLAYER_NAME] = {0};
+char relatorioGeralIA[1024] = {0};
 
 // ====== TYPEWRITER ======
 void InitTypeWriter(TypeWriter* tw, const char* text, float speed) {
@@ -252,4 +254,42 @@ void DrawDica(float posX, float posY, const char *text)
     }
 
     DrawText(text, textPosX, textPosY, fontSize, WHITE);
+}
+
+int SomarNotasIA(void) {
+    int soma = 0;
+    for (int i = 0; i < 4; i++) {
+        soma += notasIA[i];
+    }
+    return soma;
+}
+
+void GerarRelatorioGeralIA(char *relatorioGeral, size_t tamanho) {
+
+    char prompt[4096];
+    snprintf(prompt, sizeof(prompt),
+        "Você é o agente Hank, responsável por avaliar um candidato a uma vaga de segurança cibernética no FBI.\n\n"
+        "Abaixo estão os relatórios individuais da IA após cada desafio realizado pelo candidato.\n"
+        "Com base nesses relatórios, crie um relatório final resumido que avalie o desempenho geral do candidato, considerando:\n"
+        "- Postura ética\n"
+        "- Responsabilidade\n"
+        "- Uso consciente das habilidades\n"
+        "Relatórios individuais:\n"
+    );
+
+    for (int i = 0; i < 4; i++) {
+        char buffer[512];
+        snprintf(buffer, sizeof(buffer), "Relatório %d: %s\n", i + 1, relatoriosIA[i]);
+        strcat(prompt, buffer);
+    }
+
+    strcat(prompt, "\nFormato da resposta:\nRELATORIO_GERAL=<relatório consolidado e objetivo>");
+
+    char retorno[1024] = {0};
+    ObterRespostaGemini(prompt, retorno);
+
+    const char *pRel = strstr(retorno, "RELATORIO_GERAL=");
+    if (pRel) {
+        strncpy(relatorioGeral, pRel + strlen("RELATORIO_GERAL="), tamanho - 1);
+    }
 }
