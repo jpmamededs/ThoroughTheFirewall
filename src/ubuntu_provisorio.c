@@ -113,7 +113,7 @@ void Update_Ubuntu_Provisorio(void)
             {
                 char command[1024];
                 snprintf(command, sizeof(command),
-                         "start \"\" \"%s\\first_terminal.bat\"", cwd);
+                         "start \"\" \"%s\\bruteForce_terminal.bat\"", cwd);
                 system(command);
                 terminalChamado = true;
             }
