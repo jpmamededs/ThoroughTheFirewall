@@ -22,6 +22,8 @@
 #include <time.h>
 #include "template_ubuntu_01.h"
 #include "template_ubuntu_02.h"
+#include "template_3D_01.h"
+#include "template_3D_02.h"
 
 AppState state = APP_CUTSCENES;
 AppState proxFasePosInterrogatorio;
@@ -82,6 +84,8 @@ int main(void)
     static bool servidorProxy_Initialized = false; // <--- Flag ESPECÍFICA da PCServer
     static bool template_ubuntu_01_Initialized = false;
     static bool template_ubuntu_02_Initialized = false;
+    static bool template_3D_01_Initialized = false;
+    static bool template_3D_02_Initialized = false;
 
     extern bool interrogatorioFinalizado;
 
@@ -163,6 +167,20 @@ int main(void)
                 UnloadMenu();
                 template_ubuntu_02_Initialized = false;
                 state = APP_TEMPLATE_UBUNTU_02;
+            }
+            if (IsKeyPressed(KEY_C))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                template_3D_01_Initialized = false;
+                state = APP_TEMPLATE_3D_01;
+            }
+            if (IsKeyPressed(KEY_V))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                template_3D_02_Initialized = false;
+                state = APP_TEMPLATE_3D_02;
             }
             if (IsKeyPressed(KEY_J))
             {
@@ -405,6 +423,36 @@ int main(void)
                 Unload_Template_Ubuntu_02();
                 template_ubuntu_02_Initialized = false;
                 state = APP_DEBUG; // MUDAR O STATE AQUI!
+            }
+        }
+        else if (state == APP_TEMPLATE_3D_01)
+        {
+            if (!template_3D_01_Initialized)
+            {
+                Init_Template_3D_01();
+                template_3D_01_Initialized = true;
+            }
+            Update_Template_3D_01();
+            Draw_Template_3D_01();
+            if (Fase_Template_3D_01_Concluida()) {
+                Unload_Template_3D_01();
+                template_3D_01_Initialized = false;
+                state = APP_DEBUG;
+            }
+        }
+        else if (state == APP_TEMPLATE_3D_02)
+        {
+            if (!template_3D_02_Initialized)
+            {
+                Init_Template_3D_02();
+                template_3D_02_Initialized = true;
+            }
+            Update_Template_3D_02();
+            Draw_Template_3D_02();
+            if (Fase_Template_3D_02_Concluida()) {
+                Unload_Template_3D_02();
+                template_3D_02_Initialized = false;
+                state = APP_DEBUG;
             }
         }
         else if (state == APP_FASE7)

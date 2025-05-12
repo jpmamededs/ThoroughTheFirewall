@@ -439,18 +439,18 @@ void Draw_Desafio_02(void)
             }
         }
         DrawTextureEx(sprGemini, (Vector2){geminiX, geminiY}, 0.0f, geminiScale, logoCol);
-        Color borderColorNormal = (Color){4, 77, 18, 255};
-        Color borderColorHover  = (Color){18, 130, 49, 255};
-        for (int row = 0; row < NUM_BUTTON_ROWS; row++) {
-            float btnY = quadY + row * (BUTTON_SIZE + BUTTON_ROW_SPACING);
-            for (int col = 0; col < NUM_BUTTON_COLS; col++) {
-                float btnX = quadX + col * (BUTTON_SIZE + BUTTON_SPACING);
-                Rectangle btnRec = { btnX, btnY, BUTTON_SIZE, BUTTON_SIZE };
-                Color cor = quadButtonHovered[row][col] ? borderColorHover : borderColorNormal;
-                DrawRectangleRoundedLines(btnRec, 0.23f, 16, 2.0f, cor);
-//      (Rectangle) (float) (int) (Color)
-            }
-        }
+        //Color borderColorNormal = (Color){4, 77, 18, 255};
+        //Color borderColorHover  = (Color){18, 130, 49, 255};
+        //for (int row = 0; row < NUM_BUTTON_ROWS; row++) {
+            //float btnY = quadY + row * (BUTTON_SIZE + BUTTON_ROW_SPACING);
+            //for (int col = 0; col < NUM_BUTTON_COLS; col++) {
+                //float btnX = quadX + col * (BUTTON_SIZE + BUTTON_SPACING);
+                //Rectangle btnRec = { btnX, btnY, BUTTON_SIZE, BUTTON_SIZE };
+                //Color cor = quadButtonHovered[row][col] ? borderColorHover : borderColorNormal;
+                //DrawRectangleRoundedLines(btnRec, 0.23f, 16, cor);
+                //      (Rectangle) (float) (int) (Color)
+            //}
+        //}
         int led_centro_x = GetScreenWidth()/2 - 280;
         int led_centro_y = GetScreenHeight()/2 - 210;
         int led_raio = 14;
