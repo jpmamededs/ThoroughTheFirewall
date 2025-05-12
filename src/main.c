@@ -14,7 +14,7 @@
 #include "debug.h"
 #include "desafio_01.h"
 #include "fase4.h"
-#include "fase5.h"
+#include "ubuntu_provisorio.h"
 #include "fase7.h"
 #include "desafio_02.h"
 #include "servidor_proxy.h"
@@ -72,7 +72,7 @@ int main(void)
     static bool porta_batendo_Initialized = false;
     static bool desafio_01_Initialized = false;
     static bool fase4Initialized = false;
-    static bool fase5Initialized = false;
+    static bool ubuntoProvisorio_Initialized = false;
     static bool fase7Initialized = false;
     static bool desafio_02_Initialized = false;
     static bool interrogatorio_Initialized = false;
@@ -113,48 +113,56 @@ int main(void)
             // DEBUG KEYS
             if (IsKeyPressed(KEY_P))
             {
+                PauseMusicStream(music);
                 UnloadMenu();
                 fase2Initialized = false;
                 state = APP_PROVISORIO;
             }
             if (IsKeyPressed(KEY_O))
             {
+                PauseMusicStream(music);
                 UnloadMenu();
                 faseFinalInitialized = false;
                 state = APP_FASEFINAL;
             }
             if (IsKeyPressed(KEY_I))
             {
+                PauseMusicStream(music);
                 UnloadMenu();
                 desafio_01_Initialized = false;
                 state = APP_DESAFIO_01;
             }
             if (IsKeyPressed(KEY_K))
             {
+                PauseMusicStream(music);
                 UnloadMenu();
                 fase4Initialized = false;
                 state = APP_FASE4;
             }
             if (IsKeyPressed(KEY_L))
             {
+                PauseMusicStream(music);
                 UnloadMenu();
-                fase5Initialized = false;
-                state = APP_FASE5;
+                ubuntoProvisorio_Initialized = false;
+                state = APP_UBUNTU_PROVISORIO;
             }
             if (IsKeyPressed(KEY_J))
             {
+                PauseMusicStream(music);
                 UnloadMenu();
                 servidorProxy_Initialized = false;
                 state = APP_SERVIDOR_PROXY;
             }
             if (IsKeyPressed(KEY_M))
             {
+                PauseMusicStream(music);
                 UnloadMenu();
                 InitDebug();
                 state = APP_DEBUG;
             }
             if (IsKeyPressed(KEY_T))
             {
+                PauseMusicStream(music);
                 UnloadMenu();
                 perguntaAtual++;
                 Init_Interrogatorio(perguntaAtual, roteiros[perguntaAtual].audio, roteiros[perguntaAtual].texto);
@@ -164,12 +172,14 @@ int main(void)
             }
             if (IsKeyPressed(KEY_H))
             {
+                PauseMusicStream(music);
                 UnloadMenu();
                 desafio_02_Initialized = false;
                 state = APP_DESAFIO_02;
             }
             if (IsKeyPressed(KEY_N))
             {
+                PauseMusicStream(music);
                 UnloadMenu();
                 fase7Initialized = false;
                 state = APP_FASE7;
@@ -330,24 +340,23 @@ int main(void)
             if (Fase4Concluida()) {
                 UnloadFase4();
                 fase4Initialized = false;
-                proxFasePosInterrogatorio = APP_FASE5;
+                proxFasePosInterrogatorio = APP_UBUNTU_PROVISORIO;
                 state = INTERROGATORIO;
             }
         }
-        else if (state == APP_FASE5)
+        else if (state == APP_UBUNTU_PROVISORIO)
         {
-            if (!fase5Initialized)
+            if (!ubuntoProvisorio_Initialized)
             {
-                InitFase5();
-                fase5Initialized = true;
+                Init_Ubuntu_Provisorio();
+                ubuntoProvisorio_Initialized = true;
             }
-            UpdateFase5();
-            DrawFase5();
-            if (Fase5Concluida()) {
-                UnloadFase5();
-                fase5Initialized = false;
-                proxFasePosInterrogatorio = APP_DESAFIO_02;
-                state = INTERROGATORIO;
+            Update_Ubuntu_Provisorio();
+            Draw_Ubuntu_Provisorio();
+            if (Fase_Ubuntu_Provisorio_Concluida()) {
+                Unload_Ubuntu_Provisorio();
+                ubuntoProvisorio_Initialized = false;
+                state = APP_DEBUG;
             }
         }
         else if (state == APP_FASE7)
@@ -410,8 +419,8 @@ int main(void)
         Unload_Desafio_01();
     else if (state == APP_FASE4)
         UnloadFase4();
-    else if (state == APP_FASE5)
-        UnloadFase5();
+    else if (state == APP_UBUNTU_PROVISORIO)
+        Unload_Ubuntu_Provisorio();
     else if (state == APP_FASE7)
         UnloadFase7();
     else if (state == APP_DESAFIO_02)

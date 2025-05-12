@@ -20,9 +20,10 @@ typedef enum
     APP_DESAFIO_01,
     APP_SERVIDOR_PROXY,
     APP_DESAFIO_02,
+    // Ta certo só a parte de cima (ordem das fases)
     APP_PROVISORIO,
     APP_FASE4,
-    APP_FASE5,
+    APP_UBUNTU_PROVISORIO,
     APP_FASE6,
     APP_FASE7,
     APP_FASEFINAL,
