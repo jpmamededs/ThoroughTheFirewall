@@ -4,36 +4,51 @@
 #include <math.h>
 #include <stdio.h>
 
-// ESSE DAQUI É O 3D DO MAPA DO SHELL
-
 // Variáveis Globais
 static Model modelo3D;
 static Model portaModel;
 static Texture2D portaTexture;
-static Sound doorKnockSound;  // Som da batida na porta
+static Texture2D closedBoxTexture;  // Novo: Textura da caixa fechada
+static Sound doorKnockSound;
+static Sound doorOpeningSound;
 static Camera3D camera;
 static float cameraYaw = 0.0f;
 static const float maxYaw = PI / 4.0f;
 static const float minYaw = -PI / 4.0f;
 
-static bool fase4_concluida = false;
+static bool template3D_02_concluida = false;
 static float timeElapsed = 0.0f;
 static bool soundPlaying = false;
 static bool doorAnswered = false;
 static bool showButton = false;
 
+// Variáveis do Flash e Fade
+static float fadeAlpha = 0.0f;
+static bool isFading = false;
+static bool fadeComplete = false;
+static float fadeDuration = 2.5f;
+static float fadeSpeed;
+static float flashHoldTime = 1.0f;
+static float flashTimer = 0.0f;
+static bool flashActive = false;
+static bool showBox = false;  // Novo: Indica quando mostrar a caixa fechada
+
 void Init_Template_3D_02(void)
 {
-    // Inicializar Modelos e Texturas
+    fadeSpeed = 1.0f / fadeDuration;
+
     modelo3D = LoadModel("src/models/old-computer.obj");
     portaModel = LoadModel("src/models/DOOR.obj");
     portaTexture = LoadTexture("src/models/Garage_Metalness.png");
+    closedBoxTexture = LoadTexture("src/sprites/closed_cardboardBox.png");  // Carregar a caixa
+
     portaModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = portaTexture;
 
     doorKnockSound = LoadSound("src/music/doorKnock.mp3");
-    SetSoundVolume(doorKnockSound, 1.0f);  // Volume moderado
+    doorOpeningSound = LoadSound("src/music/doorOpening.mp3");
+    SetSoundVolume(doorKnockSound, 1.0f);
+    SetSoundVolume(doorOpeningSound, 1.0f);
 
-    // Inicializar a câmera
     camera.position = (Vector3){0.0f, 1.6f, 0.0f};
     camera.target = (Vector3){0.0f, 1.6f, -1.0f};
     camera.up = (Vector3){0.0f, 1.0f, 0.0f};
@@ -44,13 +59,45 @@ void Init_Template_3D_02(void)
     DisableCursor();
 }
 
-bool IsLookingAtDoor()
+void StartFadeOut()
 {
-    // Verifica se o ângulo está entre 30° e 50° para a direita
-    float angleMin = 30 * DEG2RAD;
-    float angleMax = 50 * DEG2RAD;
+    isFading = true;
+    fadeAlpha = 1.0f;
+    fadeComplete = false;
+    flashTimer = 0.0f;
+    flashActive = true;
+}
 
-    return (cameraYaw > angleMin && cameraYaw < angleMax);
+void UpdateFadeOut(float deltaTime)
+{
+    if (flashActive)
+    {
+        flashTimer += deltaTime;
+
+        // Fase 1: Flash Branco Intenso
+        if (flashTimer < flashHoldTime)
+        {
+            fadeAlpha = 1.0f;
+        }
+        else
+        {
+            // Fase 2: Transição para a Tela Preta (Fade Out)
+            fadeAlpha -= fadeSpeed * deltaTime;
+            if (fadeAlpha <= 0.0f)
+            {
+                fadeAlpha = 0.0f;
+                isFading = false;
+                fadeComplete = true;
+                flashActive = false;
+
+                // Ativar a exibição da caixa fechada após o fade
+                showBox = true;
+
+                // Tocar o som após o fade estar completo
+                PlaySound(doorOpeningSound);
+            }
+        }
+    }
 }
 
 void Update_Template_3D_02(void)
@@ -58,8 +105,15 @@ void Update_Template_3D_02(void)
     float deltaTime = GetFrameTime();
     timeElapsed += deltaTime;
 
-    // Tocar o som em loop quando iniciar (após 2 segundos)
-    if (timeElapsed >= 2.0f && !doorAnswered) 
+    UpdateFadeOut(deltaTime);
+
+    if (fadeComplete)
+    {
+        template3D_02_concluida = true;
+        return;
+    }
+
+    if (!isFading && timeElapsed >= 2.0f && !doorAnswered) 
     {
         if (!soundPlaying)
         {
@@ -67,43 +121,25 @@ void Update_Template_3D_02(void)
             soundPlaying = true;
         }
 
-        // Verificar se está olhando para o ângulo correto
-        if (IsLookingAtDoor())
+        if (IsKeyPressed(KEY_SPACE))
         {
-            showButton = true;
-        }
-        else
-        {
-            showButton = false;
-        }
+            if (IsSoundPlaying(doorKnockSound))
+            {
+                StopSound(doorKnockSound);
+                soundPlaying = false;
+            }
 
-        // Parar o som se a porta for atendida (pressionar SPACE)
-        if (showButton && IsKeyPressed(KEY_SPACE))
-        {
-            StopSound(doorKnockSound);
             doorAnswered = true;
-            soundPlaying = false;
-            showButton = false;
-        }
-
-        // Reiniciar o som se não estiver tocando
-        if (!IsSoundPlaying(doorKnockSound))
-        {
-            PlaySound(doorKnockSound);
+            StartFadeOut();
         }
     }
 
-    // Controle da câmera
     float mouseDeltaX = GetMouseDelta().x;
     cameraYaw += mouseDeltaX * 0.002f;
+    cameraYaw = fmaxf(fminf(cameraYaw, maxYaw), minYaw);
 
-    if (cameraYaw > maxYaw) cameraYaw = maxYaw;
-    if (cameraYaw < minYaw) cameraYaw = minYaw;
-
-    float distance = 1.0f;
-    camera.target.x = camera.position.x + sinf(cameraYaw) * distance;
-    camera.target.z = camera.position.z - cosf(cameraYaw) * distance;
-    camera.target.y = camera.position.y;
+    camera.target.x = camera.position.x + sinf(cameraYaw);
+    camera.target.z = camera.position.z - cosf(cameraYaw);
 }
 
 void Draw_Template_3D_02(void)
@@ -111,23 +147,35 @@ void Draw_Template_3D_02(void)
     BeginDrawing();
     ClearBackground(BLACK);
 
-    BeginMode3D(camera);
-    DrawModel(modelo3D, (Vector3){0.0f, -0.5f, -2.0f}, 0.05f, WHITE);
-    DrawModelEx(portaModel, (Vector3){28.0f, -1.0f, -12.0f}, (Vector3){0, 1, 0}, 45.0f,
-                (Vector3){0.05f, 0.05f, 0.05f}, WHITE);
-    EndMode3D();
-
-    // Botão "Atender Porta" (Verde e com tecla SPACE)
-    if (showButton)
+    if (!flashActive)  // Apenas desenha os modelos se o flash não estiver ativo
     {
-        int screenWidth = GetScreenWidth();
-        int screenHeight = GetScreenHeight();
-        const char *buttonText = "Atender Porta [SPACE]";
-        int textWidth = MeasureText(buttonText, 30);
+        BeginMode3D(camera);
+        DrawModel(modelo3D, (Vector3){0.0f, -0.5f, -2.0f}, 0.05f, WHITE);
+        DrawModelEx(portaModel, (Vector3){28.0f, -1.0f, -12.0f}, (Vector3){0, 1, 0}, 45.0f, (Vector3){0.05f, 0.05f, 0.05f}, WHITE);
+        EndMode3D();
+    }
 
-        // Botão verde
-        DrawRectangle(screenWidth / 2 - textWidth / 2 - 10, screenHeight - 80, textWidth + 20, 50, GREEN);
-        DrawText(buttonText, screenWidth / 2 - textWidth / 2, screenHeight - 70, 30, BLACK);
+    // Desenhar o efeito de flash branco seguido de tela preta
+    if (flashActive || isFading)
+    {
+        if (flashTimer < flashHoldTime)
+        {
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), WHITE);
+        }
+        else
+        {
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
+            if (showBox)
+            {
+                float scale = 0.8f;
+                int boxWidth = closedBoxTexture.width * scale;
+                int boxHeight = closedBoxTexture.height * scale;
+                int posX = (GetScreenWidth() - boxWidth) / 2;
+                int posY = (GetScreenHeight() - boxHeight) / 2;
+
+                DrawTextureEx(closedBoxTexture, (Vector2){posX, posY}, 0.0f, scale, WHITE);
+            }
+        }
     }
 
     EndDrawing();
@@ -138,12 +186,14 @@ void Unload_Template_3D_02(void)
     UnloadModel(modelo3D);
     UnloadModel(portaModel);
     UnloadTexture(portaTexture);
+    UnloadTexture(closedBoxTexture);  // Descarregar a caixa
     UnloadSound(doorKnockSound);
+    UnloadSound(doorOpeningSound);
     CloseAudioDevice();
     EnableCursor();
 }
 
 bool Fase_Template_3D_02_Concluida(void)
 {
-    return fase4_concluida;
+    return template3D_02_concluida;
 }
