@@ -56,7 +56,8 @@ static float geminiAnimSpeed = 6.0f;
 
 static bool fase_concluida = false; 
 
-void AtualizaTamanhoGeminiBox(void) {
+static void AtualizaTamanhoGeminiBox(void)
+{
     float geminiScale = 0.1f;
     float geminiH = sprGemini.height * geminiScale;
     int txtSize = 20;
@@ -65,8 +66,8 @@ void AtualizaTamanhoGeminiBox(void) {
     float minW = GEMINI_RECT_PADRAO;
     float maxW = GetScreenWidth() - 140;
     geminiRectW = minW;
-    if (geminiTextWidth + 2*GEMINI_PAD_X > minW)
-        geminiRectW = (geminiTextWidth + 2*GEMINI_PAD_X > maxW) ? maxW : geminiTextWidth + 2*GEMINI_PAD_X;
+    if (geminiTextWidth + 2 * GEMINI_PAD_X > minW)
+        geminiRectW = (geminiTextWidth + 2 * GEMINI_PAD_X > maxW) ? maxW : geminiTextWidth + 2 * GEMINI_PAD_X;
     geminiRectH = geminiH * 0.75f;
 }
 
@@ -103,10 +104,10 @@ void Init_Desafio_03(void)
     fase_concluida = false;
 }
 const char* FalaPorResultado(const char* name, bool acerto) {
-    if (!name || !name[0]) name = "Mateus";
-    if (strcmp(name, "João") == 0)      return acerto ? FALA_JOAO_ACERTO   : FALA_JOAO_ERRO;
-    if (strcmp(name, "Carlos") == 0)    return acerto ? FALA_CARLOS_ACERTO : FALA_CARLOS_ERRO;
-    if (strcmp(name, "Mamede") == 0)    return acerto ? FALA_MAMEDE_ACERTO : FALA_MAMEDE_ERRO;
+    if (!name || !name[0]) name = "Dante";
+    if (strcmp(name, "Alice") == 0)      return acerto ? FALA_JOAO_ACERTO   : FALA_JOAO_ERRO;
+    if (strcmp(name, "Jade") == 0)    return acerto ? FALA_CARLOS_ACERTO : FALA_CARLOS_ERRO;
+    if (strcmp(name, "Levi") == 0)    return acerto ? FALA_MAMEDE_ACERTO : FALA_MAMEDE_ERRO;
     return acerto ? FALA_ACERTO : FALA_ERRO;
 }
 
@@ -292,7 +293,7 @@ void Draw_Desafio_03(void)
     Texture2D spr = sprJoao;
     float scale = 0.6f;
     int carlosExtraOffset = 0, mamedeExtraOffset = 0;
-    if(strcmp(name, "Mateus") == 0) {
+    if(strcmp(name, "Dante") == 0) {
         if(pergunta2.respondeu && pergunta2.opcoes[pergunta2.opcao_selecionada_usuario].correta) {
             spr = sprMateus2; scale = 0.8f;
         } else if(pergunta2.respondeu && pergunta2.opcao_selecionada_usuario != -1) {
@@ -300,7 +301,7 @@ void Draw_Desafio_03(void)
         } else {
             spr = sprMateus; scale = 1.3f;
         }
-    } else if(strcmp(name, "João") == 0) {
+    } else if(strcmp(name, "Alice") == 0) {
         if(pergunta2.respondeu && pergunta2.opcoes[pergunta2.opcao_selecionada_usuario].correta) {
             spr = sprJoao2; scale = 0.95f;
         } else if(pergunta2.respondeu && pergunta2.opcao_selecionada_usuario != -1) {
@@ -308,7 +309,7 @@ void Draw_Desafio_03(void)
         } else {
             spr = sprJoao; scale = 0.6f;
         }
-    } else if(strcmp(name, "Carlos") == 0) {
+    } else if(strcmp(name, "Jade") == 0) {
         if(pergunta2.respondeu && pergunta2.opcoes[pergunta2.opcao_selecionada_usuario].correta) {
             spr = sprCarlos2; scale = 1.02f; carlosExtraOffset = -70;
         } else if(pergunta2.respondeu && pergunta2.opcao_selecionada_usuario != -1) {
@@ -316,7 +317,7 @@ void Draw_Desafio_03(void)
         } else {
             spr = sprCarlos; scale = 0.56f; carlosExtraOffset = 0;
         }
-    } else if(strcmp(name, "Mamede") == 0) {
+    } else if(strcmp(name, "Levi") == 0) {
         if(pergunta2.respondeu && pergunta2.opcoes[pergunta2.opcao_selecionada_usuario].correta) {
             spr = sprMamede2; scale = 1.0f;
         } else if(pergunta2.respondeu && pergunta2.opcao_selecionada_usuario != -1) {
@@ -332,9 +333,9 @@ void Draw_Desafio_03(void)
     Vector2 pos;
     pos.x = imgX - 330 + (imgW - tw2)/2.0f;
     pos.y = imgY - th + 210;
-    if (strcmp(name, "Carlos") == 0)
+    if (strcmp(name, "Jade") == 0)
         pos.x += 100 + carlosExtraOffset;
-    else if (strcmp(name, "Mamede") == 0)
+    else if (strcmp(name, "Levi") == 0)
         pos.x += mamedeExtraOffset;
     DrawTextureEx(spr, pos, 0, scale, WHITE);
 
