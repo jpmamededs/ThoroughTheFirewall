@@ -27,7 +27,7 @@ static DialogueOption opcoesFase2[] = {
 };
 static DialogueQuestion pergunta2;
 // Falas pós-resposta (por personagem correto/errado)
-#define FALA_NORMAL "Qual o primeiro passo que deve ser tomado para criar uma reverse shell em C99?"
+#define FALA_NORMAL "Qual o primeiro passo que deve ser tomado para criar uma reverse shell em C99??"
 #define FALA_ACERTO "Consegui lembrar. Acho que ninguem se quer esta pensando que eu possa ser o hacker! "
 #define FALA_ERRO "Droga! Eu acho que fiz algo errado, devo ter disparado algum alerta, preciso fugir.\nEste alarme vai acabar com meu disfarce!!!"
 #define FALA_JOAO_ACERTO "Ufa, consegui lembrar disso. Acho que os próximos passos serão mais dificeis."
