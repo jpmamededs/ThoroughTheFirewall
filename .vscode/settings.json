@@ -8,7 +8,8 @@
         "stdbool.h": "c",
         "desafio_02.h": "c",
         "dirent.h": "c",
-        "template_ubuntu_02.h": "c"
+        "template_ubuntu_02.h": "c",
+        "cutscenes.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
