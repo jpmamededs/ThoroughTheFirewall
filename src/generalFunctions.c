@@ -8,6 +8,7 @@
 int notasIA[MAX_PERGUNTAS] = {0};
 char relatoriosIA[MAX_PERGUNTAS][512] = {0};
 char gPlayerName[MAX_PLAYER_NAME] = {0};
+char gSelectedCharacterName[MAX_PLAYER_NAME] = "";
 char relatorioGeralIA[1024] = {0};
 
 // ====== TYPEWRITER ======

@@ -81,7 +81,7 @@ static void DrawDialogueBoxIntro(const TypeWriter *writer)
     }
 }
 
-void Init_Porta_Batendo(const char *nome)
+void Init_Porta_Batendo()
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
 
@@ -104,7 +104,7 @@ void Init_Porta_Batendo(const char *nome)
     somAbrindoTocado = false;
     fase_concluida = false;
 
-    introSpeaker = nome; 
+    introSpeaker = gSelectedCharacterName; 
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
     InitTypeWriter(&introWriter, "Isso foi fácil demais!", 18.5f);
     introTypeStarted = true;

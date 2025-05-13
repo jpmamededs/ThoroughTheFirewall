@@ -9,7 +9,8 @@
         "desafio_02.h": "c",
         "dirent.h": "c",
         "template_ubuntu_02.h": "c",
-        "pc_screenfinal.h": "c"
+        "pc_screenfinal.h": "c",
+        "stdio.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

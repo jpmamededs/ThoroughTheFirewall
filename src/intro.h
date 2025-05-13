@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 // Inicializa a tela de introdução, usando o nome do personagem selecionado
-void InitIntro(const char *nomePersonagem, const float temposShow[], const float temposErase[]);
+void InitIntro(const float temposShow[], const float temposErase[]);
 
 // Atualiza a lógica de apresentação da introdução (efeito de texto, input, etc)
 void UpdateIntro(void);

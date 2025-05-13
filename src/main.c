@@ -115,7 +115,7 @@ int main(void)
                 UnloadMenu();
                 float temposIntroShow[5] = {5.0f, 6.0f, 7.0f, 5.5f, 5.5f};
                 float temposIntroEraser[5] = {1.2f, 1.2f, 1.2f, 1.2f, 1.2f};
-                InitIntro(MenuSelectedCharacterName(), temposIntroShow, temposIntroEraser);
+                InitIntro(temposIntroShow, temposIntroEraser);
                 state = APP_INTRO;
             }
             // DEBUG KEYS
@@ -236,7 +236,7 @@ int main(void)
         {
             if (!ligacao_desconhecido_Initialized)
             {
-                Init_Ligacao_Desconhecido(MenuSelectedCharacterName());
+                Init_Ligacao_Desconhecido();
                 ligacao_desconhecido_Initialized = true;
             }
             Update_Ligacao_Desconhecido();
@@ -268,7 +268,7 @@ int main(void)
         {
             if (!porta_batendo_Initialized)
             {
-                Init_Porta_Batendo(MenuSelectedCharacterName());
+                Init_Porta_Batendo();
                 porta_batendo_Initialized = true;
             }
             Update_Porta_Batendo();

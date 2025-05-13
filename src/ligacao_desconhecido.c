@@ -69,7 +69,7 @@ const char *GetCurrentText(TypeWriter *writer)
     return writer->text;
 }
 
-void Init_Ligacao_Desconhecido(const char *nome)
+void Init_Ligacao_Desconhecido()
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
@@ -80,7 +80,7 @@ void Init_Ligacao_Desconhecido(const char *nome)
     somRadio = LoadSound("src/music/voz-grosa.mp3");
     somPersonagem = LoadSound(""); // se quiser voz no cara, é so colocar o caminho aqui
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
-    characterName = nome;
+    characterName = gSelectedCharacterName;
     
     portaModel = LoadModel("src/models/DOOR.obj");
     portaTexture = LoadTexture("src/models/Garage_Metalness.png");

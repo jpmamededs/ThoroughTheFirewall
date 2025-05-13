@@ -36,10 +36,12 @@ typedef enum
 
 #define MAX_PERGUNTAS 4
 #define MAX_PLAYER_NAME 26
+
 extern int notasIA[MAX_PERGUNTAS];
 extern char relatoriosIA[MAX_PERGUNTAS][512];
-extern char gPlayerName[MAX_PLAYER_NAME];
 extern char relatorioGeralIA[1024];
+extern char gPlayerName[MAX_PLAYER_NAME];
+extern char gSelectedCharacterName[MAX_PLAYER_NAME];
 
 // =====================
 // TYPEWRITER EFFECT (TEXTO DIGITANDO)
