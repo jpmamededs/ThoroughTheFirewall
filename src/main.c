@@ -11,7 +11,7 @@
 #include "desafio_03.h"
 #include "pendrive.h"
 #include "brute-force.h"
-#include "fase7.h"
+#include "desafio_04.h"
 #include "gemini.h"
 #include "generalFunctions.h"
 #include "debug.h"
@@ -77,7 +77,7 @@ int main(void)
     static bool desafio_01_Initialized = false;
     static bool fase4Initialized = false;
     static bool ubuntoProvisorio_Initialized = false;
-    static bool fase7Initialized = false;
+    static bool desafio_04_Initialized = false;
     static bool desafio_02_Initialized = false;
     static bool interrogatorio_Initialized = false;
     static bool pendrive_Initialized = false;
@@ -217,8 +217,8 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                fase7Initialized = false;
-                state = APP_FRUITNINJA;
+                desafio_04_Initialized = false;
+                state = APP_DESAFIO_04;
             }
             // FIM DEBUG
         }
@@ -395,19 +395,26 @@ int main(void)
             {
                 Unload_BruteForce();
                 bruteforce_Initialized = false;
-                state = APP_FRUITNINJA;
+                state = APP_DESAFIO_04;
             }
         }
-        else if (state == APP_FRUITNINJA)
+        else if (state == APP_DESAFIO_04)
         {
-            if (!fase7Initialized)
+            if (!desafio_04_Initialized)
             {
-                InitFase7();
-                fase7Initialized = true;
+                Init_Desafio_04();
+                desafio_04_Initialized = true;
             }
-            UpdateFase7();
-            DrawFase7();
+            Update_Desafio_04();
+            Draw_Desafio_04();
+            if (Fase_Desafio_04_Concluida()) {
+                Unload_Desafio_04();
+                desafio_04_Initialized = false;
+                proxFasePosInterrogatorio = APP_DEBUG; // Futuramente Shell reverso!
+                state = INTERROGATORIO;
+            }
         }
+        // ===== FIM DO JOGO! =====
         else if (state == APP_FASE4)
         {
             if (!fase4Initialized)
@@ -504,7 +511,7 @@ int main(void)
             UpdateDebug();
             DrawDebug();
         }
-    } // fechamento do while
+    }
 
     // Limpeza final (ao sair do loop)
     if (state == APP_CUTSCENES)
@@ -525,8 +532,8 @@ int main(void)
         UnloadFase4();
     else if (state == APP_UBUNTU_PROVISORIO)
         Unload_Ubuntu_Provisorio();
-    else if (state == APP_FRUITNINJA)
-        UnloadFase7();
+    else if (state == APP_DESAFIO_04)
+        Unload_Desafio_04();
     else if (state == APP_DESAFIO_02)
         Unload_Desafio_02();
     else if (state == INTERROGATORIO)
