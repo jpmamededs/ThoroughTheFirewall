@@ -123,12 +123,33 @@ int main(void)
                 state = APP_INTRO;
             }
             // DEBUG KEYS
-            if (IsKeyPressed(KEY_P))
+            if (IsKeyPressed(KEY_ONE))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                desafio_01_Initialized = false;
+                state = APP_DESAFIO_01;
+            }
+            if (IsKeyPressed(KEY_TWO))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                desafio_02_Initialized = false;
+                state = APP_DESAFIO_02;
+            }
+            if (IsKeyPressed(KEY_THREE))
             {
                 PauseMusicStream(music);
                 UnloadMenu();
                 desafio_03_Initialized = false;
                 state = APP_DESAFIO_03;
+            }
+            if (IsKeyPressed(KEY_FOUR))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                desafio_04_Initialized = false;
+                state = APP_DESAFIO_04;
             }
             if (IsKeyPressed(KEY_O))
             {
@@ -136,13 +157,6 @@ int main(void)
                 UnloadMenu();
                 pendrive_Initialized = false;
                 state = APP_PENDRIVE;
-            }
-            if (IsKeyPressed(KEY_I))
-            {
-                PauseMusicStream(music);
-                UnloadMenu();
-                desafio_01_Initialized = false;
-                state = APP_DESAFIO_01;
             }
             if (IsKeyPressed(KEY_K))
             {
@@ -209,20 +223,6 @@ int main(void)
                 interrogatorio_Initialized = true;
                 proxFasePosInterrogatorio = APP_DESAFIO_01;
                 state = INTERROGATORIO;
-            }
-            if (IsKeyPressed(KEY_H))
-            {
-                PauseMusicStream(music);
-                UnloadMenu();
-                desafio_02_Initialized = false;
-                state = APP_DESAFIO_02;
-            }
-            if (IsKeyPressed(KEY_N))
-            {
-                PauseMusicStream(music);
-                UnloadMenu();
-                desafio_04_Initialized = false;
-                state = APP_DESAFIO_04;
             }
             if (IsKeyPressed(KEY_B))
             {
