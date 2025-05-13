@@ -173,7 +173,7 @@ void Update_Desafio_03(void)
             pergunta2.timer_ativo = false;
             for (int i = 0; i < pergunta2.num_opcoes; ++i)
                 pergunta2.opcoes[i].desabilitada = true;
-            const char* name = MenuSelectedCharacterName();
+            const char* name = gSelectedCharacterName;
             bool acertou = pergunta2.opcoes[clicada].correta;
             strcpy(fala_exibida, FalaPorResultado(name, acertou));
             InitTypeWriter(&writer, fala_exibida, 18.5f);
@@ -234,7 +234,7 @@ void Draw_Desafio_03(void)
     int imgY = boxY - imgH;
     DrawTexturePro(pergunta_img, (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
                    (Rectangle){imgX, imgY, imgW, imgH}, (Vector2){0, 0}, 0.0f, WHITE);
-    const char* name = MenuSelectedCharacterName();
+    const char* name = gSelectedCharacterName;
     DrawText((name && name[0]) ? name : "???", imgX + 10, imgY + imgH - 30, 30, WHITE);
     int borderRadius = boxHeight / 2;
     DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight, (Color){20, 20, 20, 220});
