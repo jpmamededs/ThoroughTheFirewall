@@ -90,7 +90,7 @@ static void DrawDialogPersonagem(int screenW, int screenH) {
     int imgH = pergunta_img_loaded ? pergunta_img.height - 130 : 220;
     int imgX = boxX;
     int imgY = boxY - imgH;
-    const char *name = MenuSelectedCharacterName();
+    const char *name = gSelectedCharacterName;
     {
         Texture2D spr = sprJoao; float scale = 0.6f;
         int carlosExtraOffset = 0, mamedeExtraOffset = 0;

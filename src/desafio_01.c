@@ -97,10 +97,10 @@ static void InitSwitches(void)
 }
 static const char* FalaPorResultadoFase3(const char* name, bool acerto)
 {
-    if (!name || !name[0]) name = "Mateus";
-    if (strcmp(name, "João") == 0)      return acerto ? FALA_JOAO_ACERTO   : FALA_JOAO_ERRO;
-    if (strcmp(name, "Carlos") == 0)    return acerto ? FALA_CARLOS_ACERTO : FALA_CARLOS_ERRO;
-    if (strcmp(name, "Mamede") == 0)    return acerto ? FALA_MAMEDE_ACERTO : FALA_MAMEDE_ERRO;
+    if (!name || !name[0]) name = "Dante";
+    if (strcmp(name, "Alice") == 0)      return acerto ? FALA_JOAO_ACERTO   : FALA_JOAO_ERRO;
+    if (strcmp(name, "Jade") == 0)    return acerto ? FALA_CARLOS_ACERTO : FALA_CARLOS_ERRO;
+    if (strcmp(name, "Levi") == 0)    return acerto ? FALA_MAMEDE_ACERTO : FALA_MAMEDE_ERRO;
     return acerto ? FALA_ACERTO : FALA_ERRO;
 }
 void Init_Desafio_01(void)
@@ -181,7 +181,7 @@ void Update_Desafio_01(void)
     float entregaX = quadroX;
     float entregaY = quadroY + quadroH + 12;
     Rectangle entregaBtn = { entregaX, entregaY, entregaW, entregaH };
-    const char* name = MenuSelectedCharacterName();
+    const char* name = gSelectedCharacterName;
     if (resposta_entregue || timer_explodiu) respostaShowTimer += delta;
     else respostaShowTimer = 0.0f;
     if (!timer_explodiu && !fase3_fadeout && !resposta_entregue) {
@@ -401,7 +401,7 @@ void Draw_Desafio_01(void)
     int imgY = boxY - imgH;
     DrawTexturePro(pergunta_img, (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
                    (Rectangle){imgX, imgY, imgW, imgH}, (Vector2){0, 0}, 0.0f, WHITE);
-    const char *name = MenuSelectedCharacterName();
+    const char *name = gSelectedCharacterName;
     DrawText((name && name[0]) ? name : "???", imgX + 10, imgY + imgH - 30, 30, WHITE);
     int borderRadius = boxHeight / 2;
     DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight, (Color){20, 20, 20, 220});
@@ -418,19 +418,19 @@ void Draw_Desafio_01(void)
     bool terminou = (timer_explodiu || resposta_entregue);
     bool ganhou   = terminou && acertou_resposta;
     bool perdeu   = terminou && !acertou_resposta;
-    if(strcmp(name, "Mateus") == 0) {
+    if(strcmp(name, "Dante") == 0) {
         if (ganhou)      { spr = sprMateus2; scale = 0.8f; }
         else if(perdeu)  { spr = sprMateus3; scale = 0.8f; }
         else             { spr = sprMateus;  scale = 1.3f; }
-    } else if(strcmp(name, "João") == 0) {
+    } else if(strcmp(name, "Alice") == 0) {
         if (ganhou)      { spr = sprJoao2; scale = 0.95f; }
         else if(perdeu)  { spr = sprJoao3; scale = 0.95f; }
         else             { spr = sprJoao;  scale = 0.6f; }
-    } else if(strcmp(name, "Carlos") == 0) {
+    } else if(strcmp(name, "Jade") == 0) {
         if (ganhou)      { spr = sprCarlos2; scale = 1.02f; carlosExtraOffset = -70;}
         else if(perdeu)  { spr = sprCarlos3; scale = 1.0f;  carlosExtraOffset = -44; }
         else             { spr = sprCarlos;  scale = 0.56f; carlosExtraOffset = 0; }
-    } else if(strcmp(name, "Mamede") == 0) {
+    } else if(strcmp(name, "Levi") == 0) {
         if (ganhou)      { spr = sprMamede2; scale = 1.0f;}
         else if(perdeu)  { spr = sprMamede3; scale = 1.0f;}
         else             { spr = sprMamede;  scale = 1.0f;}
@@ -442,9 +442,9 @@ void Draw_Desafio_01(void)
     Vector2 pos;
     pos.x = imgX - 330 + (imgW - tw2)/2.0f;
     pos.y = imgY - th + 210;
-    if (strcmp(name, "Carlos") == 0)
+    if (strcmp(name, "Jade") == 0)
         pos.x += 100 + carlosExtraOffset;
-    else if (strcmp(name, "Mamede") == 0)
+    else if (strcmp(name, "Levi") == 0)
         pos.x += mamedeExtraOffset;
     DrawTextureEx(spr, pos, 0, scale, WHITE);
     if (mostrarTudo) {

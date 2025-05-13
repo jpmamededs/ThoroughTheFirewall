@@ -24,6 +24,8 @@
 #include "template_ubuntu_02.h"
 #include "template_3D_01.h"
 #include "template_3D_02.h"
+#include "tela_provisoria_01.h"
+#include "tela_provisoria_02.h"
 
 AppState state = APP_CUTSCENES;
 AppState proxFasePosInterrogatorio;
@@ -86,6 +88,8 @@ int main(void)
     static bool template_ubuntu_02_Initialized = false;
     static bool template_3D_01_Initialized = false;
     static bool template_3D_02_Initialized = false;
+    static bool tela01_Initialized = false;
+    static bool tela02_Initialized = false;
 
     extern bool interrogatorioFinalizado;
 
@@ -219,6 +223,20 @@ int main(void)
                 UnloadMenu();
                 desafio_04_Initialized = false;
                 state = APP_DESAFIO_04;
+            }
+            if (IsKeyPressed(KEY_B))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                tela01_Initialized = false;
+                state = APP_TELA_01;
+            }
+            if (IsKeyPressed(KEY_G))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                tela02_Initialized = false;
+                state = APP_TELA_02;
             }
             // FIM DEBUG
         }
@@ -503,6 +521,36 @@ int main(void)
             if (Fase_Template_3D_02_Concluida()) {
                 Unload_Template_3D_02();
                 template_3D_02_Initialized = false;
+                state = APP_DEBUG;
+            }
+        }
+        else if (state == APP_TELA_01)
+        {
+            if (!tela01_Initialized)
+            {
+                Init_Tela_01();
+                tela01_Initialized = true;
+            }
+            Update_Tela_01();
+            Draw_Tela_01();
+            if (Fase_Tela01_Concluida()) {
+                Unload_Tela_01();
+                tela01_Initialized = false;
+                state = APP_DEBUG;
+            }
+        }
+        else if (state == APP_TELA_02)
+        {
+            if (!tela02_Initialized)
+            {
+                Init_Tela_02();
+                tela02_Initialized = true;
+            }
+            Update_Tela_02();
+            Draw_Tela_02();
+            if (Fase_Tela02_Concluida()) {
+                Unload_Tela_02();
+                tela02_Initialized = false;
                 state = APP_DEBUG;
             }
         }

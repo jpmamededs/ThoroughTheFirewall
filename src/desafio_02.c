@@ -266,7 +266,7 @@ void Update_Desafio_02(void)
             quadButtonHovered[row][col] = mouseOver;
             if (mouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 TeclasQuadrado teclaApertada = (TeclasQuadrado)(row * NUM_BUTTON_COLS + col);
-                const char* name = MenuSelectedCharacterName();
+                const char* name = gSelectedCharacterName;
                 char nova_fala[256];
                 snprintf(nova_fala, sizeof(nova_fala), "%s: Cliquei na tecla %d.",
                         (name && name[0]) ? name : "???",
@@ -361,7 +361,7 @@ void Draw_Desafio_02(void)
         float drawY = (GetScreenHeight() - drawH) / 2;
         DrawTextureEx(fundo, (Vector2){drawX, drawY}, 0.0f, scale, WHITE);
     }
-    const char *name = MenuSelectedCharacterName();
+    const char *name = gSelectedCharacterName;
     DrawTexturePro(pergunta_img, (Rectangle){0, 0, pergunta_img.width, pergunta_img.height},
                    (Rectangle){imgX, imgY, imgW, imgH}, (Vector2){0, 0}, 0.0f, WHITE);
     DrawText((name && name[0]) ? name : "???", imgX + 10, imgY + imgH - 30, 30, WHITE);
