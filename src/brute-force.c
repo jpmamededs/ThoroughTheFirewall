@@ -1,4 +1,4 @@
-#include "pc_screenFinal.h"
+#include "brute-force.h"
 #include "generalFunctions.h"
 #include "raylib.h"
 #include <math.h>
@@ -34,9 +34,11 @@ static int estadoCaixa = 0;
 static float tempoCaixaDialogo = 0.0f;
 static const float trocaMensagemDelay = 3.0f;
 
+static bool fase_concluida = false; 
+
 static Rectangle folderBounds;
 
-void InitPcScreenFinal(void)
+void Init_BruteForce(void)
 {
     wallpaper = LoadTexture("src/sprites/os/wallpaper.png");
     background = LoadTexture("src/sprites/os/background.jpg");
@@ -63,9 +65,11 @@ void InitPcScreenFinal(void)
     tempoPosAnimacao = 0.0f;
     tempoCaixaDialogo = 0.0f;
     estadoCaixa = 0;
+
+    fase_concluida = false;
 }
 
-void UpdatePcScreenFinal(void)
+void Update_BruteForce(void)
 {
     float dt = GetFrameTime();
     fadeTimer += dt;
@@ -130,9 +134,13 @@ void UpdatePcScreenFinal(void)
             system(command);
         }
     }
+
+    // (fase_concluida = true;)
+    // isso define que a fase acabou, quando tiver essa lógica
+    // coloque isso, ao inves de trocar o state, Carlos agradeçe!
 }
 
-void DrawPcScreenFinal(void)
+void Draw_BruteForce(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -199,7 +207,12 @@ void DrawPcScreenFinal(void)
     EndDrawing();
 }
 
-void UnloadPcScreenFinal(void)
+bool Fase_BruteForce_Concluida(void)
+{
+    return fase_concluida;
+}
+
+void Unload_BruteForce(void)
 {
     UnloadTexture(wallpaper);
     UnloadTexture(background);

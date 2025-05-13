@@ -84,7 +84,7 @@ static void PauseTypingSfx(void)
     PauseMusicStream(typingMusic); 
 }
 
-void InitIntro(const char *nomePersonagem, const float temposShow[], const float temposErase[])
+void InitIntro(const float temposShow[], const float temposErase[])
 {
     const char *templates[INTRO_PARTS] = {
         "Você, %s, é um jovem talento da cibersegurança e foi selecionado para participar de um processo seletivo ultra secreto do FBI. \n",
@@ -107,9 +107,9 @@ void InitIntro(const char *nomePersonagem, const float temposShow[], const float
 
     // formata os textos
     for (int i = 0; i < INTRO_PARTS; i++) {
-        size_t len = strlen(templates[i]) + strlen(nomePersonagem) + 16;
+        size_t len = strlen(templates[i]) + strlen(gSelectedCharacterName) + 16;
         introParts[i] = malloc(len);
-        if (i == 0) snprintf(introParts[i], len, templates[i], nomePersonagem);
+        if (i == 0) snprintf(introParts[i], len, templates[i], gSelectedCharacterName);
         else        strcpy(introParts[i],    templates[i]);
     }
 

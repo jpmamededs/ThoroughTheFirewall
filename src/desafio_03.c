@@ -1,4 +1,4 @@
-#include "fase2.h"
+#include "desafio_03.h"
 #include "generalFunctions.h"
 #include "menu.h"
 #include "raylib.h"
@@ -54,7 +54,7 @@ static float geminiAnimSpeed = 6.0f;
 #define GEMINI_RECT_PADRAO 550
 #define GEMINI_PAD_X 36
 
-static bool fase2_concluida = false; 
+static bool fase_concluida = false; 
 
 void AtualizaTamanhoGeminiBox(void) {
     float geminiScale = 0.1f;
@@ -69,8 +69,8 @@ void AtualizaTamanhoGeminiBox(void) {
         geminiRectW = (geminiTextWidth + 2*GEMINI_PAD_X > maxW) ? maxW : geminiTextWidth + 2*GEMINI_PAD_X;
     geminiRectH = geminiH * 0.75f;
 }
-extern AppState state;
-void InitFase2(void)
+
+void Init_Desafio_03(void)
 {
     fundo = LoadTexture("src/sprites/empresa3.png");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
@@ -100,7 +100,7 @@ void InitFase2(void)
     AtualizaTamanhoGeminiBox();
     fase2_fazendo_fadeout = false;
     fase2_fadeout_time = 0.0f;
-    fase2_concluida = false;
+    fase_concluida = false;
 }
 const char* FalaPorResultado(const char* name, bool acerto) {
     if (!name || !name[0]) name = "Mateus";
@@ -109,7 +109,8 @@ const char* FalaPorResultado(const char* name, bool acerto) {
     if (strcmp(name, "Mamede") == 0)    return acerto ? FALA_MAMEDE_ACERTO : FALA_MAMEDE_ERRO;
     return acerto ? FALA_ACERTO : FALA_ERRO;
 }
-void UpdateFase2(void)
+
+void Update_Desafio_03(void)
 {
     float delta = GetFrameTime();
     float geminiX = 49, geminiY = 67, geminiScale = 0.1f;
@@ -208,12 +209,13 @@ void UpdateFase2(void)
         if (fase2_fazendo_fadeout) {
             fase2_fadeout_time += delta;
             if (fase2_fadeout_time >= FASE2_FADEOUT_DURACAO) {
-                fase2_concluida = true;
+                fase_concluida = true;
             }
         }
     }
 }
-void DrawFase2(void)
+
+void Draw_Desafio_03(void)
 {
     static float blinkTimer = 0.0f;
     float delta = GetFrameTime();
@@ -374,12 +376,12 @@ void DrawFase2(void)
     EndDrawing();
 }
 
-bool Fase2Concluida(void)
+bool Fase_Desafio_03_Concluida(void)
 {
-    return fase2_concluida;
+    return fase_concluida;
 }
 
-void UnloadFase2(void)
+void Unload_Desafio_03(void)
 {
     UnloadTexture(fundo);
     UnloadTexture(pergunta_img);

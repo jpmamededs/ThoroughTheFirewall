@@ -8,6 +8,7 @@
 int notasIA[MAX_PERGUNTAS] = {0};
 char relatoriosIA[MAX_PERGUNTAS][512] = {0};
 char gPlayerName[MAX_PLAYER_NAME] = {0};
+char gSelectedCharacterName[MAX_PLAYER_NAME] = "";
 char relatorioGeralIA[1024] = {0};
 
 // ====== TYPEWRITER ======
@@ -233,7 +234,8 @@ void DrawDica(float posX, float posY, const char *text)
     int padding = 15;
 
     DrawRectangleRounded((Rectangle){posX, posY, dicaWidth, dicaHeight}, 0.3f, 12, (Color){30, 30, 30, 200});
-    DrawRectangleRoundedLines((Rectangle){posX, posY, dicaWidth, dicaHeight}, 0.3f, 12, 2.0f, (Color){255, 255, 255, 100});
+    // VOLTAR DEPOIS
+    //DrawRectangleRoundedLines((Rectangle){posX, posY, dicaWidth, dicaHeight}, 0.3f, 12, (Color){255, 255, 255, 100});
 
 
     int iconPosX = posX + padding;

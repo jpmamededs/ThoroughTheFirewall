@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-void Init_Porta_Batendo(const char *nome);
+void Init_Porta_Batendo(void);
 void Update_Porta_Batendo(void);
 void Draw_Porta_Batendo(void);
 void Unload_Porta_Batendo(void);

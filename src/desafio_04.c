@@ -1,4 +1,4 @@
-#include "fase7.h"
+#include "desafio_04.h"
 #include "generalFunctions.h"
 #include "menu.h"
 #include "raylib.h"
@@ -76,6 +76,8 @@ static bool faz_fadeout = false;
 static float fadeout_time = 0.0f;
 #define FADEOUT_DURACAO 0.8f
 static bool preFalaInicial = true;
+
+static bool fase_concluida = false; 
 
 // ---------- Função para desenhar caixa de diálogo + personagem ----------
 static void DrawDialogPersonagem(int screenW, int screenH) {
@@ -185,7 +187,7 @@ void ProximaOnda(int w, int h) {
     int qtd = GetRandomValue(2, MAX_ARQUIVOS);
     ResetArquivos(w, h, qtd);
 }
-void InitFase7(void) {
+void Init_Desafio_04(void) {
     pontos = 0;
     rodada = 0;
     venceu_fase = false;
@@ -200,6 +202,7 @@ void InitFase7(void) {
     fadeout_time = 0.0f;
     spriteStatus = SPRITE_NORMAL;
     preFalaInicial = true;
+    fase_concluida = false;
     if (!backgroundLoaded) { background = LoadTexture("src/sprites/pc_perfect.png"); backgroundLoaded = true; }
     if (!ubuntuFundoLoaded) { ubuntuFundo = LoadTexture("src/sprites/ubuntuFundo.png"); ubuntuFundoLoaded = true; }
     if (!antiVirusLoaded) { antiVirusSprite = LoadTexture("src/sprites/antiVirus.png"); antiVirusLoaded = true; }
@@ -224,7 +227,7 @@ void InitFase7(void) {
     strcpy(fala_exibida, FALA_INTRO);
     InitTypeWriter(&writer, fala_exibida, 18.5f);
 }
-void UpdateFase7(void) {
+void Update_Desafio_04(void) {
     float delta = GetFrameTime();
     if (preFalaInicial) {
         UpdateTypeWriter(&writer, delta, IsKeyPressed(KEY_SPACE));
@@ -244,7 +247,9 @@ void UpdateFase7(void) {
             podeAvancarDerrotaOuVitoria = true;
         if (podeAvancarDerrotaOuVitoria &&
             (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) {
-            faz_fadeout = true; fadeout_time = 0.0f;
+            faz_fadeout = true; 
+            fadeout_time = 0.0f;
+            fase_concluida = true;
         }
         return;
     }
@@ -255,7 +260,9 @@ void UpdateFase7(void) {
             podeAvancarDerrotaOuVitoria = true;
         if (podeAvancarDerrotaOuVitoria &&
             (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) {
-            faz_fadeout = true; fadeout_time = 0.0f;
+            faz_fadeout = true; 
+            fadeout_time = 0.0f;
+            fase_concluida = true;
         }
         return;
     }
@@ -341,7 +348,7 @@ void UpdateFase7(void) {
     }
     UpdateTypeWriter(&writer, delta, IsKeyPressed(KEY_SPACE));
 }
-void DrawFase7(void) {
+void Draw_Desafio_04(void) {
     BeginDrawing();
     int screenW = GetScreenWidth();
     int screenH = GetScreenHeight();
@@ -475,7 +482,12 @@ void DrawFase7(void) {
     EndDrawing();
 }
 
-void UnloadFase7(void) {
+bool Fase_Desafio_04_Concluida(void)
+{
+    return fase_concluida;
+}
+
+void Unload_Desafio_04(void) {
     if (backgroundLoaded) { UnloadTexture(background); backgroundLoaded = false; }
     if (ubuntuFundoLoaded) { UnloadTexture(ubuntuFundo); ubuntuFundoLoaded = false; }
     if (antiVirusLoaded) { UnloadTexture(antiVirusSprite); antiVirusLoaded = false; }

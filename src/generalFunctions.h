@@ -20,8 +20,10 @@ typedef enum
     APP_DESAFIO_01,
     APP_SERVIDOR_PROXY,
     APP_DESAFIO_02,
-    // Ta certo só a parte de cima (ordem das fases)
-    APP_PROVISORIO,
+    APP_DESAFIO_03,
+    APP_PENDRIVE,
+    APP_BRUTEFORCE,
+    APP_DESAFIO_04,
     APP_TEMPLATE_UBUNTU_01,
     APP_TEMPLATE_UBUNTU_02,
     APP_TEMPLATE_3D_01,
@@ -29,18 +31,17 @@ typedef enum
     APP_FASE4,
     APP_UBUNTU_PROVISORIO,
     APP_FASE6,
-    APP_FASE7,
-    APP_FASEFINAL,
-    APP_PC_SCREEN_FINAL,
     APP_DEBUG
 } AppState;
 
 #define MAX_PERGUNTAS 4
 #define MAX_PLAYER_NAME 26
+
 extern int notasIA[MAX_PERGUNTAS];
 extern char relatoriosIA[MAX_PERGUNTAS][512];
-extern char gPlayerName[MAX_PLAYER_NAME];
 extern char relatorioGeralIA[1024];
+extern char gPlayerName[MAX_PLAYER_NAME];
+extern char gSelectedCharacterName[MAX_PLAYER_NAME];
 
 // =====================
 // TYPEWRITER EFFECT (TEXTO DIGITANDO)

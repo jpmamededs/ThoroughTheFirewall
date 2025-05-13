@@ -1,11 +1,8 @@
-#include "faseFinal.h"
+#include "pendrive.h"
 #include "raylib.h"
 #include "generalFunctions.h"
 #include <math.h>
 #include <string.h>
-#include "pc_screenFinal.h"
-
-extern AppState state;
 
 static Model modelo3D;
 static Model portaModel;
@@ -24,15 +21,16 @@ static bool pendriveUsavel = false;
 
 static Vector3 usbWorldPos = {-2.0f, 0.5f, 2.0f};
 
-// Typewriter
 static TypeWriter tw;
 static bool mensagemInicialFinalizada = false;
+
+static bool fase_concluida = false; 
 
 static Vector3 Vector3SubtractManual(Vector3 a, Vector3 b) {
     return (Vector3){a.x - b.x, a.y - b.y, a.z - b.z};
 }
 
-void InitFaseFinal(void)
+void Init_Pendrive(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
     portaModel = LoadModel("src/models/DOOR.obj");
@@ -59,10 +57,12 @@ void InitFaseFinal(void)
     pendriveUsavel = false;
     mensagemInicialFinalizada = false;
 
+    fase_concluida = false;
+
     InitTypeWriter(&tw, "Ué, onde eu deixei meu pendrive?", 35.0f);
 }
 
-void UpdateFaseFinal(void)
+void Update_Pendrive(void)
 {
     float delta = GetFrameTime();
 
@@ -97,7 +97,7 @@ void UpdateFaseFinal(void)
     }
 }
 
-void DrawFaseFinal(void)
+void Draw_Pendrive(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -152,14 +152,19 @@ void DrawFaseFinal(void)
 
         Vector2 mouse = GetMousePosition();
         if (CheckCollisionPointRec(mouse, btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            state = APP_PC_SCREEN_FINAL;
+            fase_concluida = true;
         }
     }
 
     EndDrawing();
 }
 
-void UnloadFaseFinal(void)
+bool Fase_Pendrive_Concluida(void)
+{
+    return fase_concluida;
+}
+
+void Unload_Pendrive(void)
 {
     UnloadModel(modelo3D);
     UnloadModel(portaModel);
