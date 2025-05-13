@@ -4,6 +4,8 @@
 #include <math.h>
 #include <stdio.h>
 
+// ESSE DAQUI É O 3D DO MAPA DO SHELL
+
 // Variáveis Globais
 static Model modelo3D;
 static Model portaModel;
