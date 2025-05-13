@@ -13,7 +13,9 @@
         "stdio.h": "c",
         "math.h": "c",
         "string.h": "c",
-        "menu.h": "c"
+        "menu.h": "c",
+        "raylib.h": "c",
+        "loading_screen.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

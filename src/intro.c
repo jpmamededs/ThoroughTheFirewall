@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #define INTRO_TEXT_SPEED 42
-#define INTRO_PARTS       5
+#define INTRO_PARTS 3
 #define BOX_WIDTH_RATIO   0.75f    // largura da caixa (75 % da tela)
 #define BOX_HEIGHT_RATIO  0.18f    // altura da caixa (50 % da tela)
 #define TYPING_SFX_PATH  "src/music/aiSpeaking.mp3"
@@ -87,11 +87,9 @@ static void PauseTypingSfx(void)
 void InitIntro(const float temposShow[], const float temposErase[])
 {
     const char *templates[INTRO_PARTS] = {
-        "Você, %s, é um jovem talento da cibersegurança e foi selecionado para participar de um processo seletivo ultra secreto do FBI. \n",
-        "A missão é simples: provar que você é o melhor entre os quatro candidatos, completando uma série de desafios práticos relacionados à área de cibersegurança.\n",
+        "Você, %s, é um jovem talento da cibersegurança e foi selecionado para participar de um processo seletivo ultra secreto do FBI. A missão é simples: provar que você é o melhor entre os quatro candidatos, completando uma série de desafios práticos relacionados à área de cibersegurança.\n",
         "O responsável pela seleção é o Agente Hank Miccuci, um especialista rigoroso e exigente, que avaliará não só suas habilidades técnicas, mas também sua ética e responsabilidade durante as provas.\n",
-        "Para conquistar a vaga, você precisará ser rápido, preciso e manter a integridade, pois qualquer atitude antiética pode custar sua chance.\n",
-        "Mostre que você é capaz de defender sistemas críticos e se torne o próximo agente cibernético do FBI\n"
+        "Para conquistar a vaga, você precisará ser rápido, preciso e manter a integridade, pois qualquer atitude antiética pode custar sua chance. Mostre que você é capaz de defender sistemas críticos e se torne o próximo agente cibernético do FBI\n"
     };
 
     // libera strings antigas
@@ -130,7 +128,7 @@ void InitIntro(const float temposShow[], const float temposErase[])
     bgMusic = LoadMusicStream(BACKGROUND_MUSIC);
 
     SetMusicVolume(typingMusic, TYPING_VOLUME);
-    SetMusicVolume(bgMusic, 3.5f);
+    SetMusicVolume(bgMusic, 2.2f);
     StartTypingSfx();
     PlayMusicStream(bgMusic);    
 }

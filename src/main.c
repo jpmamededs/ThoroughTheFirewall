@@ -26,6 +26,7 @@
 #include "template_3D_02.h"
 #include "tela_provisoria_01.h"
 #include "tela_provisoria_02.h"
+#include "loading_screen.h"
 
 AppState state = APP_CUTSCENES;
 AppState proxFasePosInterrogatorio;
@@ -90,6 +91,7 @@ int main(void)
     static bool template_3D_02_Initialized = false;
     static bool tela01_Initialized = false;
     static bool tela02_Initialized = false;
+    static bool loading_Initialized = false;
 
     extern bool interrogatorioFinalizado;
 
@@ -117,8 +119,8 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                float temposIntroShow[5] = {5.0f, 6.0f, 7.0f, 5.5f, 5.5f};
-                float temposIntroEraser[5] = {1.2f, 1.2f, 1.2f, 1.2f, 1.2f};
+                float temposIntroShow[3] = {12.0f, 8.0f, 10.0f};
+                float temposIntroEraser[3] = {1.5f, 1.5f, 1.5f};
                 InitIntro(temposIntroShow, temposIntroEraser);
                 state = APP_INTRO;
             }
@@ -208,7 +210,7 @@ int main(void)
                 state = APP_SERVIDOR_PROXY;
             }
             if (IsKeyPressed(KEY_M))
-            {
+            { 
                 PauseMusicStream(music);
                 UnloadMenu();
                 InitDebug();
@@ -219,7 +221,7 @@ int main(void)
                 PauseMusicStream(music);
                 UnloadMenu();
                 perguntaAtual++;
-                Init_Interrogatorio(perguntaAtual, roteiros[perguntaAtual].audio, roteiros[perguntaAtual].texto);
+                Init_Interrogatorio(-1, NULL, NULL);
                 interrogatorio_Initialized = true;
                 proxFasePosInterrogatorio = APP_DESAFIO_01;
                 state = INTERROGATORIO;
@@ -247,6 +249,22 @@ int main(void)
             if (IntroEnded())
             {
                 UnloadIntro();
+                state = APP_LOADING_SCREEN;
+            }
+        }
+        else if (state == APP_LOADING_SCREEN)
+        {
+            if (!loading_Initialized)
+            {
+                Init_LoadingScreen(5.0f);
+                loading_Initialized = true;
+            }
+            Update_LoadingScreen();
+            Draw_LoadingScreen();
+            if (LoadingScreen_Done())
+            {
+                Unload_LoadingScreen();
+                loading_Initialized = false;
                 state = APP_LIGACAO_DESCONHECIDO;
             }
         }

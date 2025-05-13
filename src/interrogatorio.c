@@ -70,14 +70,13 @@ Question perguntas[TOTAL_PERGUNTAS] =
 };
 
 static const char *INTRO_FALA1 =
-        "Impressionante... Não é todo dia que alguém ultrapassa meu firewall tão rápido. Sou Hank, "
-        "agente do FBI e responsável pelo processo seletivo. Você foi escolhido para integrar uma unidade "
-        "cibernética especial. No entanto, há outros três candidatos [ENTER]"; 
-
+        "Impressionante... Não é todo dia que alguém ultrapassa meu firewall tão rápido. Sou Hank, agente do FBI "
+        "e responsável pelo processo seletivo. Para provar que é o melhor, complete cinco desafios práticos que "
+        "envolvem áreas da cibersegurança. [ENTER]";
+        
 static const char *INTRO_FALA2 =
-        "Para provar que é o melhor, complete cinco desafios práticos que envolvem áreas da cibersegurança. "
-        "Avaliarei sua técnica, resistência à pressão e ética. Vamos começar pelo primeiro desafio. [ENTER]";
-
+        "Mas fique ligado, pois, além de avaliar sua técnica, vou observar principalmente como você se comporta, "
+        "para ver se realmente merece fazer parte do FBI. Então, vamos deixar de conversa e partir para o primeiro desafio! [ENTER]";
 static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateApresentacao, UpdateFalaHank, UpdateFalaInterrogatorio };
 static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawApresentacao,  DrawFalaHank,  DrawFalaInterrogatorio  };
 
@@ -129,7 +128,7 @@ void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto
     ctx.bustupChegou = ctx.somSurpresaTocado = false;
 
     // ETAPA 2 ------------------------------------------------------------
-    InitTypeWriter(&ctx.writer, ctx.falaTexto, 19.0f);
+    InitTypeWriter(&ctx.writer, ctx.falaTexto, 16.0f);
     ctx.mostrarConfiante = ctx.dialogoFinalizado = false;
 
     // ETAPA 3 ------------------------------------------------------------
@@ -229,7 +228,7 @@ static void UpdateFalaHank(float dt)
         if (semPergunta && !ctx.usandoExtra && ctx.falaTextoExtra) {
             ctx.usandoExtra = true;
             ctx.falaTexto   = ctx.falaTextoExtra;
-            InitTypeWriter(&ctx.writer, ctx.falaTexto, 19.0f);
+            InitTypeWriter(&ctx.writer, ctx.falaTexto, 17.0f);
             ctx.falaAudio = LoadSound("src/music/fala_apresentacao_2.mp3");
             SetSoundVolume(ctx.falaAudio, 4.0f);
             ctx.falaSomTocado = false;
@@ -242,11 +241,13 @@ static void UpdateFalaHank(float dt)
     if (ctx.dialogoFinalizado) {
         if (semPergunta) {
             interrogatorioFinalizado = true;
+            return;
         } else {
             ctx.stage = PERGUNTA_INTERROGATORIO;
             ctx.respostaLen = 0;
             ctx.respostaBuf[0] = '\0';
             ctx.aguardandoInput = true;
+            return;
         }
     }
 }
@@ -293,9 +294,13 @@ static void DrawFalaHank(void)
 {
     // Sprite confiante
     float scale = 1.3f;
-    Rectangle src = ctx.dialogoFinalizado
-                      ? (Rectangle){3029, 3357, 631, 725}
-                      : (Rectangle){2087,    0, 631, 722};
+
+    Rectangle src;
+    if (!ctx.usandoExtra)
+        src = (Rectangle){2087, 0, 631, 722};
+    else
+        src = (Rectangle){3029, 3357, 631, 725};
+
     float w = src.width*scale, h = src.height*scale;
     Vector2 pos = { (GetScreenWidth()-w)/2.f, GetScreenHeight()-h };
     DrawTexturePro(ctx.spriteConfiante, src, (Rectangle){pos.x,pos.y,w,h}, (Vector2){0,0},0, WHITE);
