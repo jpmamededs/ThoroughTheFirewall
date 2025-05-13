@@ -8,10 +8,14 @@
 #include <stdio.h>
 #include <dirent.h>
 
+// ESSA É A FASE DO KEYLOGGER UBUNTU
+
 static Texture2D wallpaper;
 static Texture2D background;
 static Texture2D terminalIcon;
 static Texture2D geminiIcon;
+static Texture2D folderIcon;
+static Texture2D firefoxIcon;
 static Sound bootSound;
 static Font geminiFont;
 
@@ -55,6 +59,8 @@ void Init_Template_Ubuntu_01(void)
     background = LoadTexture("src/sprites/os/background.jpg");
     terminalIcon = LoadTexture("src/sprites/os/terminal_icon.png");
     geminiIcon = LoadTexture("src/sprites/os/gemini.png");
+    folderIcon = LoadTexture("src/sprites/os/folder.png");
+    firefoxIcon = LoadTexture("src/sprites/os/firefox.png");
     bootSound = LoadSound("src/music/boot.mp3");
     geminiFont = LoadFont("src/fonts/GoogleSansMono.ttf");
 
@@ -67,8 +73,7 @@ void Init_Template_Ubuntu_01(void)
     float geminiAnimScale = 1.0f / 13.5f;
     geminiFinalPos = (Vector2){
         GetScreenWidth() - geminiIcon.width * geminiAnimScale - 20,
-        GetScreenHeight() - geminiIcon.height * geminiAnimScale - 60
-    };
+        GetScreenHeight() - geminiIcon.height * geminiAnimScale - 60};
 
     geminiAnimPos = (Vector2){GetScreenWidth(), geminiFinalPos.y};
 
@@ -113,10 +118,39 @@ void Update_Template_Ubuntu_01(void)
             {
                 char command[1024];
                 snprintf(command, sizeof(command),
-                         "start \"\" \"%s\\first_terminal.bat\"", cwd);
+                         "start \"\" \"%s\\keylogger_terminal.bat\"", cwd);
                 system(command);
                 terminalChamado = true;
             }
+        }
+    }
+
+    if (showBackground && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
+        Vector2 mouse = GetMousePosition();
+
+        // Verifica clique no ícone do terminal
+        Rectangle terminalIconBounds = {10, 10, terminalIcon.width * 1.5f, terminalIcon.height * 2.0f};
+        if (CheckCollisionPointRec(mouse, terminalIconBounds))
+        {
+            char cwd[512];
+            if (_getcwd(cwd, sizeof(cwd)) != NULL)
+            {
+                char command[1024];
+                snprintf(command, sizeof(command),
+                         "start \"\" \"%s\\keylogger_terminal.bat\"", cwd);
+                system(command);
+                terminalChamado = true;
+            }
+        }
+        Rectangle firefoxIconBounds = {
+            10,
+            10 + terminalIcon.height * 1.3f + 10 + folderIcon.height * 0.12f + 10,
+            firefoxIcon.width * 0.11f,
+            firefoxIcon.height * 0.11f};
+        if (CheckCollisionPointRec(mouse, firefoxIconBounds))
+        {
+            system("start https://leakedips.vercel.app/");
         }
     }
 
@@ -126,9 +160,9 @@ void Update_Template_Ubuntu_01(void)
     {
         while ((dir = readdir(d)) != NULL)
         {
-            if (strcmp(dir->d_name, "dados.txt") == 0)
+            if (strcmp(dir->d_name, "dados2.txt") == 0)
             {
-                remove("dados.txt");
+                remove("dados2.txt");
 
                 estadoCaixa = 2;
                 tempoMensagemFinal = 0.0f;
@@ -230,10 +264,25 @@ void Draw_Template_Ubuntu_01(void)
         float terminalScale = 1.3f;
         float geminiAnimScale = 1.0f / 13.5f;
 
-        DrawTextureEx(terminalIcon, (Vector2){iconMargin, iconMargin}, 0.0f, terminalScale, WHITE);
+        // Desenha o ícone do terminal
+        Vector2 terminalPos = (Vector2){iconMargin, iconMargin};
+        DrawTextureEx(terminalIcon, terminalPos, 0.0f, terminalScale, WHITE);
 
+        // Desenha o ícone do Gemini se a animação já começou
         if (geminiAnimStarted)
             DrawTextureEx(geminiIcon, geminiAnimPos, 0.0f, geminiAnimScale, WHITE);
+
+        // Ícones de pasta e Firefox reduzidos drasticamente
+        float folderScale = 0.12f;
+        float firefoxScale = 0.11f;
+
+        // Desenha o ícone da pasta abaixo do ícone do terminal
+        Vector2 folderPos = (Vector2){terminalPos.x, terminalPos.y + terminalIcon.height * terminalScale + iconMargin};
+        DrawTextureEx(folderIcon, folderPos, 0.0f, folderScale, WHITE);
+
+        // Desenha o ícone do Firefox abaixo do ícone da pasta
+        Vector2 firefoxPos = (Vector2){folderPos.x, folderPos.y + folderIcon.height * folderScale + iconMargin};
+        DrawTextureEx(firefoxIcon, firefoxPos, 0.0f, firefoxScale, WHITE);
 
         if (mostrarCaixaDialogo)
         {
@@ -278,6 +327,8 @@ void Unload_Template_Ubuntu_01(void)
     UnloadTexture(background);
     UnloadTexture(terminalIcon);
     UnloadTexture(geminiIcon);
+    UnloadTexture(folderIcon);
+    UnloadTexture(firefoxIcon);
     UnloadSound(bootSound);
     UnloadFont(geminiFont);
 }

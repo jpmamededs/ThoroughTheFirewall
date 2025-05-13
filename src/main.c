@@ -1,29 +1,31 @@
-#include "raylib.h"
 #include "cutscenes.h"
 #include "menu.h"
 #include "intro.h"
 #include "ligacao_desconhecido.h"
+#include "firewall.h"
 #include "porta_batendo.h"
 #include "interrogatorio.h"
+#include "desafio_01.h"
+#include "servidor_proxy.h"
+#include "desafio_02.h"
+#include "desafio_03.h"
+#include "pendrive.h"
+#include "brute-force.h"
+#include "desafio_04.h"
 #include "gemini.h"
-#include "faseFinal.h"
-#include "firewall.h"
-#include "pc_screenFinal.h"
-#include "fase2.h"
 #include "generalFunctions.h"
 #include "debug.h"
-#include "desafio_01.h"
 #include "fase4.h"
 #include "ubuntu_provisorio.h"
-#include "fase7.h"
-#include "desafio_02.h"
-#include "servidor_proxy.h"
 #include <stdlib.h>
 #include <time.h>
+#include "raylib.h"
 #include "template_ubuntu_01.h"
 #include "template_ubuntu_02.h"
 #include "template_3D_01.h"
 #include "template_3D_02.h"
+#include "tela_provisoria_01.h"
+#include "tela_provisoria_02.h"
 
 AppState state = APP_CUTSCENES;
 AppState proxFasePosInterrogatorio;
@@ -70,22 +72,24 @@ int main(void)
 
     static int perguntaAtual = -1;
     bool firewall_Initialized = false;
-    bool pcScreenFinalInitialized = false;
-    bool fase2Initialized = false;
+    bool bruteforce_Initialized = false;
+    bool desafio_03_Initialized = false;
     bool ligacao_desconhecido_Initialized = false;
     static bool porta_batendo_Initialized = false;
     static bool desafio_01_Initialized = false;
     static bool fase4Initialized = false;
     static bool ubuntoProvisorio_Initialized = false;
-    static bool fase7Initialized = false;
+    static bool desafio_04_Initialized = false;
     static bool desafio_02_Initialized = false;
     static bool interrogatorio_Initialized = false;
-    static bool faseFinalInitialized = false;
+    static bool pendrive_Initialized = false;
     static bool servidorProxy_Initialized = false; // <--- Flag ESPECÍFICA da PCServer
     static bool template_ubuntu_01_Initialized = false;
     static bool template_ubuntu_02_Initialized = false;
     static bool template_3D_01_Initialized = false;
     static bool template_3D_02_Initialized = false;
+    static bool tela01_Initialized = false;
+    static bool tela02_Initialized = false;
 
     extern bool interrogatorioFinalizado;
 
@@ -115,30 +119,44 @@ int main(void)
                 UnloadMenu();
                 float temposIntroShow[5] = {5.0f, 6.0f, 7.0f, 5.5f, 5.5f};
                 float temposIntroEraser[5] = {1.2f, 1.2f, 1.2f, 1.2f, 1.2f};
-                InitIntro(MenuSelectedCharacterName(), temposIntroShow, temposIntroEraser);
+                InitIntro(temposIntroShow, temposIntroEraser);
                 state = APP_INTRO;
             }
             // DEBUG KEYS
-            if (IsKeyPressed(KEY_P))
-            {
-                PauseMusicStream(music);
-                UnloadMenu();
-                fase2Initialized = false;
-                state = APP_PROVISORIO;
-            }
-            if (IsKeyPressed(KEY_O))
-            {
-                PauseMusicStream(music);
-                UnloadMenu();
-                faseFinalInitialized = false;
-                state = APP_FASEFINAL;
-            }
-            if (IsKeyPressed(KEY_I))
+            if (IsKeyPressed(KEY_ONE))
             {
                 PauseMusicStream(music);
                 UnloadMenu();
                 desafio_01_Initialized = false;
                 state = APP_DESAFIO_01;
+            }
+            if (IsKeyPressed(KEY_TWO))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                desafio_02_Initialized = false;
+                state = APP_DESAFIO_02;
+            }
+            if (IsKeyPressed(KEY_THREE))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                desafio_03_Initialized = false;
+                state = APP_DESAFIO_03;
+            }
+            if (IsKeyPressed(KEY_FOUR))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                desafio_04_Initialized = false;
+                state = APP_DESAFIO_04;
+            }
+            if (IsKeyPressed(KEY_O))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                pendrive_Initialized = false;
+                state = APP_PENDRIVE;
             }
             if (IsKeyPressed(KEY_K))
             {
@@ -206,19 +224,19 @@ int main(void)
                 proxFasePosInterrogatorio = APP_DESAFIO_01;
                 state = INTERROGATORIO;
             }
-            if (IsKeyPressed(KEY_H))
+            if (IsKeyPressed(KEY_B))
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                desafio_02_Initialized = false;
-                state = APP_DESAFIO_02;
+                tela01_Initialized = false;
+                state = APP_TELA_01;
             }
-            if (IsKeyPressed(KEY_N))
+            if (IsKeyPressed(KEY_G))
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                fase7Initialized = false;
-                state = APP_FASE7;
+                tela02_Initialized = false;
+                state = APP_TELA_02;
             }
             // FIM DEBUG
         }
@@ -236,7 +254,7 @@ int main(void)
         {
             if (!ligacao_desconhecido_Initialized)
             {
-                Init_Ligacao_Desconhecido(MenuSelectedCharacterName());
+                Init_Ligacao_Desconhecido();
                 ligacao_desconhecido_Initialized = true;
             }
             Update_Ligacao_Desconhecido();
@@ -268,13 +286,14 @@ int main(void)
         {
             if (!porta_batendo_Initialized)
             {
-                Init_Porta_Batendo(MenuSelectedCharacterName());
+                Init_Porta_Batendo();
                 porta_batendo_Initialized = true;
             }
             Update_Porta_Batendo();
             Draw_Porta_Batendo();
             if (Fase_Porta_Batendo_Concluida())
             {
+                Unload_Porta_Batendo();
                 Init_Interrogatorio(-1, NULL, NULL);
                 interrogatorio_Initialized = true;
                 proxFasePosInterrogatorio = APP_DESAFIO_01;
@@ -344,26 +363,76 @@ int main(void)
             {
                 Unload_Desafio_02();
                 desafio_02_Initialized = false;
-                proxFasePosInterrogatorio = APP_PROVISORIO; // mudar depois!
+                proxFasePosInterrogatorio = APP_DESAFIO_03;
                 state = INTERROGATORIO;
             }
         }
-        else if (state == APP_PROVISORIO)
+        // KEYLOGGER!!!!!
+        else if (state == APP_DESAFIO_03)
         {
-            if (!fase2Initialized)
+            if (!desafio_03_Initialized)
             {
-                InitFase2();
-                fase2Initialized = true;
+                Init_Desafio_03();
+                desafio_03_Initialized = true;
             }
-            UpdateFase2();
-            DrawFase2();
-            if (Fase2Concluida()) {
-                UnloadFase2();
-                fase2Initialized = false;
-                proxFasePosInterrogatorio = APP_DESAFIO_01;
+            Update_Desafio_03();
+            Draw_Desafio_03();
+            if (Fase_Desafio_03_Concluida()) {
+                Unload_Desafio_03();
+                desafio_03_Initialized = false;
+                proxFasePosInterrogatorio = APP_PENDRIVE;
                 state = INTERROGATORIO;
             }
         }
+        else if (state == APP_PENDRIVE)
+        {
+            if (!pendrive_Initialized)
+            {
+                Init_Pendrive();
+                pendrive_Initialized = true;
+            }
+            Update_Pendrive();
+            Draw_Pendrive();
+            if (Fase_Pendrive_Concluida())
+            {
+                Unload_Pendrive();
+                pendrive_Initialized = false;
+                state = APP_BRUTEFORCE;
+            }
+        }
+        else if (state == APP_BRUTEFORCE)
+        {
+            if (!bruteforce_Initialized)
+            {
+                Init_BruteForce();
+                bruteforce_Initialized = true;
+            }
+            Update_BruteForce();
+            Draw_BruteForce();
+            if (Fase_BruteForce_Concluida())
+            {
+                Unload_BruteForce();
+                bruteforce_Initialized = false;
+                state = APP_DESAFIO_04;
+            }
+        }
+        else if (state == APP_DESAFIO_04)
+        {
+            if (!desafio_04_Initialized)
+            {
+                Init_Desafio_04();
+                desafio_04_Initialized = true;
+            }
+            Update_Desafio_04();
+            Draw_Desafio_04();
+            if (Fase_Desafio_04_Concluida()) {
+                Unload_Desafio_04();
+                desafio_04_Initialized = false;
+                proxFasePosInterrogatorio = APP_DEBUG; // Futuramente Shell reverso!
+                state = INTERROGATORIO;
+            }
+        }
+        // ===== FIM DO JOGO! =====
         else if (state == APP_FASE4)
         {
             if (!fase4Initialized)
@@ -455,40 +524,34 @@ int main(void)
                 state = APP_DEBUG;
             }
         }
-        else if (state == APP_FASE7)
+        else if (state == APP_TELA_01)
         {
-            if (!fase7Initialized)
+            if (!tela01_Initialized)
             {
-                InitFase7();
-                fase7Initialized = true;
+                Init_Tela_01();
+                tela01_Initialized = true;
             }
-            UpdateFase7();
-            DrawFase7();
+            Update_Tela_01();
+            Draw_Tela_01();
+            if (Fase_Tela01_Concluida()) {
+                Unload_Tela_01();
+                tela01_Initialized = false;
+                state = APP_DEBUG;
+            }
         }
-        else if (state == APP_FASEFINAL)
+        else if (state == APP_TELA_02)
         {
-            if (!faseFinalInitialized)
+            if (!tela02_Initialized)
             {
-                InitFaseFinal();
-                faseFinalInitialized = true;
+                Init_Tela_02();
+                tela02_Initialized = true;
             }
-            UpdateFaseFinal();
-            DrawFaseFinal();
-        }
-        else if (state == APP_PC_SCREEN_FINAL)
-        {
-            if (!pcScreenFinalInitialized)
-            {
-                InitPcScreenFinal();
-                pcScreenFinalInitialized = true;
-            }
-            UpdatePcScreenFinal();
-            DrawPcScreenFinal();
-            if (IsKeyPressed(KEY_ESCAPE))
-            {
-                UnloadPcScreenFinal();
-                pcScreenFinalInitialized = false;
-                state = APP_MENU;
+            Update_Tela_02();
+            Draw_Tela_02();
+            if (Fase_Tela02_Concluida()) {
+                Unload_Tela_02();
+                tela02_Initialized = false;
+                state = APP_DEBUG;
             }
         }
         else if (state == APP_DEBUG)
@@ -496,7 +559,7 @@ int main(void)
             UpdateDebug();
             DrawDebug();
         }
-    } // fechamento do while
+    }
 
     // Limpeza final (ao sair do loop)
     if (state == APP_CUTSCENES)
@@ -507,8 +570,8 @@ int main(void)
         UnloadIntro();
     else if (state == APP_LIGACAO_DESCONHECIDO)
         Unload_Ligacao_Desconhecido();
-    else if (state == APP_PROVISORIO)
-        UnloadFase2();
+    else if (state == APP_DESAFIO_03)
+        Unload_Desafio_03();
     else if (state == APP_PORTA_BATENDO)
         Unload_Porta_Batendo();
     else if (state == APP_DESAFIO_01)
@@ -517,18 +580,18 @@ int main(void)
         UnloadFase4();
     else if (state == APP_UBUNTU_PROVISORIO)
         Unload_Ubuntu_Provisorio();
-    else if (state == APP_FASE7)
-        UnloadFase7();
+    else if (state == APP_DESAFIO_04)
+        Unload_Desafio_04();
     else if (state == APP_DESAFIO_02)
         Unload_Desafio_02();
     else if (state == INTERROGATORIO)
         Unload_Interrogatorio();
-    else if (state == APP_FASEFINAL)
-        UnloadFaseFinal();
+    else if (state == APP_PENDRIVE)
+        Unload_Pendrive();
     else if (state == APP_FIREWALL)
         Unload_Firewall();
-    else if (state == APP_PC_SCREEN_FINAL)
-        UnloadPcScreenFinal();
+    else if (state == APP_BRUTEFORCE)
+        Unload_BruteForce();
     else if (state == APP_SERVIDOR_PROXY)
         Unload_ServidorProxy();
     else if (state == APP_DEBUG)

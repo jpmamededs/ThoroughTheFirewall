@@ -3,11 +3,10 @@
 
 #include <stdbool.h>
 
-void Init_Ligacao_Desconhecido(const char *nome);
+void Init_Ligacao_Desconhecido(void);
 void Update_Ligacao_Desconhecido(void);
 void Draw_Ligacao_Desconhecido();
 void Unload_Ligacao_Desconhecido(void);
-
 bool Fase_Ligacao_Desconhecido_Concluida(void);
 
 #endif

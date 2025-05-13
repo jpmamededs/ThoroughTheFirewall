@@ -1,5 +1,5 @@
-#ifndef PC_SCREEN_H
-#define PC_SCREEN_H
+#ifndef FIREWALL_H
+#define FIREWALL_H
 
 #include <stdbool.h>
 

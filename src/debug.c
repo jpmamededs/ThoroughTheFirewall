@@ -5,13 +5,11 @@
 #include <stdio.h>
 
 static char resposta[1024] = {0};
-static bool respostaPronta = false;
 static bool requisicaoIniciada = false;
 //static float tempoParaIniciar = 0.5f; // atraso de meio segundo
 static float tempoDecorrido = 0.0f;
 
 void InitDebug(void) {
-    respostaPronta = false;
     requisicaoIniciada = false;
     tempoDecorrido = 0.0f;
     memset(resposta, 0, sizeof(resposta));
@@ -19,15 +17,6 @@ void InitDebug(void) {
 
 void UpdateDebug(void) {
     tempoDecorrido += GetFrameTime();
-
-    //if (!requisicaoIniciada && tempoDecorrido >= tempoParaIniciar) {
-    //    ObterRespostaGemini(
-    //        "Você é um detetive. O que deve ser feito agora?",
-    //        resposta
-    //    );
-    //    respostaPronta = true;
-    //    requisicaoIniciada = true;
-    //}
 
     int yOffset = 120;
     for (int i = 0; i < MAX_PERGUNTAS; i++) {
@@ -50,23 +39,42 @@ void DrawDebug(void) {
 
     // Desenha o nome do jogador no topo da tela
     DrawText("Nome do Jogador:", 50, 10, 20, LIGHTGRAY);
-    DrawText(gPlayerName, 220, 10, 20, GREEN);  // Nome na cor verde
+    DrawText(gPlayerName, 250, 10, 20, GREEN);
 
-    if (!respostaPronta) {
-        DrawText("Carregando resposta da IA...", 50, 50, 20, GRAY);
-    } else {
-        int y = 80;
-        const int lineHeight = 25;
+    int y = 80;
+    const int lineHeight = 25;
 
-        char respostaTemp[1024];
-        strncpy(respostaTemp, resposta, sizeof(respostaTemp));
+    char respostaTemp[1024];
+    strncpy(respostaTemp, resposta, sizeof(respostaTemp));
 
-        char *linha = strtok(respostaTemp, "\n");
-        while (linha != NULL) {
-            DrawText(linha, 50, y, 20, WHITE);
-            y += lineHeight;
-            linha = strtok(NULL, "\n");
-        }
+    char *linha1 = strtok(respostaTemp, "\n");
+    while (linha1 != NULL) {
+        DrawText(linha1, 50, y, 20, WHITE);
+        y += lineHeight;
+        linha1 = strtok(NULL, "\n");
+    }
+
+    // Mostrar a nota total calculada
+    int notaTotal = SomarNotasIA();
+    char notaStr[64];
+    snprintf(notaStr, sizeof(notaStr), "Nota Total da IA: %d", notaTotal);
+    DrawText(notaStr, 50, y, 20, YELLOW);
+    y += lineHeight;
+
+    // Gerar o relatório geral e exibir
+    char relatorioFinal[1024];
+    GerarRelatorioGeralIA(relatorioFinal, sizeof(relatorioFinal));
+    DrawText("Relatório Geral:", 50, y, 20, LIGHTGRAY);
+    y += lineHeight;
+
+    // Quebra o relatório final em várias linhas para exibição
+    char relatorioTemp[1024];
+    strncpy(relatorioTemp, relatorioFinal, sizeof(relatorioTemp));
+    char *linha = strtok(relatorioTemp, "\n");
+    while (linha != NULL) {
+        DrawText(linha, 50, y, 20, WHITE);
+        y += lineHeight;
+        linha = strtok(NULL, "\n");
     }
 
     EndDrawing();

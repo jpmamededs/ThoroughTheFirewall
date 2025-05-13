@@ -1,5 +1,6 @@
 // generalFunctions.c
 #include "generalFunctions.h"
+#include "gemini.h"
 #include "raylib.h"
 #include <string.h>
 #include <stdio.h>
@@ -7,6 +8,8 @@
 int notasIA[MAX_PERGUNTAS] = {0};
 char relatoriosIA[MAX_PERGUNTAS][512] = {0};
 char gPlayerName[MAX_PLAYER_NAME] = {0};
+char gSelectedCharacterName[MAX_PLAYER_NAME] = "";
+char relatorioGeralIA[1024] = {0};
 
 // ====== TYPEWRITER ======
 void InitTypeWriter(TypeWriter* tw, const char* text, float speed) {
@@ -221,4 +224,74 @@ float UpdateFade(float dt, float duration, bool fadeIn)
 
 void InitPlayerName(void) {
     memset(gPlayerName, 0, sizeof(gPlayerName));
+}
+
+void DrawDica(float posX, float posY, const char *text)
+{
+    int dicaWidth = 420;
+    int dicaHeight = 50;
+    int iconSize = 20;
+    int padding = 15;
+
+    DrawRectangleRounded((Rectangle){posX, posY, dicaWidth, dicaHeight}, 0.3f, 12, (Color){30, 30, 30, 200});
+    // VOLTAR DEPOIS
+    //DrawRectangleRoundedLines((Rectangle){posX, posY, dicaWidth, dicaHeight}, 0.3f, 12, (Color){255, 255, 255, 100});
+
+
+    int iconPosX = posX + padding;
+    int iconPosY = posY + dicaHeight / 2;
+
+    DrawCircle(iconPosX, iconPosY, iconSize / 2, (Color){100, 100, 255, 200});
+    DrawText("i", iconPosX, iconPosY - 10, 20, WHITE);
+
+    int fontSize = 18;
+    int textPosX = iconPosX + iconSize + padding;
+    int textPosY = posY + dicaHeight / 2 - fontSize / 2;
+    int textWidth = MeasureText(text, fontSize);
+
+    if (textWidth > dicaWidth - (2 * padding + iconSize))
+    {
+        fontSize = 16;
+        textWidth = MeasureText(text, fontSize);
+    }
+
+    DrawText(text, textPosX, textPosY, fontSize, WHITE);
+}
+
+int SomarNotasIA(void) {
+    int soma = 0;
+    for (int i = 0; i < 4; i++) {
+        soma += notasIA[i];
+    }
+    return soma;
+}
+
+void GerarRelatorioGeralIA(char *relatorioGeral, size_t tamanho) {
+
+    char prompt[4096];
+    snprintf(prompt, sizeof(prompt),
+        "Você é o agente Hank, responsável por avaliar um candidato a uma vaga de segurança cibernética no FBI.\n\n"
+        "Abaixo estão os relatórios individuais da IA após cada desafio realizado pelo candidato.\n"
+        "Com base nesses relatórios, crie um relatório final resumido que avalie o desempenho geral do candidato, considerando:\n"
+        "- Postura ética\n"
+        "- Responsabilidade\n"
+        "- Uso consciente das habilidades\n"
+        "Relatórios individuais:\n"
+    );
+
+    for (int i = 0; i < 4; i++) {
+        char buffer[512];
+        snprintf(buffer, sizeof(buffer), "Relatório %d: %s\n", i + 1, relatoriosIA[i]);
+        strcat(prompt, buffer);
+    }
+
+    strcat(prompt, "\nFormato da resposta:\nRELATORIO_GERAL=<relatório consolidado e objetivo>");
+
+    char retorno[1024] = {0};
+    ObterRespostaGemini(prompt, retorno);
+
+    const char *pRel = strstr(retorno, "RELATORIO_GERAL=");
+    if (pRel) {
+        strncpy(relatorioGeral, pRel + strlen("RELATORIO_GERAL="), tamanho - 1);
+    }
 }

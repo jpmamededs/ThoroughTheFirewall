@@ -9,7 +9,12 @@
         "desafio_02.h": "c",
         "dirent.h": "c",
         "template_ubuntu_02.h": "c",
-        "cutscenes.h": "c"
+        "cutscenes.h": "c",
+        "pc_screenfinal.h": "c",
+        "stdio.h": "c",
+        "math.h": "c",
+        "string.h": "c",
+        "menu.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

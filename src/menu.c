@@ -357,6 +357,8 @@ void UpdateMenu(void)
         if ((confirmHover && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) ||
             IsKeyPressed(KEY_ENTER))
         {
+            strncpy(gSelectedCharacterName, selectedChar->name, MAX_PLAYER_NAME);
+            gSelectedCharacterName[MAX_PLAYER_NAME-1] = '\0';
             PlaySound(clickSound);
             PlaySound(alertSound);
             isFadingOut = true;
