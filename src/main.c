@@ -65,6 +65,7 @@ int main(void)
     int screenHeight = GetMonitorHeight(0);
 
     InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
+    SetTargetFPS(1000);
     SetWindowPosition(0, 0);
 
     InitAudioDevice();
@@ -100,7 +101,7 @@ int main(void)
     extern bool interrogatorioFinalizado;
 
     // DEBUG DE SELEÇÃO DO NOME
-    strncpy(gSelectedCharacterName, "Jade", MAX_PLAYER_NAME);
+    strncpy(gSelectedCharacterName, "Levi", MAX_PLAYER_NAME);
     gSelectedCharacterName[MAX_PLAYER_NAME-1] = '\0';
 
     while (!WindowShouldClose())
