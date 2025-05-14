@@ -27,9 +27,12 @@
 #include "tela_provisoria_01.h"
 #include "tela_provisoria_02.h"
 #include "loading_screen.h"
+#include "transition_screen.h"
 
 AppState state = APP_CUTSCENES;
-AppState proxFasePosInterrogatorio;
+AppState PFP_Iterrogatorio;
+AppState PFP_Loading;
+AppState PFP_Trasicao;
 
 typedef struct { const char *audio; const char *texto; } RoteiroHank;
 static const RoteiroHank roteiros[] = {
@@ -84,7 +87,7 @@ int main(void)
     static bool desafio_02_Initialized = false;
     static bool interrogatorio_Initialized = false;
     static bool pendrive_Initialized = false;
-    static bool servidorProxy_Initialized = false; // <--- Flag ESPECÍFICA da PCServer
+    static bool servidorProxy_Initialized = false;
     static bool template_ubuntu_01_Initialized = false;
     static bool template_ubuntu_02_Initialized = false;
     static bool template_3D_01_Initialized = false;
@@ -92,6 +95,7 @@ int main(void)
     static bool tela01_Initialized = false;
     static bool tela02_Initialized = false;
     static bool loading_Initialized = false;
+    static bool transicao_Initialized = false;
 
     extern bool interrogatorioFinalizado;
 
@@ -223,7 +227,7 @@ int main(void)
                 perguntaAtual++;
                 Init_Interrogatorio(-1, NULL, NULL);
                 interrogatorio_Initialized = true;
-                proxFasePosInterrogatorio = APP_DESAFIO_01;
+                PFP_Iterrogatorio = APP_DESAFIO_01;
                 state = INTERROGATORIO;
             }
             if (IsKeyPressed(KEY_B))
@@ -240,6 +244,13 @@ int main(void)
                 tela02_Initialized = false;
                 state = APP_TELA_02;
             }
+            if (IsKeyPressed(KEY_F))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                transicao_Initialized = false;
+                state = APP_TRANSICAO;
+            }
             // FIM DEBUG
         }
         else if (state == APP_INTRO)
@@ -250,13 +261,14 @@ int main(void)
             {
                 UnloadIntro();
                 state = APP_LOADING_SCREEN;
+                PFP_Loading = APP_LIGACAO_DESCONHECIDO;
             }
         }
         else if (state == APP_LOADING_SCREEN)
         {
             if (!loading_Initialized)
             {
-                Init_LoadingScreen(6.0f);
+                Init_LoadingScreen(5.0f);
                 loading_Initialized = true;
             }
             Update_LoadingScreen();
@@ -265,7 +277,7 @@ int main(void)
             {
                 Unload_LoadingScreen();
                 loading_Initialized = false;
-                state = APP_LIGACAO_DESCONHECIDO;
+                state = PFP_Loading;
             }
         }
         else if (state == APP_LIGACAO_DESCONHECIDO)
@@ -312,10 +324,14 @@ int main(void)
             if (Fase_Porta_Batendo_Concluida())
             {
                 Unload_Porta_Batendo();
+                porta_batendo_Initialized = false;
+
                 Init_Interrogatorio(-1, NULL, NULL);
                 interrogatorio_Initialized = true;
-                proxFasePosInterrogatorio = APP_DESAFIO_01;
                 state = INTERROGATORIO;
+
+                PFP_Iterrogatorio = APP_TRANSICAO;
+                PFP_Trasicao = APP_DESAFIO_01;
             }
         }
         else if (state == INTERROGATORIO)
@@ -332,7 +348,23 @@ int main(void)
                 Unload_Interrogatorio();
                 interrogatorio_Initialized = false;
                 perguntaAtual++;
-                state = proxFasePosInterrogatorio;
+                state = PFP_Iterrogatorio;
+            }
+        }
+        else if (state == APP_TRANSICAO)
+        {
+            if (!transicao_Initialized)
+            {
+                Init_TransitionScreen(1, "Redirecione os sistemas criticos");
+                transicao_Initialized = true;
+            }
+            Update_TransitionScreen();
+            Draw_TransitionScreen();
+            if (TransitionScreenDone())
+            {
+                Unload_TransitionScreen();
+                transicao_Initialized = false;
+                state = PFP_Trasicao;
             }
         }
         else if (state == APP_DESAFIO_01)
@@ -348,8 +380,10 @@ int main(void)
             {
                 Unload_Desafio_01();
                 desafio_01_Initialized = false;
-                proxFasePosInterrogatorio = APP_SERVIDOR_PROXY;
-                state = INTERROGATORIO;
+
+                state = APP_LOADING_SCREEN;
+                PFP_Loading = INTERROGATORIO;
+                PFP_Iterrogatorio = APP_SERVIDOR_PROXY;
             }
         }
         else if (state == APP_SERVIDOR_PROXY)
@@ -365,7 +399,12 @@ int main(void)
             {
                 Unload_ServidorProxy();
                 servidorProxy_Initialized = false;
-                state = APP_DESAFIO_02;
+
+                Init_TransitionScreen(2, "Cifra De Cesar");
+                transicao_Initialized = true;
+
+                state = APP_TRANSICAO;
+                PFP_Trasicao = APP_DESAFIO_02;
             }
         }
         else if (state == APP_DESAFIO_02)
@@ -381,8 +420,10 @@ int main(void)
             {
                 Unload_Desafio_02();
                 desafio_02_Initialized = false;
-                proxFasePosInterrogatorio = APP_DESAFIO_03;
-                state = INTERROGATORIO;
+
+                state = APP_LOADING_SCREEN;
+                PFP_Loading = INTERROGATORIO;
+                PFP_Iterrogatorio = APP_DESAFIO_03; // KEYLOGGER!!!!!
             }
         }
         // KEYLOGGER!!!!!
@@ -395,11 +436,14 @@ int main(void)
             }
             Update_Desafio_03();
             Draw_Desafio_03();
-            if (Fase_Desafio_03_Concluida()) {
+            if (Fase_Desafio_03_Concluida()) 
+            {
                 Unload_Desafio_03();
                 desafio_03_Initialized = false;
-                proxFasePosInterrogatorio = APP_PENDRIVE;
-                state = INTERROGATORIO;
+
+                state = APP_LOADING_SCREEN;
+                PFP_Loading = INTERROGATORIO;
+                PFP_Iterrogatorio = APP_PENDRIVE;
             }
         }
         else if (state == APP_PENDRIVE)
@@ -431,7 +475,12 @@ int main(void)
             {
                 Unload_BruteForce();
                 bruteforce_Initialized = false;
-                state = APP_DESAFIO_04;
+
+                Init_TransitionScreen(4, "Fruit Ninja");
+                transicao_Initialized = true;
+
+                state = APP_TRANSICAO;
+                PFP_Trasicao = APP_DESAFIO_04;
             }
         }
         else if (state == APP_DESAFIO_04)
@@ -443,11 +492,14 @@ int main(void)
             }
             Update_Desafio_04();
             Draw_Desafio_04();
-            if (Fase_Desafio_04_Concluida()) {
+            if (Fase_Desafio_04_Concluida()) 
+            {
                 Unload_Desafio_04();
                 desafio_04_Initialized = false;
-                proxFasePosInterrogatorio = APP_DEBUG; // Futuramente Shell reverso!
-                state = INTERROGATORIO;
+
+                state = APP_LOADING_SCREEN;
+                PFP_Loading = INTERROGATORIO;
+                PFP_Iterrogatorio = APP_DEBUG; // Futuramente SHELL REVERSO!
             }
         }
         // ===== FIM DO JOGO! =====
@@ -463,7 +515,7 @@ int main(void)
             if (Fase4Concluida()) {
                 UnloadFase4();
                 fase4Initialized = false;
-                proxFasePosInterrogatorio = APP_UBUNTU_PROVISORIO;
+                PFP_Iterrogatorio = APP_UBUNTU_PROVISORIO;
                 state = INTERROGATORIO;
             }
         }

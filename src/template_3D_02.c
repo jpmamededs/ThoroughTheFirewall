@@ -20,7 +20,6 @@ static bool template3D_02_concluida = false;
 static float timeElapsed = 0.0f;
 static bool soundPlaying = false;
 static bool doorAnswered = false;
-static bool showButton = false;
 
 // Variáveis do Flash e Fade
 static float fadeAlpha = 0.0f;
