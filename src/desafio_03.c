@@ -1,5 +1,23 @@
 #include "desafio_03.h"
 
+typedef struct {
+    const char* texto;
+    bool correta;
+    bool desabilitada;
+} DialogueOption;
+
+typedef struct {
+    const char* pergunta_txt;
+    DialogueOption* opcoes;
+    int num_opcoes;
+    int opcao_selecionada_usuario;
+    bool respondeu;
+    float timer_restante;
+    float timer_total;
+    bool timer_ativo;
+    bool timer_explodiu;
+} DialogueQuestion;
+
 #define FASE2_FADEOUT_DURACAO 0.8f
 #define FALA_NORMAL_03 "Você recebe um e-mail com o assunto: 'Parabéns! Você ganhou um prêmio exclusivo! Clique no link para resgatar agora.'\nO e-mail parece vir de uma empresa conhecida, mas contém erros gramaticais e um link encurtado. O que você faz?"
 #define FALA_ACERTO_03  "Escolha certeira! Hank deve ter anotado meu cuidado — estou um passo à frente na vaga."
@@ -72,6 +90,110 @@ const char* FalaPorResultado(const char* name, bool acerto) {
     if (strcmp(name, "Jade") == 0)    return acerto ? FALA_CARLOS_ACERTO : FALA_CARLOS_ERRO;
     if (strcmp(name, "Levi") == 0)    return acerto ? FALA_MAMEDE_ACERTO : FALA_MAMEDE_ERRO;
     return acerto ? FALA_ACERTO_03 : FALA_ERRO_03;
+}
+
+void InitDialogueQuestion(DialogueQuestion* dq, const char* pergunta_txt, DialogueOption* opcoes, int num_opcoes, float timer_total) {
+    if (!dq) return;
+    dq->pergunta_txt = pergunta_txt;
+    dq->opcoes = opcoes;
+    dq->num_opcoes = num_opcoes;
+    dq->opcao_selecionada_usuario = -1;
+    dq->respondeu = false;
+    dq->timer_restante = timer_total;
+    dq->timer_total = timer_total;
+    dq->timer_ativo = true;
+    dq->timer_explodiu = false;
+    for (int i=0; i<num_opcoes; ++i)
+        dq->opcoes[i].desabilitada = false; // reabilita tudo
+}
+
+void UpdateDialogueQuestion(DialogueQuestion* dq, float deltaTime) {
+    if (!dq) return;
+    if (!dq->timer_explodiu && dq->timer_ativo && !dq->respondeu) {
+        dq->timer_restante -= deltaTime;
+        if (dq->timer_restante <= 0.0f) {
+            dq->timer_restante = 0.0f;
+            dq->timer_explodiu = true;
+            dq->timer_ativo = false;
+            for(int i=0; i<dq->num_opcoes; ++i)
+                dq->opcoes[i].desabilitada = true;
+        }
+    }
+}
+
+void DialogueNavigateOptions(const DialogueQuestion* dq, int* selectedIndex, int direction) {
+    if (!dq || !selectedIndex) return;
+    int idx = *selectedIndex;
+    int tries = 0;
+    do {
+        idx = (idx + direction + dq->num_opcoes) % dq->num_opcoes;
+        tries++;
+    } while (dq->opcoes[idx].desabilitada && tries < dq->num_opcoes);
+    if (!dq->opcoes[idx].desabilitada)
+        *selectedIndex = idx;
+}
+
+int GetDialogueOptionClick(const DialogueQuestion* dq,
+    int offsetX, int offsetY, int baseWidth, int rectHeight, int spacing, int larguraStep)
+{
+    if (!dq) return -1;
+    Vector2 mouse = GetMousePosition();
+    for (int i = 0; i < dq->num_opcoes; i++) {
+        int rectWidth = baseWidth + i * larguraStep;
+        int y = offsetY + i * (rectHeight + spacing);
+        int x = GetScreenWidth() - rectWidth - offsetX;
+        Rectangle rec = {x, y, rectWidth, rectHeight};
+        if (!dq->opcoes[i].desabilitada &&
+            CheckCollisionPointRec(mouse, rec) &&
+            IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void DrawDialogueOption(const DialogueOption* opt, Rectangle rec, bool selected, bool disabled, bool blink, Color base, Color txtCor) {
+    Color cor = base;
+    DrawRectangleRounded(rec, 0.32f, 16, cor);
+    DrawText(opt->texto, rec.x+36, rec.y+rec.height/2-24/2, 24, txtCor);
+}
+
+void DrawAllDialogueOptions(const DialogueQuestion* dq, int selected, int offsetX, int offsetY,
+    int baseWidth, int rectHeight, int spacing, int larguraStep,
+    int blinkWrong, bool blink, int blinkCorrect)
+{
+    Color rectGray      = (Color){56, 56, 56, 216};
+    Color hoverGreen    = (Color){26,110,51,235};
+    Color disabledGray  = (Color){90,90,90,175};
+    Vector2 mouse = GetMousePosition();
+    for (int i = 0; i < dq->num_opcoes; i++) {
+        int rectWidth = baseWidth + i * larguraStep;
+        int y = offsetY + i * (rectHeight + spacing);
+        int x = GetScreenWidth() - rectWidth - offsetX;
+        Rectangle rec = {x, y, rectWidth, rectHeight};
+        int mouseOver = CheckCollisionPointRec(mouse, rec);
+        bool optSelected = (selected == i);
+        Color txtCor = WHITE;
+        Color baseCor = rectGray;
+
+        if ((blinkWrong == i) && blink) {
+            baseCor = (Color){230, 30, 30, 210};
+            txtCor = WHITE;
+        }
+        else if ((blinkCorrect == i) && blink) {
+            baseCor = (Color){26, 110, 51, 255};
+            txtCor = WHITE;
+        }
+        else if (dq->opcoes[i].desabilitada) {
+            baseCor = disabledGray;
+            txtCor = (Color){180,180,180,210};
+        }
+        else if (!dq->respondeu && !dq->opcoes[i].desabilitada && (mouseOver || optSelected)) {
+            baseCor = hoverGreen;
+        }
+
+        DrawDialogueOption(&dq->opcoes[i], rec, optSelected, dq->opcoes[i].desabilitada, blink, baseCor, txtCor);
+    }
 }
 
 void Init_Desafio_03(void)

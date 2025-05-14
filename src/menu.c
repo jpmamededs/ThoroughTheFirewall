@@ -235,7 +235,7 @@ void UpdateMenu(void)
         if ((hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER))
         {
             PlaySound(clickSound);
-            InitPlayerName();
+            memset(gPlayerName, 0, sizeof(gPlayerName));
             currentScreen = MENU_INPUT_NAME;
         }
     }
