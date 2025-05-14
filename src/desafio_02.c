@@ -1,5 +1,20 @@
 #include "desafio_02.h"
 
+#define BUTTON_SIZE        80
+#define BUTTON_SPACING     18
+#define BUTTON_ROW_SPACING 16
+#define NUM_BUTTON_COLS    3
+#define NUM_BUTTON_ROWS    3
+#define MAX_TENTATIVAS 3
+#define SEQ_TOTAL_PASSOS 4
+#define FADEOUT_DURACAO 0.8f
+#define GEMINI_RECT_PADRAO 550
+#define GEMINI_PAD_X 36
+#define FASE6_CHRONO_MAX 60.0f
+#define FALA_NORMAL_02 "Essa senha está criptografada... Preciso voltar duas letras para decifrá-la. Não posso errar!"
+#define FALA_VENCEU_02 "JOÃO! A senha está correta! Estou pronto para o próximo desafio."
+#define FALA_PERDEU_02 "Não deu tempo... A criptografia me venceu. Hank vai me dispensar..."
+
 static int quadX = 400;
 static int quadY = 300;
 static bool quadButtonPressed[NUM_BUTTON_ROWS][NUM_BUTTON_COLS] = {false};
