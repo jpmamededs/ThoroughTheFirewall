@@ -53,8 +53,8 @@ void Init_TransitionScreen(int desafioNumero, const char *descricao)
     elapsed  = 0.0f;
     done     = false;
 
-    font = LoadFont("src/fonts/Underdog-Regular.ttf");
-    whoosh = LoadSound("src/music/pac-man-startup.mp3"); 
+    font = LoadFont("src/fonts/SpecialElite-Regular.ttf");
+    whoosh = LoadSound("src/music/som_transicao.mp3"); 
     PlaySound(whoosh);
 }
 

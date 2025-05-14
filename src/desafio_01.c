@@ -86,7 +86,7 @@ static const char* FalaPorResultado(const char* name, bool acerto)
     if (strcmp(name, "Alice") == 0)      return acerto ? FALA_JOAO_ACERTO   : FALA_JOAO_ERRO;
     if (strcmp(name, "Jade") == 0)    return acerto ? FALA_CARLOS_ACERTO : FALA_CARLOS_ERRO;
     if (strcmp(name, "Levi") == 0)    return acerto ? FALA_MAMEDE_ACERTO : FALA_MAMEDE_ERRO;
-    return acerto ? FALA_ACERTO : FALA_ERRO;
+    return acerto ? FALA_ACERTO_01 : FALA_ERRO_01;
 }
 
 void Init_Desafio_01(void)
@@ -112,7 +112,7 @@ void Init_Desafio_01(void)
     sprCadeadoFechadoCortado = LoadTexture("src/sprites/cadeado_fechado_cortado.png");
     sprCadeadoAbertoCortado  = LoadTexture("src/sprites/cadeado_aberto_cortado.png");
 
-    strcpy(fala_exibida, FALA_NORMAL);
+    strcpy(fala_exibida, FALA_NORMAL_01);
     InitTypeWriter(&writer, fala_exibida, 19.5f);
     InitSwitches();
     AtualizaTamanhoGeminiBox();

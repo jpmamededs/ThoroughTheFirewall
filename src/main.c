@@ -99,6 +99,10 @@ int main(void)
 
     extern bool interrogatorioFinalizado;
 
+    // DEBUG DE SELEÇÃO DO NOME
+    strncpy(gSelectedCharacterName, "Levi", MAX_PLAYER_NAME);
+    gSelectedCharacterName[MAX_PLAYER_NAME-1] = '\0';
+
     while (!WindowShouldClose())
     {
         UpdateMusicStream(music);
