@@ -120,7 +120,7 @@ void InitIntro(const float temposShow[], const float temposErase[])
     InitTypeEraser(&eraser, introParts[currentPart], spd0);
 
     font        = GetFontDefault();
-    hackerBg    = LoadTexture("src/sprites/hacker-bg.png");
+    hackerBg    = LoadTexture("src/sprites/fundo_intro.png");
     agentSecreto= LoadTexture("src/sprites/agent_secreto.png");
 
     // som
@@ -209,7 +209,7 @@ void DrawIntro(void)
     float boxX = (w - boxW) / 2.f;
     float boxY = h - bottom - boxH;
 
-    DrawRectangleRounded((Rectangle){boxX,boxY,boxW,boxH}, 0.07f, 32,
+    DrawRectangleRounded((Rectangle){boxX,boxY,boxW,boxH}, 0.2f, 32,
                          (Color){0,0,0,180});
 
     float scale = 0.6f;

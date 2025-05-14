@@ -27,6 +27,9 @@ void InitCutscenes(void)
 void UpdateCutscenes(void)
 {
     if (ended) return;
+
+    if (IsKeyPressed(KEY_SPACE)) ended = true;
+
     float time = GetTime() - startTime;
     if (IsKeyPressed(KEY_SPACE) && time < 5.8f)
         startTime = GetTime() - 5.8f;

@@ -256,7 +256,7 @@ int main(void)
         {
             if (!loading_Initialized)
             {
-                Init_LoadingScreen(5.0f);
+                Init_LoadingScreen(6.0f);
                 loading_Initialized = true;
             }
             Update_LoadingScreen();

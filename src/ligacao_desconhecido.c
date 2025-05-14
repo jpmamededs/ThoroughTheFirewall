@@ -28,7 +28,7 @@ static bool telefoneSubindo = false;
 static bool animacaoFeita = false;
 static float animacaoTelefoneY = 0.0f;
 static float tempoDesdeInicio = 0.0f;
-static float cooldownTelefone = -5.0f;
+static float cooldownTelefone = -7.0f;
 static Rectangle telefoneBounds = {0};
 static float delayTexto = 0.0f;
 static float hangUpCooldown = -1.0f;
@@ -53,7 +53,7 @@ static Sound somChamadaAcabada;
 static bool somChamadaTocado = false; 
 static float gapTimer = -1.0f;        // cronômetro entre Fala-1 e Fala-2
 static bool  gapSoundPlayed = false;
-#define RING_GAP 0.40f
+#define RING_GAP 0.60f
 
 static bool fase_concluida = false;
 static const char *characterName = "";
@@ -103,7 +103,7 @@ void Init_Ligacao_Desconhecido()
     animacaoFeita = false;
     animacaoTelefoneY = 0.0f;
     tempoDesdeInicio = 0.0f;
-    cooldownTelefone = -5.0f;
+    cooldownTelefone = -7.0f;
     delayTexto = 0.0f;
     typeStarted = false;
     hangUpCooldown = -1.0f;
