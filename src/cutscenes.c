@@ -1,14 +1,27 @@
 #include "raylib.h"
 #include "cutscenes.h"
 #include <math.h>
+
 // --- Variáveis globais de cutscene ---
 static Texture2D empresa1, empresa2, empresa3, empresa4;
 static Texture2D detetiveNaEmpresa4;
 static Texture2D minhaTinta;
 static Texture2D meuSelo;
+static Texture2D bg1;
+static Texture2D personagemHank; // <---- HANK antigo
+static Texture2D v1_hank;        // <---- v1_hank (NOVO)
+static Texture2D v2_hank;        // <---- v2_hank (NOVO)
+static Texture2D v3_hank;        // <---- v3_hank (NOVO)
+static Texture2D v4_hank;        // <---- v4_hank (NOVO)
+static Texture2D nomeHank;       // <---- NOME DO HANK (NOVO)
 static int screenWidth, screenHeight;
 static float startTime = 0.0f;
 static bool ended = false;
+// Transição pincelada
+static bool pinceladaIniciou = false;
+static float pinceisStartTime = 0.0f;
+static bool pinceladaTerminou = false;
+static float momentoBG1Inteiro = 0.0f; // Quando o bg1 ficou completamente visível
 
 void InitCutscenes(void)
 {
@@ -21,21 +34,340 @@ void InitCutscenes(void)
     detetiveNaEmpresa4 = LoadTexture("src/sprites/intro/detetiveNaEmpresa4.png");
     minhaTinta      = LoadTexture("src/sprites/intro/tinta.png");
     meuSelo         = LoadTexture("src/sprites/intro/selo.png");
+    bg1             = LoadTexture("src/sprites/intro/bg1.png");
+    personagemHank  = LoadTexture("src/sprites/intro/personagemHank.png"); // <--- HANK load
+    v1_hank         = LoadTexture("src/sprites/intro/v1_hank.png");         // <--- v1_hank load
+    v2_hank         = LoadTexture("src/sprites/intro/v2_hank.png");         // <--- v2_hank load (NOVO)
+    v3_hank         = LoadTexture("src/sprites/intro/v3_hank.png");         // <--- v3_hank load (NEW!)
+    v4_hank         = LoadTexture("src/sprites/intro/v4_hank.png");         // <--- v4_hank load (NOVO!)
+    nomeHank        = LoadTexture("src/sprites/intro/nomeHank.png");        // <--- NOME DO HANK
     startTime = GetTime();
     ended = false;
+    pinceladaIniciou = false;
+    pinceisStartTime = 0.0f;
+    pinceladaTerminou = false;
+    momentoBG1Inteiro = 0.0f;
 }
+
 void UpdateCutscenes(void)
 {
     if (ended) return;
-
-    if (IsKeyPressed(KEY_SPACE)) ended = true;
-
     float time = GetTime() - startTime;
+    if (IsKeyPressed(KEY_SPACE)) ended = true;
     if (IsKeyPressed(KEY_SPACE) && time < 5.8f)
         startTime = GetTime() - 5.8f;
-    if (time >= 16.3f && (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER)))
-        ended = true;
 }
+// --- HANK Antigo ---
+void DrawHankAnim(float animTime, int w, int h)
+{
+    const float animDuration = 1.2f;
+    if (animTime < 0.0f) animTime = 0.0f;
+    if (animTime > animDuration) animTime = animDuration;
+    float t = animTime / animDuration;
+    float easeT = t * t * (3.0f - 2.0f * t);
+    float spriteW = personagemHank.width;
+    float spriteH = personagemHank.height;
+    float escala = (h / 4.0f / spriteH) * 3.5f;
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    float xFinal = 20.0f;
+    float xStart = xFinal - 28.0f;
+    float xAtual = xStart + (xFinal - xStart) * easeT;
+    float yFinal = h - dstH - 32.0f + 160.0f;
+    unsigned char alpha = (unsigned char)(255 * easeT);
+    if (alpha > 0)
+    {
+        DrawTexturePro(
+            personagemHank,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xAtual, yFinal, dstW, dstH},
+            (Vector2){0, 0},
+            0.0f, (Color){255,255,255,alpha}
+        );
+    }
+}
+
+// --- v1_hank animada próxima de Hank, menor e depois dele, e depois flutuando ---
+void DrawV1HankAnim(float animTime, int w, int h)
+{
+    const float animDuration = 0.55f;
+    float spriteW = v1_hank.width;
+    float spriteH = v1_hank.height;
+    float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
+    float dstHW = personagemHank.width * escalaHank;
+    float dstHH = personagemHank.height * escalaHank;
+    float escala = escalaHank * (1.0f / 3.5f);
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    float xHank = 20.0f;
+    float yHank = h - dstHH - 32.0f + 160.0f;
+    float xFinal = xHank + dstHW * 0.78f +120;
+    float yFinal = yHank - dstH * 0.33f;
+
+    if (animTime < animDuration)
+    {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal + 80.0f;
+        float yStart = yFinal - 100.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yStart + (yFinal - yStart) * easeT;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0)
+        {
+            DrawTexturePro(
+                v1_hank,
+                (Rectangle){0, 0, spriteW, spriteH},
+                (Rectangle){xAtual, yAtual, dstW, dstH},
+                (Vector2){0, 0},
+                0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    }
+    else
+    {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 0.0f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+
+        DrawTexturePro(
+            v1_hank,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xFinal, yFinal + offset, dstW, dstH},
+            (Vector2){0, 0},
+            0.0f, WHITE
+        );
+    }
+}
+
+// ----------- v2_hank animada (com flutuação depois) -------------
+void DrawV2HankAnim(float animTime, int w, int h)
+{
+    const float animDuration = 0.55f;
+    float spriteW = v2_hank.width;
+    float spriteH = v2_hank.height;
+    float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
+    float dstHW = personagemHank.width * escalaHank;
+    float dstHH = personagemHank.height * escalaHank;
+    float escala = escalaHank * (1.0f / 1.6f);
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    float xHank = 20.0f;
+    float yHank = h - dstHH - 32.0f + 160.0f;
+    float xV1Final = xHank + dstHW * 0.78f + 120;
+    float yV1Final = yHank - dstH * 0.33f;
+    float offsetX = dstW * 0.95f + 70;
+    float offsetY = 20.0f +40;
+    float xFinal = xV1Final + offsetX;
+    float yFinal = yV1Final + offsetY;
+
+    if (animTime < animDuration)
+    {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal + 70.0f;
+        float yStart = yFinal + 70.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yStart + (yFinal - yStart) * easeT;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0)
+        {
+            DrawTexturePro(
+                v2_hank,
+                (Rectangle){0, 0, spriteW, spriteH},
+                (Rectangle){xAtual, yAtual, dstW, dstH},
+                (Vector2){0, 0},
+                0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    }
+    else
+    {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 1.22f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+
+        DrawTexturePro(
+            v2_hank,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xFinal, yFinal + offset, dstW, dstH},
+            (Vector2){0, 0},
+            0.0f, WHITE
+        );
+    }
+}
+
+// ---- v3_hank animada: à direita de v2_hank, com flutuação -----
+void DrawV3HankAnim(float animTime, int w, int h)
+{
+    const float animDuration = 0.55f;
+    float spriteW2 = v2_hank.width;
+    float spriteH2 = v2_hank.height;
+    float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
+    float dstHW = personagemHank.width * escalaHank;
+    float dstHH = personagemHank.height * escalaHank;
+    float escala2 = escalaHank * (1.0f / 1.4f);
+    float dstW2 = spriteW2 * escala2;
+    float dstH2 = spriteH2 * escala2;
+    float xHank = 20.0f;
+    float yHank = h - dstHH - 32.0f + 160.0f;
+    float xV1Final = xHank + dstHW * 0.78f + 120;
+    float yV1Final = yHank - dstH2 * 0.33f;
+    float offsetX2 = dstW2 * 0.95f + 350;
+    float offsetY2 = 20.0f + 20;
+    float xV2Final = xV1Final + offsetX2;
+    float yV2Final = yV1Final + offsetY2;
+
+    float spriteW3 = v3_hank.width;
+    float spriteH3 = v3_hank.height;
+    float escala3 = escalaHank * (1.0f / 1.2f);
+    float dstW3 = spriteW3 * escala3;
+    float dstH3 = spriteH3 * escala3;
+    float xFinal = xV2Final + 70.0f;
+    float yFinal = yV2Final - 50.0f;
+
+    if (animTime < animDuration)
+    {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal + 70.0f;
+        float yStart = yFinal - 60.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yStart + (yFinal - yStart) * easeT;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0)
+        {
+            DrawTexturePro(
+                v3_hank,
+                (Rectangle){0, 0, spriteW3, spriteH3},
+                (Rectangle){xAtual, yAtual, dstW3, dstH3},
+                (Vector2){0, 0},
+                0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    }
+    else
+    {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 2.17f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+
+        DrawTexturePro(
+            v3_hank,
+            (Rectangle){0, 0, spriteW3, spriteH3},
+            (Rectangle){xFinal, yFinal + offset, dstW3, dstH3},
+            (Vector2){0, 0},
+            0.0f, WHITE
+        );
+    }
+}
+
+// --- v4_hank animada à direita/abaixo de v3_hank, e depois flutuação ---
+void DrawV4HankAnim(float animTime, int w, int h)
+{
+    const float animDuration = 0.55f;
+    float spriteW2 = v2_hank.width;
+    float spriteH2 = v2_hank.height;
+    float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
+    float dstHW = personagemHank.width * escalaHank;
+    float dstHH = personagemHank.height * escalaHank;
+    float escala2 = escalaHank * (1.0f / 1.4f);
+    float dstW2 = spriteW2 * escala2;
+    float dstH2 = spriteH2 * escala2;
+    float xHank = 20.0f;
+    float yHank = h - dstHH - 32.0f + 160.0f;
+    float xV1Final = xHank + dstHW * 0.78f + 120;
+    float yV1Final = yHank - dstH2 * 0.33f;
+    float offsetX2 = dstW2 * 0.95f + 350;
+    float offsetY2 = 20.0f + 20;
+    float xV2Final = xV1Final + offsetX2;
+    float yV2Final = yV1Final + offsetY2;
+
+    float xV3Final = xV2Final + 70.0f;
+    float yV3Final = yV2Final - 50.0f;
+    float spriteW4 = v4_hank.width;
+    float spriteH4 = v4_hank.height;
+    float escala4 = escalaHank * (1.0f / 3.5f);
+    float dstW4 = spriteW4 * escala4;
+    float dstH4 = spriteH4 * escala4;
+    float xFinal = xV3Final + 300.0f;
+    float yFinal = yV3Final + 170.0f;
+
+    if (animTime < animDuration)
+    {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal + 50.0f;
+        float yStart = yFinal + 100.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yStart + (yFinal - yStart) * easeT;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0)
+        {
+            DrawTexturePro(
+                v4_hank,
+                (Rectangle){0, 0, spriteW4, spriteH4},
+                (Rectangle){xAtual, yAtual, dstW4, dstH4},
+                (Vector2){0, 0},
+                0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    }
+    else
+    {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 3.10f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+
+        DrawTexturePro(
+            v4_hank,
+            (Rectangle){0, 0, spriteW4, spriteH4},
+            (Rectangle){xFinal, yFinal + offset, dstW4, dstH4},
+            (Vector2){0, 0},
+            0.0f, WHITE
+        );
+    }
+}
+
+// ----------- Animação do nome Hank depois de v4_hank finalizar -----------
+void DrawNomeHankAnim(float animTime, int w, int h)
+{
+    const float animDur = 1.00f;
+    float t = animTime / animDur;
+    if (t < 0.0f) t = 0.0f;
+    if (t > 1.0f) t = 1.0f;
+    float easeT = 1.0f - powf(1.0f-t, 2.2f);
+    float texW = nomeHank.width;
+    float texH = nomeHank.height;
+    float escala = ((float)w / 4.5f) / texW;
+    if (escala * texH > h / 9.0f) escala = (h/1.5f)/texH;
+    float dstW = texW * escala;
+    float dstH = texH * escala;
+    float margemX = 220.0f;
+    float margemY = 160.0f;
+    float xDest = w - dstW + margemX;
+    float yDest = h - dstH + margemY;
+    float revealedW = dstW * easeT;
+    float revealedPixSrc = texW * easeT;
+    unsigned char alpha = (unsigned char)(255 * easeT);
+    if (easeT > 0.0f)
+    {
+        DrawTexturePro(
+            nomeHank,
+            (Rectangle){0, 0, revealedPixSrc, texH},
+            (Rectangle){xDest, yDest, revealedW, dstH},
+            (Vector2){0, 0},
+            0.0f,
+            (Color){255,255,255,alpha}
+        );
+    }
+}
+
+// --- (as demais funções continuam iguais) ---
 void DrawEmpresa4DetetiveAnim(float animTime, int w, int h)
 {
     const float animDuration = 1.2f;
@@ -121,6 +453,69 @@ void DrawEmpresa4TintaAnimESelo(float showTime, int w, int h)
         );
     }
 }
+void DrawAnimacaoPinceladaBg1(float elapsed, int w, int h)
+{
+    const float duracao = 1.10f;
+    const int pinceladas = 9;
+    float t = elapsed / duracao;
+    if (t > 1.0f) t = 1.0f;
+    float srcW = empresa4.width, srcH = empresa4.height;
+    float scaleX = srcW / (float)w;
+    float scaleY = srcH / (float)h;
+    float scale = (scaleX < scaleY) ? scaleX : scaleY;
+    float cropW = w * scale;
+    float cropH = h * scale;
+    float cropX = 0;
+    float cropY = (srcH - cropH) * 0.5f;
+    DrawTexturePro(
+        empresa4,
+        (Rectangle){cropX, cropY, cropW, cropH},
+        (Rectangle){0, 0, w, h},
+        (Vector2){0, 0},
+        0.0f, WHITE
+    );
+    const float detetiveDur = 1.2f;
+    const float tintaDelay = detetiveDur;
+    float empresa4ShowTime = elapsed;
+    float detetiveAnimTime = empresa4ShowTime;
+    if (detetiveAnimTime < 0.0f) detetiveAnimTime = 0.0f;
+    if (detetiveAnimTime > detetiveDur) detetiveAnimTime = detetiveDur;
+    DrawEmpresa4DetetiveAnim(detetiveAnimTime, w, h);
+    if (empresa4ShowTime >= tintaDelay)
+        DrawEmpresa4TintaAnimESelo(empresa4ShowTime - tintaDelay, w, h);
+    int barraAltura = (h + pinceladas - 1) / pinceladas;
+    float faixa_delay = 0.015f;
+    float faixa_duracao = 0.75f;
+    int overlap = barraAltura / 7;
+    for (int i = 0; i < pinceladas; i++) {
+        float inicio = i * faixa_delay;
+        float faixaT = (elapsed - inicio) / faixa_duracao;
+        if (faixaT < 0) faixaT = 0;
+        if (faixaT > 1) faixaT = 1;
+        faixaT = faixaT*faixaT*(3-2*faixaT);
+        int revelado = (int)(w * faixaT);
+        int x = (i % 2 == 0) ? 0 : w - revelado;
+        int y = i * barraAltura;
+        int barraAlturaReal = barraAltura + ((i < pinceladas-1) ? overlap : 0);
+        DrawTexturePro(
+            bg1,
+            (Rectangle){
+                (float)x * ((float)bg1.width/(float)w),
+                (float)y * ((float)bg1.height/(float)h),
+                revelado * ((float)bg1.width/(float)w),
+                barraAlturaReal * ((float)bg1.height/(float)h)},
+            (Rectangle){x, y, revelado, barraAlturaReal},
+            (Vector2){0, 0},
+            0.0f, WHITE
+        );
+    }
+    if (elapsed >= (faixa_delay * (pinceladas-1)) + faixa_duracao) {
+        pinceladaTerminou = true;
+        if(momentoBG1Inteiro == 0.0f)
+            momentoBG1Inteiro = GetTime();
+    }
+}
+
 void DrawCutscenes(void)
 {
     if (ended) return;
@@ -220,15 +615,13 @@ void DrawCutscenes(void)
             );
         }
     }
-    // EMPRESA2 -> EMPRESA3: piscada preta simples
     else if (time < 9.31f)
     {
         ClearBackground(BLACK);
     }
-    // PAN DA EMPRESA3 APÓS O FLASH
     else if (time < 14.13f)
     {
-        float panT = (time - 9.31f) / 4.82f; // mantem proportional total pan (14.13-9.31)
+        float panT = (time - 9.31f) / 4.82f;
         if (panT > 1.0f) panT = 1.0f;
         float panEase = panT * panT * (3.0f - 2.0f * panT);
         float srcW = empresa3.width;
@@ -315,7 +708,6 @@ void DrawCutscenes(void)
             DrawRectangle(0,0,w,h,(Color){0,0,0,fadeAlpha});
         }
     }
-    //--- EMPRESA4: Detetive/tinta só depois do fade concluído, sem flinque/piscada --
     else if (time < 16.3f)
     {
         float fadeInDuration = 0.47f;
@@ -349,7 +741,6 @@ void DrawCutscenes(void)
         float empresa4ShowTime = time - 15.83f;
         const float detetiveDur = 1.2f;
         const float tintaDelay = detetiveDur;
-        // Detetive/tinta: só quando fade sumiu completamente!
         if (fadeT >= 1.0f)
         {
             float detetiveAnimTime = empresa4ShowTime;
@@ -365,33 +756,70 @@ void DrawCutscenes(void)
         float empresa4ShowTime = time - 16.3f;
         const float detetiveDur = 1.2f;
         const float tintaDelay = detetiveDur;
-        float srcW = empresa4.width;
-        float srcH = empresa4.height;
-        float dstW = (float)w;
-        float dstH = (float)h;
-        float scaleX = srcW / dstW;
-        float scaleY = srcH / dstH;
-        float scale = (scaleX < scaleY) ? scaleX : scaleY;
-        float cropW = dstW * scale;
-        float cropH = dstH * scale;
-        float cropX = 0;
-        float cropY = (srcH - cropH) * 0.5f;
-        DrawTexturePro(
-            empresa4,
-            (Rectangle){cropX, cropY, cropW, cropH},
-            (Rectangle){0, 0, w, h},
-            (Vector2){0, 0},
-            0.0f, WHITE
-        );
-        float detetiveAnimTime = empresa4ShowTime;
-        if (detetiveAnimTime < 0.0f) detetiveAnimTime = 0.0f;
-        if (detetiveAnimTime > detetiveDur) detetiveAnimTime = detetiveDur;
-        DrawEmpresa4DetetiveAnim(detetiveAnimTime, w, h);
-        if (empresa4ShowTime >= tintaDelay)
-            DrawEmpresa4TintaAnimESelo(empresa4ShowTime - tintaDelay, w, h);
+        const float extraCompany4Time = 1.6f;
+        const float empresa4Duration = detetiveDur + tintaDelay + extraCompany4Time;
+        if (!pinceladaIniciou && empresa4ShowTime > empresa4Duration) {
+            pinceladaIniciou = true;
+            pinceisStartTime = GetTime();
+        }
+        if (pinceladaIniciou && !pinceladaTerminou) {
+            float pinceladaElapsed = GetTime() - pinceisStartTime;
+            DrawAnimacaoPinceladaBg1(pinceladaElapsed, w, h);
+        }
+        else if (pinceladaTerminou) {
+            float tempoBG1 = GetTime() - momentoBG1Inteiro;
+            DrawTexturePro(
+                bg1,
+                (Rectangle){0,0,bg1.width, bg1.height},
+                (Rectangle){0,0,w,h},
+                (Vector2){0,0},
+                0.0f, WHITE
+            );
+            DrawHankAnim(tempoBG1, w, h);
+            if (tempoBG1 > 1.2f)
+                DrawV1HankAnim(tempoBG1 - 1.2f, w, h);
+            if (tempoBG1 > 1.75f)
+                DrawV2HankAnim(tempoBG1 - 1.75f, w, h);
+            if (tempoBG1 > 2.20f)
+                DrawV3HankAnim(tempoBG1 - 2.20f, w, h);
+            if (tempoBG1 > 2.95f)
+                DrawV4HankAnim(tempoBG1 - 2.95f, w, h);
+            float nomeHankStart = 2.95f + 0.55f;
+            if (tempoBG1 > nomeHankStart)
+                DrawNomeHankAnim(tempoBG1 - nomeHankStart, w, h);
+            if (tempoBG1 > nomeHankStart + 1.15f)
+                ended = true;
+        }
+        else {
+            float srcW = empresa4.width;
+            float srcH = empresa4.height;
+            float dstW = (float)w;
+            float dstH = (float)h;
+            float scaleX = srcW / dstW;
+            float scaleY = srcH / dstH;
+            float scale = (scaleX < scaleY) ? scaleX : scaleY;
+            float cropW = dstW * scale;
+            float cropH = dstH * scale;
+            float cropX = 0;
+            float cropY = (srcH - cropH) * 0.5f;
+            DrawTexturePro(
+                empresa4,
+                (Rectangle){cropX, cropY, cropW, cropH},
+                (Rectangle){0, 0, w, h},
+                (Vector2){0, 0},
+                0.0f, WHITE
+            );
+            float detetiveAnimTime = empresa4ShowTime;
+            if (detetiveAnimTime < 0.0f) detetiveAnimTime = 0.0f;
+            if (detetiveAnimTime > detetiveDur) detetiveAnimTime = detetiveDur;
+            DrawEmpresa4DetetiveAnim(detetiveAnimTime, w, h);
+            if (empresa4ShowTime >= tintaDelay)
+                DrawEmpresa4TintaAnimESelo(empresa4ShowTime - tintaDelay, w, h);
+        }
     }
     EndDrawing();
 }
+
 bool CutscenesEnded(void)
 {
     return ended;
@@ -405,4 +833,11 @@ void UnloadCutscenes(void)
     UnloadTexture(detetiveNaEmpresa4);
     UnloadTexture(minhaTinta);
     UnloadTexture(meuSelo);
+    UnloadTexture(bg1);
+    UnloadTexture(personagemHank);
+    UnloadTexture(v1_hank);
+    UnloadTexture(v2_hank);
+    UnloadTexture(v3_hank);
+    UnloadTexture(v4_hank);
+    UnloadTexture(nomeHank);
 }
