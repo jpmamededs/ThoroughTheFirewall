@@ -1,10 +1,24 @@
 #include "desafio_01.h"
-#include "generalFunctions.h"
-#include "menu.h"
-#include "raylib.h"
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
+
+#define NUM_SWITCHES 8
+#define QUADRO_SHIFT_Y (-40)
+#define MIN_Y_BASE 536
+#define MAX_Y_BASE 700
+#define RESPOSTA_MOSTRA_SEG 5.0f
+#define LIMPEZA_TELA_RESULTADO 5.0f
+#define GEMINI_RECT_PADRAO 550
+#define GEMINI_PAD_X 36
+#define FASE3_FADEOUT_DURACAO 0.8f
+#define FALA_NORMAL_01 "Preciso realocar os recursos para manter os sistemas críticos ativos. Não posso desligar os essenciais!"
+#define FALA_ACERTO_01 "Consegui! Os sistemas prioritários estão ativos e funcionando corretamente."
+#define FALA_ERRO_01 "Algo deu errado... Desativei um sistema essencial! Isso pode comprometer o funcionamento!"
+#define FALA_JOAO_ACERTO "Tudo certo! Os recursos estão bem distribuídos e a operação está estável."
+#define FALA_JOAO_ERRO "Droga! Desativei um sistema essencial! Isso pode atrapalhar o andamento da operação!"
+#define FALA_CARLOS_ACERTO "Recursos alocados corretamente! A operação segue estável."
+#define FALA_CARLOS_ERRO "Ih, desliguei um sistema importante! Isso vai prejudicar o funcionamento!"
+#define FALA_MAMEDE_ACERTO "Boa! Mantive os recursos essenciais ativos e a operação estável."
+#define FALA_MAMEDE_ERRO "Que problema! Desliguei algo crítico! A estabilidade ficou comprometida."
+#define FALA_EXPLODIU "O que foi isso? Parece que algum sistema falhou! Preciso verificar os recursos novamente!"
 
 static Texture2D fundo;
 static Texture2D pergunta_img;
@@ -86,7 +100,7 @@ static const char* FalaPorResultado(const char* name, bool acerto)
     if (strcmp(name, "Alice") == 0)      return acerto ? FALA_JOAO_ACERTO   : FALA_JOAO_ERRO;
     if (strcmp(name, "Jade") == 0)    return acerto ? FALA_CARLOS_ACERTO : FALA_CARLOS_ERRO;
     if (strcmp(name, "Levi") == 0)    return acerto ? FALA_MAMEDE_ACERTO : FALA_MAMEDE_ERRO;
-    return acerto ? FALA_ACERTO : FALA_ERRO;
+    return acerto ? FALA_ACERTO_01 : FALA_ERRO_01;
 }
 
 void Init_Desafio_01(void)
@@ -112,7 +126,7 @@ void Init_Desafio_01(void)
     sprCadeadoFechadoCortado = LoadTexture("src/sprites/cadeado_fechado_cortado.png");
     sprCadeadoAbertoCortado  = LoadTexture("src/sprites/cadeado_aberto_cortado.png");
 
-    strcpy(fala_exibida, FALA_NORMAL);
+    strcpy(fala_exibida, FALA_NORMAL_01);
     InitTypeWriter(&writer, fala_exibida, 19.5f);
     InitSwitches();
     AtualizaTamanhoGeminiBox();
