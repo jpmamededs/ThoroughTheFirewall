@@ -14,7 +14,7 @@ static float cameraYaw = 0.0f;
 static const float maxYaw = PI / 4.0f;
 static const float minYaw = -PI / 4.0f;
 
-static bool fase4_concluida = false;
+static bool fase_template_3D_01_concluida = false;
 static float timeElapsed = 0.0f;
 
 static float phonePosY = 0.0f;
@@ -138,5 +138,5 @@ void Unload_Template_3D_01(void)
 
 bool Fase_Template_3D_01_Concluida(void)
 {
-    return fase4_concluida;
+    return fase_template_3D_01_concluida;
 }
