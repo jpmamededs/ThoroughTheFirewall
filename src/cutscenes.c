@@ -221,7 +221,7 @@ void DrawLeviAnim(float animTime, int w, int h)
     float easeT = t * t * (3.0f - 2.0f * t);
     float spriteW = personagemLevi.width;
     float spriteH = personagemLevi.height;
-    float escala = 1.7f;
+    float escala = 0.45f;
     float dstW = spriteW * escala;
     float dstH = spriteH * escala;
     float xFinal = (w - dstW) / 2.0f;    // CENTRALIZADO
@@ -260,7 +260,7 @@ void DrawV1LeviAnim(float animTime, int w, int h)
     float xLevi = (w - dstLW) / 2.0f;
     float yLevi = h - dstLH - 32.0f;
     // POSICIONE ao lado esquerdo do Levi central, mas pertinho dele:
-    float xFinal = xLevi - dstW * 0.75f - 320;
+    float xFinal = xLevi - dstW * 0.75f;
     float yFinal = yLevi + dstLH - dstH - 520;
     // -- Anima igual
     if (animTime < animDuration)
@@ -314,7 +314,7 @@ void DrawV2LeviAnim(float animTime, int w, int h)
     float xLevi = (w - dstLW) / 2.0f;
     float yLevi = h - dstLH - 32.0f;
     // GRUDA mais à esquerda do V1 Levi:
-    float xFinal = xLevi - dstW * 0.75f + 280;
+    float xFinal = xLevi - dstW * 0.75f + 600;
     float yFinal = yLevi + dstLH - dstH - 680;
     if (animTime < animDuration)
     {
@@ -367,7 +367,7 @@ void DrawV3LeviAnim(float animTime, int w, int h)
     float xLevi = (w - dstLW) / 2.0f;
     float yLevi = h - dstLH - 32.0f;
     // MAIS À ESQUERDA
-    float xFinal = xLevi - dstW * 0.75f + 870;
+    float xFinal = xLevi - dstW * 0.75f +1300;
     float yFinal = yLevi + dstLH - dstH - 530;
     if (animTime < animDuration)
     {
@@ -1061,14 +1061,14 @@ void DrawV1HankAnim(float animTime, int w, int h)
     const float animDuration = 0.12f;
     float spriteW = v1_hank.width;
     float spriteH = v1_hank.height;
-    float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
+    float escalaHank = (h / 4.0f / personagemHank.height) * 2.8f;
     float dstHW = personagemHank.width * escalaHank;
     float dstHH = personagemHank.height * escalaHank;
     float escala = escalaHank * (1.0f / 3.5f);
     float dstW = spriteW * escala;
     float dstH = spriteH * escala;
     float xHank = 20.0f;
-    float yHank = h - dstHH - 32.0f + 160.0f;
+    float yHank = h - dstHH + 10.0f;
     float xFinal = xHank + dstHW * 0.78f +120;
     float yFinal = yHank - dstH * 0.33f;
     if (animTime < animDuration)
@@ -1113,14 +1113,14 @@ void DrawV2HankAnim(float animTime, int w, int h)
     const float animDuration = 0.12f;
     float spriteW = v2_hank.width;
     float spriteH = v2_hank.height;
-    float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
+    float escalaHank = (h / 4.0f / personagemHank.height) * 2.8f;
     float dstHW = personagemHank.width * escalaHank;
     float dstHH = personagemHank.height * escalaHank;
     float escala = escalaHank * (1.0f / 1.6f);
     float dstW = spriteW * escala;
     float dstH = spriteH * escala;
     float xHank = 20.0f;
-    float yHank = h - dstHH - 32.0f + 160.0f;
+    float yHank = h - dstHH + 60.0f;
     float xV1Final = xHank + dstHW * 0.78f + 120;
     float yV1Final = yHank - dstH * 0.33f;
     float offsetX = dstW * 0.95f + 70;
@@ -1169,14 +1169,14 @@ void DrawV3HankAnim(float animTime, int w, int h)
     const float animDuration = 0.12f;
     float spriteW2 = v2_hank.width;
     float spriteH2 = v2_hank.height;
-    float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
+    float escalaHank = (h / 4.0f / personagemHank.height) * 2.8f;
     float dstHW = personagemHank.width * escalaHank;
     float dstHH = personagemHank.height * escalaHank;
     float escala2 = escalaHank * (1.0f / 1.4f);
     float dstW2 = spriteW2 * escala2;
     float dstH2 = spriteH2 * escala2;
     float xHank = 20.0f;
-    float yHank = h - dstHH - 32.0f + 160.0f;
+    float yHank = h - dstHH - 80;
     float xV1Final = xHank + dstHW * 0.78f + 120;
     float yV1Final = yHank - dstH2 * 0.33f;
     float offsetX2 = dstW2 * 0.95f + 350;
@@ -1232,14 +1232,14 @@ void DrawV4HankAnim(float animTime, int w, int h)
     const float animDuration = 0.12f;
     float spriteW2 = v2_hank.width;
     float spriteH2 = v2_hank.height;
-    float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
+    float escalaHank = (h / 4.0f / personagemHank.height) * 2.8f;
     float dstHW = personagemHank.width * escalaHank;
     float dstHH = personagemHank.height * escalaHank;
     float escala2 = escalaHank * (1.0f / 1.4f);
     float dstW2 = spriteW2 * escala2;
     float dstH2 = spriteH2 * escala2;
     float xHank = 20.0f;
-    float yHank = h - dstHH - 32.0f + 160.0f;
+    float yHank = h - dstHH  + 100.0f;
     float xV1Final = xHank + dstHW * 0.78f + 120;
     float yV1Final = yHank - dstH2 * 0.33f;
     float offsetX2 = dstW2 * 0.95f + 350;
@@ -1516,7 +1516,8 @@ static void DrawAnimacaoBarrasBg5(float elapsed, int w, int h)
     float t = elapsed / 1.15f;
     if (t > 1.0f) t = 1.0f;
     int barWidth = (w + bars - 1) / bars;
-    // desce bg5 sobre bg4
+
+    // Desenha bg4 como base
     DrawTexturePro(
         bg4,
         (Rectangle){0,0,bg4.width,bg4.height},
@@ -1531,22 +1532,24 @@ static void DrawAnimacaoBarrasBg5(float elapsed, int w, int h)
         float barraT = (t - barraInicio) / 0.3f;
         if (barraT < 0) barraT = 0;
         if (barraT > 1) barraT = 1;
-        barraT = barraT * barraT * (3.0f - 2.0f * barraT);
+        barraT = barraT*barraT*(3-2*barraT);
         int yReveal = (int)(h * barraT);
+
+        int x = w - (i+1)*barWidth; // De trás pra frente
+
         if (yReveal > 0)
         {
             DrawTexturePro(
                 bg5,
                 (Rectangle){
-                    (float)(i*barWidth) * ((float)bg5.width/w),
+                    (float)x * ((float)bg5.width/w),
                     0,
                     barWidth * ((float)bg5.width/w),
                     yReveal * ((float)bg5.height/h)},
-                (Rectangle){
-                    i*barWidth,
-                    0,
-                    barWidth,
-                    yReveal},
+                (Rectangle){x,
+                            0,
+                            barWidth,
+                            yReveal},
                 (Vector2){0,0}, 0.0f, WHITE
             );
         }
@@ -1559,7 +1562,7 @@ static void DrawAnimacaoBarrasBg4(float elapsed, int w, int h)
     float t = elapsed / 1.15f;
     if (t > 1.0f) t = 1.0f;
     int barWidth = (w + bars - 1) / bars;
-    // Desenha bg3 como base e revela o bg4 pelas barras descendo de cima pra baixo.
+    // Desenha bg3 como base e revela o bg4 por barras aumentando da esquerda p/direita
     DrawTexturePro(
         bg3,
         (Rectangle){0,0,bg3.width,bg3.height},
@@ -1574,23 +1577,19 @@ static void DrawAnimacaoBarrasBg4(float elapsed, int w, int h)
         float barraT = (t - barraInicio) / 0.3f;
         if (barraT < 0) barraT = 0;
         if (barraT > 1) barraT = 1;
-        barraT = barraT * barraT * (3.0f - 2.0f * barraT);
+        barraT = barraT*barraT*(3-2*barraT);
         int yReveal = (int)(h * barraT);
+        int x = i * barWidth;
         if (yReveal > 0)
         {
-            // De cima pra baixo (igual DrawAnimacaoBarrasBg3 para bg4)
             DrawTexturePro(
                 bg4,
                 (Rectangle){
-                    (float)(i*barWidth) * ((float)bg4.width/w),
+                    (float)x * ((float)bg4.width/w),
                     0,
                     barWidth * ((float)bg4.width/w),
                     yReveal * ((float)bg4.height/h)},
-                (Rectangle){
-                    i*barWidth,
-                    0,
-                    barWidth,
-                    yReveal},
+                (Rectangle){x, 0, barWidth, yReveal},
                 (Vector2){0,0}, 0.0f, WHITE
             );
         }
@@ -1641,43 +1640,39 @@ static void DrawAnimacaoBarrasBg2(float elapsed, int w, int h)
 }
 static void DrawAnimacaoBarrasBg3(float elapsed, int w, int h)
 {
-    const int bars = 96;
+    const int bars = 64;
     float t = elapsed / 1.15f;
     if (t > 1.0f) t = 1.0f;
-    int barWidth = (w + bars - 1) / bars;
-
-    // Desenha bg2 como base e revela o bg3 pelas barras descendo de cima pra baixo.
+    int barHeight = (h + bars - 1) / bars;
+    // Desenha bg2 como base e revela o bg3 por barras de cima para baixo
     DrawTexturePro(
         bg2,
         (Rectangle){0,0,bg2.width,bg2.height},
         (Rectangle){0,0,w,h},
         (Vector2){0,0}, 0.0f, WHITE
     );
-    for (int i = 0; i < bars; i++)
-    {
+    for (int i = 0; i < bars; i++) {
         float barraInicio = (float)i / bars * 0.55f;
         float randomSeed = (float)((i * 193) % 211) / 211.0f;
         barraInicio += randomSeed * 0.12f;
         float barraT = (t - barraInicio) / 0.3f;
         if (barraT < 0) barraT = 0;
         if (barraT > 1) barraT = 1;
-        barraT = barraT * barraT * (3.0f - 2.0f * barraT);
-        int yReveal = (int)(h * barraT);
-        if (yReveal > 0)
+        barraT = barraT*barraT*(3-2*barraT);
+        int xReveal = (int)(w * barraT);
+        int y = i * barHeight;
+        if (xReveal > 0)
         {
-            // ************* DE CIMA PRA BAIXO  *************************
             DrawTexturePro(
                 bg3,
-                (Rectangle){
-                    (float)(i*barWidth) * ((float)bg3.width/w),
-                    0,
-                    barWidth * ((float)bg3.width/w),
-                    yReveal * ((float)bg3.height/h)},
-                (Rectangle){
-                    i*barWidth,
-                    0,
-                    barWidth,
-                    yReveal},
+                (Rectangle){0,
+                            (float)(i*barHeight) * ((float)bg3.height/h),
+                            xReveal * ((float)bg3.width/w),
+                            barHeight * ((float)bg3.height/h)},
+                (Rectangle){0,
+                            y,
+                            xReveal,
+                            barHeight},
                 (Vector2){0,0}, 0.0f, WHITE
             );
         }
