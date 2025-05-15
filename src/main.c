@@ -106,6 +106,7 @@ int main(void)
     static bool loading_Initialized = false;
     static bool transicao_Initialized = false;
     static bool ranking_Initialized = false;
+    static bool menu_Initialized = false;
     static bool debug_Initialized = false;
 
     extern bool interrogatorioFinalizado;
@@ -125,15 +126,26 @@ int main(void)
             if (CutscenesEnded())
             {
                 UnloadCutscenes();
-                InitMenu();
                 ResumeMusicStream(music);
                 state = APP_MENU;
             }
         }
         else if (state == APP_MENU)
         {
+            if (!menu_Initialized)
+            {
+                InitMenu();
+                menu_Initialized = true;
+            }
             UpdateMenu();
             DrawMenu();
+            if (!ComecouJogo() && IsKeyPressed(KEY_R))
+            {
+                UnloadMenu();
+                ranking_Initialized = false;
+                menu_Initialized = false;
+                state = APP_RANKING;
+            }
             if (MenuStartGame())
             {
                 PauseMusicStream(music);
@@ -272,13 +284,6 @@ int main(void)
                 UnloadMenu();
                 transicao_Initialized = false;
                 state = APP_TRANSICAO;
-            }
-            if (IsKeyPressed(KEY_Q))
-            {
-                PauseMusicStream(music);
-                UnloadMenu();
-                ranking_Initialized = false;
-                state = APP_RANKING;
             }
             // FIM DEBUG
         }
@@ -685,7 +690,7 @@ int main(void)
             if (Ranking_Concluido()) {
                 Unload_Ranking();
                 ranking_Initialized = false;
-                state = APP_DEBUG;
+                state = APP_MENU;
             }
         }
         else if (state == APP_DEBUG)

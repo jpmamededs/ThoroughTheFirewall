@@ -34,6 +34,13 @@ typedef struct {
     char  relatorioGeral[1024];
 } PlayerStats;
 
+typedef struct {
+    char playerName[MAX_PLAYER_NAME];
+    char characterName[MAX_PLAYER_NAME];
+    float notalGeral;
+    bool isPassouSelecao;
+} PlayerStatsDTO;
+
 extern int  notasIA[MAX_PERGUNTAS];
 extern char relatoriosIA[MAX_PERGUNTAS][512];
 extern char relatorioGeralIA[1024];
