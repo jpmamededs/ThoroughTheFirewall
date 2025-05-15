@@ -2,6 +2,8 @@
 #include "cutscenes.h"
 #include <math.h>
 
+#define NUM_COSTAS 4
+
 // --- Variáveis globais de cutscene ---
 static Texture2D empresa1, empresa2, empresa3, empresa4;
 static Texture2D detetiveNaEmpresa4;
@@ -33,6 +35,16 @@ static Texture2D v1_jade;
 static Texture2D v2_jade;
 static Texture2D v3_jade;
 static Texture2D nomeJade;
+static Texture2D bgHacker;
+static Texture2D costasJade, costasLevi, costasAlice, costasDante;
+static Texture2D bgSemiFinal;
+static Texture2D aliceComemora;
+static Texture2D fotosTodos;
+
+static bool hackerTransicaoIniciou = false;
+static bool hackerTransicaoTerminou = false;
+static float hackerTransicaoStartTime = 0.0f;
+static float hackerMomentoTotal = 0.0f;
 
 static int screenWidth, screenHeight;
 static float startTime = 0.0f;
@@ -86,6 +98,12 @@ static float jadeStartTime = 0.0f;
 static bool jadeAnimTerminou = false;
 static float jadeAnimTerminouTime = 0.0f;
 
+static bool semiFinalIniciou = false;
+static float semiFinalStartTime = 0.0f;
+static bool aliceComemoraAnimTerminou = false;
+static float aliceComemoraTerminoTime = 0.0f;
+static bool fotosTodosApareceu = false;
+
 // --- PROTÓTIPO da transição BG2 ---
 static void DrawAnimacaoBarrasBg2(float elapsed, int w, int h);
 
@@ -131,6 +149,15 @@ void InitCutscenes(void)
     v2_jade = LoadTexture("src/sprites/intro/v2_jade.png");
     v3_jade = LoadTexture("src/sprites/intro/v3_jade.png");
     nomeJade = LoadTexture("src/sprites/intro/nomeJade.png");
+    bgHacker = LoadTexture("src/sprites/intro/bgHacker.png");
+    costasJade  = LoadTexture("src/sprites/intro/costasJade.png");
+    costasLevi  = LoadTexture("src/sprites/intro/costasLevi.png");
+    costasAlice = LoadTexture("src/sprites/intro/costasAlice.png");
+    costasDante = LoadTexture("src/sprites/intro/costasDante.png");
+    bgSemiFinal     = LoadTexture("src/sprites/intro/bgSemiFinal.png");
+    aliceComemora   = LoadTexture("src/sprites/intro/aliceComemora.png");
+    fotosTodos      = LoadTexture("src/sprites/intro/fotosTodos.png");
+
     
     startTime = GetTime();
     ended = false;
@@ -171,6 +198,13 @@ void InitCutscenes(void)
     jadeStartTime = 0.0f;
     jadeAnimTerminou = false;
     jadeAnimTerminouTime = 0.0f;
+
+    hackerTransicaoIniciou = false;
+    hackerTransicaoTerminou = false;
+    hackerTransicaoStartTime = 0.0f;
+    hackerMomentoTotal = 0.0f;
+
+    
 }
 
 void UpdateCutscenes(void)
@@ -209,6 +243,95 @@ void DrawHankAnim(float animTime, int w, int h)
             (Vector2){0, 0},
             0.0f, (Color){255,255,255,alpha}
         );
+    }
+}
+
+static void DrawCostasSpritesOverBgHacker(float surgimentoT, int w, int h)
+{
+    Texture2D sprites[NUM_COSTAS] = {costasJade, costasLevi, costasAlice, costasDante};
+    const float sprMargin = 60.0f;
+    float totalWidth = 0;
+    float desiredH = h * 0.6f;
+    float sprW[NUM_COSTAS], sprH[NUM_COSTAS], escala[NUM_COSTAS];
+
+    for (int i = 0; i < NUM_COSTAS; ++i) {
+        escala[i] = desiredH / sprites[i].height;
+        sprW[i] = sprites[i].width * escala[i];
+        sprH[i] = desiredH;
+        totalWidth += sprW[i];
+        if (i < NUM_COSTAS-1) totalWidth += sprMargin;
+    }
+    float startX = (w - totalWidth)/2.0f;
+    float baseY = h - desiredH;
+
+    // Fade in + subida
+    float exibeT = surgimentoT/1.1f;
+    if (exibeT > 1.0f) exibeT = 1.0f;
+    float smoothT = exibeT*exibeT*(3.0f-2.0f*exibeT);
+    float yAppearOffset = (1.0f-smoothT) * (h*0.12f);
+    unsigned char alpha = (unsigned char)(255.0f * smoothT);
+
+    // Movimento X SUAVE, sincronizado mas com pequenas fases
+    float now = (float)GetTime();
+    float floatAmountX = w * 0.020f; // 2% width
+    float px = startX;
+    float baseFreq = 0.74f;           // ~1 ciclo/seg
+    for (int i=0; i<NUM_COSTAS; ++i) {
+        // A fase faz cada personagem balançar com atraso SUAVE, não saltos!
+        float phase = 0.5f * i; 
+        float floX = sinf(now * baseFreq + phase) * floatAmountX;
+
+        float x = px + floX;
+        float y = baseY + yAppearOffset;
+
+        DrawTexturePro(
+            sprites[i],
+            (Rectangle){0,0,sprites[i].width,sprites[i].height},
+            (Rectangle){x, y, sprW[i], sprH[i]},
+            (Vector2){0,0}, 0.0f, (Color){255,255,255,alpha}
+        );
+        px += sprW[i] + sprMargin;
+    }
+}
+
+static void DrawGlitchTransitionBg5ToHacker(float glitchT, int w, int h)
+{
+    // Deixa o fundo bg5 como base
+    DrawTexturePro(
+        bg5,
+        (Rectangle){0,0,bg5.width,bg5.height},
+        (Rectangle){0,0,w,h},
+        (Vector2){0,0}, 0.0f, WHITE
+    );
+
+    // Sobrepõe GLITCHES e revela partes bgHacker com "corrosão"
+    int glitches = 18 + (int)(28 * glitchT);
+    for (int i = 0; i < glitches; i++)
+    {
+        int ry = GetRandomValue(0, h - 5);
+        int rh = GetRandomValue(1, 10);
+        DrawRectangle(0, ry, w, rh, BLACK);
+
+        if (glitchT > 0.3f) {
+            int rx = GetRandomValue(0, w - 60);
+            int rw = GetRandomValue(16, 90);
+            int ry2 = GetRandomValue(0, h - 20);
+            int rh2 = GetRandomValue(8, 30);
+            // Ao invés de apagar, "revela" parta do bgHacker
+            DrawTexturePro(
+                bgHacker,
+                (Rectangle){rx * ((float)bgHacker.width / w), ry2 * ((float)bgHacker.height / h), rw * ((float)bgHacker.width / w), rh2 * ((float)bgHacker.height / h)},
+                (Rectangle){rx, ry2, rw, rh2},
+                (Vector2){0,0}, 0.0f, WHITE
+            );
+        }
+    }
+
+    // FADE OUT para revelar bgHacker por completo
+    if (glitchT > 0.70f) {
+        unsigned char fadeAlpha = (unsigned char)(255 * (glitchT-0.7f) / 0.3f);
+        if (fadeAlpha > 255) fadeAlpha = 255;
+        DrawRectangle(0,0,w,h,(Color){0,0,0,fadeAlpha});
     }
 }
 
@@ -2107,9 +2230,9 @@ void DrawCutscenes(void)
                             } else if (bg5TransicaoTerminou) {
                                 // desenha bg5 ANTES das animações da Jade
                                 DrawTexturePro(
-                                    bg5, 
-                                    (Rectangle){0,0,bg5.width,bg5.height}, 
-                                    (Rectangle){0,0,w,h}, 
+                                    bg5,
+                                    (Rectangle){0,0,bg5.width,bg5.height},
+                                    (Rectangle){0,0,w,h},
                                     (Vector2){0,0}, 0.0f, WHITE
                                 );
                                 float tempoJade = GetTime() - bg5MomentoTotal;
@@ -2119,12 +2242,146 @@ void DrawCutscenes(void)
                                 if (tempoJade > 1.2f)  DrawV1JadeAnim(tempoJade - 1.2f, w, h);
                                 if (tempoJade > 1.75f) DrawV2JadeAnim(tempoJade - 1.75f, w, h);
                                 if (tempoJade > 2.2f)  DrawV3JadeAnim(tempoJade - 2.2f, w, h);
-                                if (tempoJade > nomeJadeStart) 
+                                if (tempoJade > nomeJadeStart)
                                     DrawNomeJadeAnim(tempoJade - nomeJadeStart, w, h);
 
-                                // Só termina 1s depois do nome aparecer (igual outros)
-                                if (tempoJade > nomeJadeStart + 1.3f)
-                                    ended = true;
+                                // ---- NOVO: Após 1.3s do nome JADE, começa transição hacker glitch
+                                if (!hackerTransicaoIniciou && tempoJade > nomeJadeStart + 1.3f) {
+                                    hackerTransicaoIniciou = true;
+                                    hackerTransicaoStartTime = GetTime();
+                                }
+                                // Se começou a transição, exibe animação de glitch
+                                if (hackerTransicaoIniciou && !hackerTransicaoTerminou) {
+                                    float elapsedHack = GetTime() - hackerTransicaoStartTime;
+                                    float glitchT = elapsedHack / 2.3f;  // <--- aumente o tempo aqui!
+                                    if (glitchT > 1.0f) glitchT = 1.0f;
+                                    // suavizar para smoothstep
+                                    glitchT = glitchT * glitchT * (3.0f - 2.0f * glitchT);
+                                    DrawGlitchTransitionBg5ToHacker(glitchT, w, h);
+                                    if (glitchT >= 1.0f) {
+                                        hackerTransicaoTerminou = true;
+                                        hackerMomentoTotal = GetTime();
+                                    }
+                                }
+                                // Se terminou a transição, mostra bgHacker completo por pelo menos 1s
+                                else if (hackerTransicaoTerminou) {
+                                    DrawTexturePro(
+                                        bgHacker,
+                                        (Rectangle){0,0,bgHacker.width,bgHacker.height},
+                                        (Rectangle){0,0,w,h},
+                                        (Vector2){0,0}, 0.0f, WHITE
+                                    );
+                                    float timeSince = GetTime() - hackerMomentoTotal;
+
+                                    float costasDur = 4.0f; // tempo mostrando as costas
+
+                                    if (timeSince < costasDur) {
+                                        DrawCostasSpritesOverBgHacker(timeSince, w, h);
+                                    }
+                                    else {
+                                        // --- INÍCIO DA CENA bgSemiFinal ---
+                                        if (!semiFinalIniciou) {
+                                            semiFinalIniciou = true;
+                                            semiFinalStartTime = GetTime();
+                                            aliceComemoraAnimTerminou = false;
+                                            fotosTodosApareceu = false;
+                                        }
+                                        float tempoSemi = GetTime() - semiFinalStartTime;
+
+                                        // 1. Fundo: bgSemiFinal
+                                        DrawTexturePro(
+                                            bgSemiFinal,
+                                            (Rectangle){0,0,bgSemiFinal.width,bgSemiFinal.height},
+                                            (Rectangle){0,0,w,h},
+                                            (Vector2){0,0}, 0.0f, WHITE
+                                        );
+
+                                        // 2. Animação AliceComemora (inferior esquerda)
+                                        // Parâmetros de animação, ajuste conforme necessário
+                                        const float aliceAnimIn   = 0.0f;
+                                        const float aliceAnimDur  = 1.2f;
+
+                                        float aliceW = aliceComemora.width;
+                                        float aliceH = aliceComemora.height;
+                                        float escAlice = (w * 0.200f) / aliceW;
+                                        float dstWA = aliceW * escAlice;
+                                        float dstHA = aliceH * escAlice;
+                                        float margemBAIXO = 30.0f;
+                                        float margemESQ   = 30.0f;
+
+                                        if (!aliceComemoraAnimTerminou) {
+                                            float animT = tempoSemi - aliceAnimIn;
+                                            if (animT < 0.0f) animT = 0.0f;
+                                            if (animT > aliceAnimDur) animT = aliceAnimDur;
+                                            float t = animT / aliceAnimDur;
+                                            float smoothT = t*t*(3-2*t);
+
+                                            // Slide in + fade-in Alice
+                                            float xStart = margemESQ - 70.0f;
+                                            float xEnd   = margemESQ;
+                                            float xAtual = xStart + (xEnd-xStart)*smoothT;
+                                            float yEnd   = h - dstHA - margemBAIXO;
+                                            unsigned char alpha = (unsigned char)(255 * smoothT);
+
+                                            DrawTexturePro(
+                                                aliceComemora,
+                                                (Rectangle){0,0,aliceW,aliceH},
+                                                (Rectangle){xAtual, yEnd, dstWA, dstHA},
+                                                (Vector2){0,0}, 0.0f, (Color){255,255,255,alpha}
+                                            );
+
+                                            if (animT >= aliceAnimDur) {
+                                                aliceComemoraAnimTerminou = true;
+                                                aliceComemoraTerminoTime = GetTime();
+                                            }
+                                        } else {
+                                            // Alice parada na posição final
+                                            float xEnd   = margemESQ;
+                                            float yEnd   = h - dstHA - margemBAIXO;
+                                            DrawTexturePro(
+                                                aliceComemora,
+                                                (Rectangle){0,0,aliceW,aliceH},
+                                                (Rectangle){xEnd, yEnd, dstWA, dstHA},
+                                                (Vector2){0,0}, 0.0f, WHITE
+                                            );
+                                        }
+
+                                        // 3. FotosTodos após Alice terminar + 0.5s (topo direita)
+                                        if (aliceComemoraAnimTerminou) {
+                                            float tempoDesdeAliceFim = GetTime() - aliceComemoraTerminoTime;
+                                            if (!fotosTodosApareceu && tempoDesdeAliceFim > 0.5f)
+                                                fotosTodosApareceu = true;
+                                            // RECOMENDÁVEL: adicionar um fade-in
+                                            if (fotosTodosApareceu) {
+                                                float fotosW = fotosTodos.width;
+                                                float fotosH = fotosTodos.height;
+                                                float escFotos = (w/6.3f) / fotosW;
+                                                if (escFotos*fotosH > h/5.0f) escFotos = (h/4.5f)/fotosH;
+                                                float dstWF = fotosW * escFotos;
+                                                float dstHF = fotosH * escFotos;
+                                                float margemTOPO   = 34.0f;
+                                                float margemDIREITA = 44.0f;
+                                                // Fade-in
+                                                float fadeFotos = tempoDesdeAliceFim - 0.5f;
+                                                float alphaFotos = 255.0f;
+                                                if (fadeFotos >= 0.0f && fadeFotos < 0.45f)
+                                                    alphaFotos = 255.0f * (fadeFotos/0.45f);
+                                                if (alphaFotos > 255.0f) alphaFotos = 255.0f;
+                                                DrawTexturePro(
+                                                    fotosTodos,
+                                                    (Rectangle){0,0,fotosW,fotosH},
+                                                    (Rectangle){w - dstWF - margemDIREITA, margemTOPO, dstWF, dstHF},
+                                                    (Vector2){0,0}, 0.0f, (Color){255,255,255,(unsigned char)(alphaFotos)}
+                                                );
+                                            }
+                                        }
+
+                                        // 4. Para finalizar, só termina com um clique/tecla ou tempo máximo na tela...
+                                        // (opcional, dependendo do seu fluxo; caso queira forçar fim após X seg:)
+                                        // if (tempoSemi > 7.0f) ended = true;
+
+                                    }
+                                }
                             }
                         }
                     }
@@ -2222,4 +2479,12 @@ void UnloadCutscenes(void)
     UnloadTexture(v2_jade);
     UnloadTexture(v3_jade);
     UnloadTexture(nomeJade);
+    UnloadTexture(bgHacker);
+    UnloadTexture(costasJade);
+    UnloadTexture(costasLevi);
+    UnloadTexture(costasAlice);
+    UnloadTexture(costasDante);
+    UnloadTexture(bgSemiFinal);
+    UnloadTexture(aliceComemora);
+    UnloadTexture(fotosTodos);
 }
