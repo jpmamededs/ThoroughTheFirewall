@@ -20,6 +20,20 @@ static Texture2D nomeAlice;
 static Texture2D v1_alice;
 static Texture2D v2_alice;
 static Texture2D v3_alice;
+static Texture2D bg3;
+static Texture2D bg4;
+static Texture2D personagemDante;
+static Texture2D v1_dante;
+static Texture2D v2_dante;
+static Texture2D v3_dante;
+static Texture2D nomeDante;
+static Texture2D bg5;
+static Texture2D personagemJade;
+static Texture2D v1_jade;
+static Texture2D v2_jade;
+static Texture2D v3_jade;
+static Texture2D nomeJade;
+
 static int screenWidth, screenHeight;
 static float startTime = 0.0f;
 static bool ended = false;
@@ -37,10 +51,40 @@ static float bg2TransicaoStartTime = 0.0f;
 static bool bg2TransicaoTerminou = false;
 static float bg2MomentoTotal = 0.0f;
 
+static bool bg3TransicaoIniciou = false;
+static float bg3TransicaoStartTime = 0.0f;
+static bool bg3TransicaoTerminou = false;
+static float bg3MomentoTotal = 0.0f;
+
 static bool aliceApareceu = false;
 static float aliceStartTime = 0.0f;
 static bool aliceAnimTerminou = false;
 static float aliceAnimTerminouTime = 0.0f;
+
+static Texture2D personagemLevi;
+static Texture2D v1_levi;
+static Texture2D v2_levi;
+static Texture2D v3_levi;
+static Texture2D nomeLevi;
+
+static bool bg4TransicaoIniciou = false;
+static float bg4TransicaoStartTime = 0.0f;
+static bool bg4TransicaoTerminou = false;
+static float bg4MomentoTotal = 0.0f;
+static bool danteApareceu = false;
+static float danteStartTime = 0.0f;
+static bool danteAnimTerminou = false;
+static float danteAnimTerminouTime = 0.0f;
+
+
+static bool bg5TransicaoIniciou = false;
+static float bg5TransicaoStartTime = 0.0f;
+static bool bg5TransicaoTerminou = false;
+static float bg5MomentoTotal = 0.0f;
+static bool jadeApareceu = false;
+static float jadeStartTime = 0.0f;
+static bool jadeAnimTerminou = false;
+static float jadeAnimTerminouTime = 0.0f;
 
 // --- PROTÓTIPO da transição BG2 ---
 static void DrawAnimacaoBarrasBg2(float elapsed, int w, int h);
@@ -69,6 +113,24 @@ void InitCutscenes(void)
     v3_hank         = LoadTexture("src/sprites/intro/v3_hank.png");
     v4_hank         = LoadTexture("src/sprites/intro/v4_hank.png");
     nomeHank        = LoadTexture("src/sprites/intro/nomeHank.png");
+    bg3 = LoadTexture("src/sprites/intro/bg3.png");
+    personagemLevi  = LoadTexture("src/sprites/intro/personagemLevi.png");
+    v1_levi         = LoadTexture("src/sprites/intro/v1_levi.png");
+    v2_levi         = LoadTexture("src/sprites/intro/v2_levi.png");
+    v3_levi         = LoadTexture("src/sprites/intro/v3_levi.png");
+    nomeLevi        = LoadTexture("src/sprites/intro/nomeLevi.png");
+    bg4 = LoadTexture("src/sprites/intro/bg4.png");
+    personagemDante = LoadTexture("src/sprites/intro/personagemDante.png");
+    v1_dante = LoadTexture("src/sprites/intro/v1_dante.png");
+    v2_dante = LoadTexture("src/sprites/intro/v2_dante.png");
+    v3_dante = LoadTexture("src/sprites/intro/v3_dante.png");
+    nomeDante = LoadTexture("src/sprites/intro/nomeDante.png");
+    bg5 = LoadTexture("src/sprites/intro/bg5.png");
+    personagemJade = LoadTexture("src/sprites/intro/personagemJade.png");
+    v1_jade = LoadTexture("src/sprites/intro/v1_jade.png");
+    v2_jade = LoadTexture("src/sprites/intro/v2_jade.png");
+    v3_jade = LoadTexture("src/sprites/intro/v3_jade.png");
+    nomeJade = LoadTexture("src/sprites/intro/nomeJade.png");
     
     startTime = GetTime();
     ended = false;
@@ -86,6 +148,29 @@ void InitCutscenes(void)
     aliceStartTime = 0.0f;
     aliceAnimTerminou = false;
     aliceAnimTerminouTime = 0.0f;
+
+    bg3TransicaoIniciou = false;
+    bg3TransicaoStartTime = 0.0f;
+    bg3TransicaoTerminou = false;
+    bg3MomentoTotal = 0.0f;
+
+    bg4TransicaoIniciou = false;
+    bg4TransicaoStartTime = 0.0f;
+    bg4TransicaoTerminou = false;
+    bg4MomentoTotal = 0.0f;
+    danteApareceu = false;
+    danteStartTime = 0.0f;
+    danteAnimTerminou = false;
+    danteAnimTerminouTime = 0.0f;
+
+    bg5TransicaoIniciou = false;
+    bg5TransicaoStartTime = 0.0f;
+    bg5TransicaoTerminou = false;
+    bg5MomentoTotal = 0.0f;
+    jadeApareceu = false;
+    jadeStartTime = 0.0f;
+    jadeAnimTerminou = false;
+    jadeAnimTerminouTime = 0.0f;
 }
 
 void UpdateCutscenes(void)
@@ -127,6 +212,229 @@ void DrawHankAnim(float animTime, int w, int h)
     }
 }
 
+void DrawLeviAnim(float animTime, int w, int h)
+{
+    const float animDuration = 1.2f;
+    if (animTime < 0.0f) animTime = 0.0f;
+    if (animTime > animDuration) animTime = animDuration;
+    float t = animTime / animDuration;
+    float easeT = t * t * (3.0f - 2.0f * t);
+    float spriteW = personagemLevi.width;
+    float spriteH = personagemLevi.height;
+    float escala = 1.7f;
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    float xFinal = (w - dstW) / 2.0f;    // CENTRALIZADO
+    //float xStart = xFinal;
+    float yFinal = h - dstH - 32.0f;
+    float yStart = yFinal + 150.0f;        // Aparece de baixo para cima
+    float yAtual = yStart + (yFinal - yStart) * easeT;
+    unsigned char alpha = (unsigned char)(255 * easeT);
+    if (alpha > 0)
+    {
+        DrawTexturePro(
+            personagemLevi,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xFinal, yAtual, dstW, dstH},
+            (Vector2){0, 0},
+            0.0f, (Color){255,255,255, alpha}
+        );
+    }
+}
+
+
+
+void DrawV1LeviAnim(float animTime, int w, int h)
+{
+    const float animDuration = 0.12f;
+    if (animTime < 0.0f) return;
+    float spriteW = v1_levi.width;
+    float spriteH = v1_levi.height;
+    // Centralize o "personagemLevi" no centro (como já faz)
+    float escalaLevi = 1.0f; // Mesmo do personagemLevi central
+    float dstLW = personagemLevi.width * escalaLevi;
+    float dstLH = personagemLevi.height * escalaLevi;
+    float escala = 0.32f; // Clone menorzinho porém visível
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    float xLevi = (w - dstLW) / 2.0f;
+    float yLevi = h - dstLH - 32.0f;
+    // POSICIONE ao lado esquerdo do Levi central, mas pertinho dele:
+    float xFinal = xLevi - dstW * 0.75f - 320;
+    float yFinal = yLevi + dstLH - dstH - 520;
+    // -- Anima igual
+    if (animTime < animDuration)
+    {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal - 60.0f;
+        float yStart = yFinal - 70.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yStart + (yFinal - yStart) * easeT;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0)
+        {
+            DrawTexturePro(
+                v1_levi,
+                (Rectangle){0, 0, spriteW, spriteH},
+                (Rectangle){xAtual, yAtual, dstW, dstH},
+                (Vector2){0, 0},
+                0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    }
+    else
+    {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 0.0f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+        DrawTexturePro(
+            v1_levi,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xFinal, yFinal + offset, dstW, dstH},
+            (Vector2){0, 0},
+            0.0f, WHITE
+        );
+    }
+}
+
+void DrawV2LeviAnim(float animTime, int w, int h)
+{
+    const float animDuration = 0.12f;
+    if (animTime < 0.0f) return;
+    float spriteW = v2_levi.width;
+    float spriteH = v2_levi.height;
+    float escalaLevi = 1.0f;
+    float dstLW = personagemLevi.width * escalaLevi;
+    float dstLH = personagemLevi.height * escalaLevi;
+    float escala = 0.4f; // Um pouco menor
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    float xLevi = (w - dstLW) / 2.0f;
+    float yLevi = h - dstLH - 32.0f;
+    // GRUDA mais à esquerda do V1 Levi:
+    float xFinal = xLevi - dstW * 0.75f + 280;
+    float yFinal = yLevi + dstLH - dstH - 680;
+    if (animTime < animDuration)
+    {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal - 40.0f;
+        float yStart = yFinal - 80.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yStart + (yFinal - yStart) * easeT;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0)
+        {
+            DrawTexturePro(
+                v2_levi,
+                (Rectangle){0, 0, spriteW, spriteH},
+                (Rectangle){xAtual, yAtual, dstW, dstH},
+                (Vector2){0, 0},
+                0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    }
+    else
+    {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 1.22f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+        DrawTexturePro(
+            v2_levi,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xFinal, yFinal + offset, dstW, dstH},
+            (Vector2){0, 0},
+            0.0f, WHITE
+        );
+    }
+}
+
+void DrawV3LeviAnim(float animTime, int w, int h)
+{
+    const float animDuration = 0.12f;
+    if (animTime < 0.0f) return;
+    float spriteW = v3_levi.width;
+    float spriteH = v3_levi.height;
+    float escalaLevi = 1.0f;
+    float dstLW = personagemLevi.width * escalaLevi;
+    float dstLH = personagemLevi.height * escalaLevi;
+    float escala = 0.3f;
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    float xLevi = (w - dstLW) / 2.0f;
+    float yLevi = h - dstLH - 32.0f;
+    // MAIS À ESQUERDA
+    float xFinal = xLevi - dstW * 0.75f + 870;
+    float yFinal = yLevi + dstLH - dstH - 530;
+    if (animTime < animDuration)
+    {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal - 30.0f;
+        float yStart = yFinal - 60.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yStart + (yFinal - yStart) * easeT;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0)
+        {
+            DrawTexturePro(
+                v3_levi,
+                (Rectangle){0, 0, spriteW, spriteH},
+                (Rectangle){xAtual, yAtual, dstW, dstH},
+                (Vector2){0, 0},
+                0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    }
+    else
+    {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 2.17f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+        DrawTexturePro(
+            v3_levi,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xFinal, yFinal + offset, dstW, dstH},
+            (Vector2){0, 0},
+            0.0f, WHITE
+        );
+    }
+}
+
+void DrawNomeLeviAnim(float animTime, int w, int h)
+{
+    const float animDur = 1.00f;
+    float t = animTime / animDur;
+    if (t < 0.0f) t = 0.0f;
+    if (t > 1.0f) t = 1.0f;
+    float easeT = 1.0f - powf(1.0f-t, 2.2f);
+    float texW = nomeLevi.width;
+    float texH = nomeLevi.height;
+    float escala = ((float)w / 4.5f) / texW;
+    if (escala * texH > h / 9.5f) escala = (h/1.5f)/texH;
+    float dstW = texW * escala;
+    float dstH = texH * escala;
+    float xDest = (w - dstW) / 2.0f - 600; // CENTRALIZADO
+    float yDest = h - dstH + 200.0f; // Ajuste se quiser +perto/+longe de Levi
+    float revealedW = dstW * easeT;
+    float revealedPixSrc = texW * easeT;
+    unsigned char alpha = (unsigned char)(255 * easeT);
+    if (easeT > 0.0f)
+    {
+        DrawTexturePro(
+            nomeLevi,
+            (Rectangle){0, 0, revealedPixSrc, texH},
+            (Rectangle){xDest, yDest, revealedW, dstH},
+            (Vector2){0, 0},
+            0.0f, (Color){255,255,255,alpha}
+        );
+    }
+}
+
 // ---- Animacao Alice: IGUAL Hank, mas vindo da direita ----
 void DrawAliceAnim(float animTime, int w, int h)
 {
@@ -160,7 +468,7 @@ void DrawAliceAnim(float animTime, int w, int h)
 // --- v1_alice animada próxima de Alice, menor e à esquerda dela, e depois flutuando ---
 void DrawV1AliceAnim(float animTime, int w, int h)
 {
-    const float animDuration = 0.55f;
+    const float animDuration = 0.12f;
     if (animTime < 0.0f) return; // <-- Garante que não desenha com animTime negativo!
     float spriteW = v1_alice.width;
     float spriteH = v1_alice.height;
@@ -212,7 +520,7 @@ void DrawV1AliceAnim(float animTime, int w, int h)
 
 void DrawV2AliceAnim(float animTime, int w, int h)
 {
-    const float animDuration = 0.55f;
+    const float animDuration = 0.12f;
     if (animTime < 0.0f) return; // <-- Aqui também!
     float spriteW = v2_alice.width;
     float spriteH = v2_alice.height;
@@ -268,7 +576,7 @@ void DrawV2AliceAnim(float animTime, int w, int h)
 
 void DrawV3AliceAnim(float animTime, int w, int h)
 {
-    const float animDuration = 0.55f;
+    const float animDuration = 0.12f;
     float spriteW3 = v3_alice.width;
     float spriteH3 = v3_alice.height;
     float escalaAlice = (h / 4.0f / personagemAlice.height) * 3.5f;
@@ -335,10 +643,422 @@ void DrawV3AliceAnim(float animTime, int w, int h)
         );
     }
 }
+void DrawDanteAnim(float animTime, int w, int h)
+{
+    // Dante animado vindo da esquerda para o canto inferior esquerdo
+    const float animDuration = 1.2f;
+    if (animTime < 0.0f) animTime = 0.0f;
+    if (animTime > animDuration) animTime = animDuration;
+    float t = animTime / animDuration;
+    float easeT = t * t * (3.0f - 2.0f * t);
+    float spriteW = personagemDante.width;
+    float spriteH = personagemDante.height;
+    float escala = (h / 1.4f / spriteH);  // ajuste de escala geral
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+
+    // Alinhado no canto inferior esquerdo
+    float xFinal = 50.0f;                   // 20 pixels da esquerda
+    float xStart = xFinal - 28.0f;          // começa um pouco mais fora da tela, à esquerda
+    float xAtual = xStart + (xFinal - xStart) * easeT;
+
+    float yFinal = h - dstH - 20.0f;        // 20 pixels do rodapé da tela
+
+    unsigned char alpha = (unsigned char)(255 * easeT);
+    if (alpha > 0)
+    {
+        DrawTexturePro(
+            personagemDante,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xAtual, yFinal, dstW, dstH},
+            (Vector2){0, 0},
+            0.0f, (Color){255,255,255,alpha}
+        );
+    }
+}
+
+// --- Agora V1 tem a posição que era da V3 anterior ---
+void DrawV1DanteAnim(float animTime, int w, int h) {
+    const float animDuration = 0.12f;
+    float spriteW3 = v1_dante.width;
+    float spriteH3 = v1_dante.height;
+    float escalaDante = (h / 4.0f / personagemDante.height) * 3.5f;
+    float escala2 = escalaDante * (1.0f / 5.5f);
+    float dstW2 = v2_dante.width * escala2;
+    float escala3 = escalaDante * (1.0f / 5.5f);
+    float dstW3 = spriteW3 * escala3;
+    float dstH3 = spriteH3 * escala3;
+    float dstAW = personagemDante.width * escalaDante;
+    float dstAH = personagemDante.height * escalaDante;
+    float xDante = w - dstAW + 80.0f;
+    float yDante = h - dstAH - 32.0f + 160.0f;
+    float escala1 = escalaDante * (1.0f / 5.5f);
+    float xV1Final = xDante - (v1_dante.width * escala1) * 0.78f - 120;
+    float yV1Final = yDante - (v1_dante.height * escala1) * 0.33f;
+    float offsetX_v2 = -(dstW2 * 0.95f + 70);
+    float offsetY_v2 = -40.0f - 35;
+    float xV2Final = xV1Final + offsetX_v2;
+    float yV2Final = yV1Final + offsetY_v2;
+    float offsetX_v3 = -dstW3 * 0.99f - 90;
+    float offsetY_v3 = +78.0f;
+    float xFinal = xV2Final + offsetX_v3;
+    float yFinal = yV2Final + offsetY_v3;
+    if (animTime < animDuration) {
+        float t = animTime / animDuration;
+        if (t > 1.0f) t = 1.0f;
+        else if (t < 0.0f) t = 0.0f;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        if (easeT > 1.0f) easeT = 1.0f;
+        else if (easeT < 0.0f) easeT = 0.0f;
+        unsigned char alpha = (unsigned char)(255.0f * easeT + 0.5f);
+        if (alpha > 0) {
+            float xStart = xFinal - 60.0f;
+            float yStart = yFinal + 80.0f;
+            float xAtual = xStart + (xFinal - xStart) * easeT;
+            float yAtual = yStart + (yFinal - yStart) * easeT;
+            DrawTexturePro(
+                v1_dante,
+                (Rectangle){0, 0, spriteW3, spriteH3},
+                (Rectangle){xAtual, yAtual, dstW3, dstH3},
+                (Vector2){0, 0}, 0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    } else {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 2.17f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+        DrawTexturePro(
+            v1_dante,
+            (Rectangle){0, 0, spriteW3, spriteH3},
+            (Rectangle){xFinal, yFinal + offset, dstW3, dstH3},
+            (Vector2){0, 0}, 0.0f, WHITE
+        );
+    }
+}
+
+void DrawV2DanteAnim(float animTime, int w, int h) {
+    const float animDuration = 0.12f;
+    if (animTime < 0.0f) return;
+    float spriteW = v2_dante.width;
+    float spriteH = v2_dante.height;
+    float escalaDante = (h / 4.0f / personagemDante.height) * 3.5f;
+    float dstAW = personagemDante.width * escalaDante;
+    float dstAH = personagemDante.height * escalaDante;
+    float escala = escalaDante * (1.0f / 5.5f);
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    float xDante = w - dstAW + 120.0f;
+    float yDante = h - dstAH - 32.0f + 160.0f;
+    float xV1Final = xDante - (v1_dante.width * escalaDante * (1.0f / 5.5f)) * 0.78f - 120;
+    float yV1Final = yDante - (v1_dante.height * escalaDante * (1.0f / 5.5f)) * 0.33f;
+    float offsetX = -(dstW * 0.95f + 70);
+    float offsetY = -40.0f - 35;
+    float xFinal = xV1Final + offsetX;
+    float yFinal = yV1Final + offsetY;
+    if (animTime < animDuration) {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal - 70.0f;
+        float yStart = yFinal - 80.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yStart + (yFinal - yStart) * easeT;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0) {
+            DrawTexturePro(
+                v2_dante,
+                (Rectangle){0, 0, spriteW, spriteH},
+                (Rectangle){xAtual, yAtual, dstW, dstH},
+                (Vector2){0, 0}, 0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    } else {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 1.22f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+        DrawTexturePro(
+            v2_dante,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xFinal, yFinal + offset, dstW, dstH},
+            (Vector2){0, 0}, 0.0f, WHITE
+        );
+    }
+}
+
+// --- Agora V3 tem a posição que era da V1 anterior ---
+void DrawV3DanteAnim(float animTime, int w, int h) {
+    const float animDuration = 0.12f;
+    if (animTime < 0.0f) return;
+    float spriteW = v3_dante.width;
+    float spriteH = v3_dante.height;
+    float escalaDante = (h / 4.0f / personagemDante.height) * 3.5f;
+    float dstAW = personagemDante.width * escalaDante;
+    float dstAH = personagemDante.height * escalaDante;
+    float escala = escalaDante * (1.0f / 5.5f);
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    float xDante = w - dstAW + 280.0f;
+    float yDante = h - dstAH - 32.0f + 420.0f;
+    float xFinal = xDante - dstW * 0.78f - 120;
+    float yFinal = yDante - dstH * 0.33f;
+    if (animTime < animDuration) {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal - 80.0f;
+        float yStart = yFinal - 100.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yStart + (yFinal - yStart) * easeT;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0) {
+            DrawTexturePro(
+                v3_dante,
+                (Rectangle){0, 0, spriteW, spriteH},
+                (Rectangle){xAtual, yAtual, dstW, dstH},
+                (Vector2){0, 0}, 0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    } else {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 0.0f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+        DrawTexturePro(
+            v3_dante,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xFinal, yFinal + offset, dstW, dstH},
+            (Vector2){0, 0}, 0.0f, WHITE
+        );
+    }
+}
+void DrawNomeDanteAnim(float animTime, int w, int h)
+{
+    const float animDur = 1.00f;
+    float t = animTime / animDur;
+    if (t < 0.0f) t = 0.0f;
+    if (t > 1.0f) t = 1.0f;
+    float easeT = 1.0f - powf(1.0f-t, 2.2f);
+    float texW = nomeDante.width;
+    float texH = nomeDante.height;
+    float escala = ((float)w / 5.0f) / texW;
+    if (escala * texH > h / 9.0f) escala = (h/1.5f)/texH;
+    float dstW = texW * escala;
+    float dstH = texH * escala;
+
+    // Ajuste para canto superior direito
+    float margemX = - 260.0f; // Distância da direita
+    float margemY = - 150.0f; // Distância do topo
+    float xDest = w - dstW - margemX;
+    float yDest = margemY;
+
+    float revealedW = dstW * easeT;
+    float revealedPixSrc = texW * easeT;
+    unsigned char alpha = (unsigned char)(255 * easeT);
+    if (easeT > 0.0f)
+    {
+        DrawTexturePro(
+            nomeDante,
+            (Rectangle){0, 0, revealedPixSrc, texH},
+            (Rectangle){xDest, yDest, revealedW, dstH},
+            (Vector2){0, 0}, 0.0f, (Color){255,255,255,alpha}
+        );
+    }
+}
+
+void DrawNomeJadeAnim(float animTime, int w, int h)
+{
+    const float animDur = 1.00f;
+    float t = animTime / animDur;
+    if (t < 0.0f) t = 0.0f;
+    if (t > 1.0f) t = 1.0f;
+    float easeT = 1.0f - powf(1.0f - t, 2.2f);
+    float texW = nomeJade.width;
+    float texH = nomeJade.height;
+    float escala = ((float)w / 5.0f) / texW;
+    if (escala * texH > h / 9.0f) escala = (h/1.5f)/texH;
+    float dstW = texW * escala;
+    float dstH = texH * escala;
+    
+    // NOVO: margem esquerda (xDest = 0) e centralização vertical
+    float xDest = -260.0f;
+    float yDest = (h - dstH) / 2.0f;
+    
+    float revealedW = dstW * easeT;
+    float revealedPixSrc = texW * easeT;
+    unsigned char alpha = (unsigned char)(255 * easeT);
+    if (easeT > 0.0f)
+    {
+        DrawTexturePro(
+            nomeJade,
+            (Rectangle){0, 0, revealedPixSrc, texH},
+            (Rectangle){xDest, yDest, revealedW, dstH},
+            (Vector2){0, 0},
+            0.0f, (Color){255,255,255,alpha}
+        );
+    }
+}
+void DrawV1JadeAnim(float animTime, int w, int h)
+{
+    const float animDuration = 0.12f;
+    if (animTime < 0.0f) return;
+    float spriteW = v1_jade.width;
+    float spriteH = v1_jade.height;
+
+    float escalaJade = (h / 4.0f / personagemJade.height) * 3.5f;
+    float dstAW = personagemJade.width * escalaJade;
+    float dstAH = personagemJade.height * escalaJade;
+    float escala = escalaJade * (1.0f / 5.0f);
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    float xJade = 620.0f; // mesmo xFinal do pessoal na base canto
+    float yJade = h - dstAH + 320.0f;
+    float xFinal = xJade + dstAW * 0.78f + 120;
+    float yFinal = yJade - dstH * 0.33f;
+    if (animTime < animDuration)
+    {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal + 80.0f;
+        float yStart = yFinal - 100.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yStart + (yFinal - yStart) * easeT;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0)
+        {
+            DrawTexturePro(
+                v1_jade,
+                (Rectangle){0, 0, spriteW, spriteH},
+                (Rectangle){xAtual, yAtual, dstW, dstH},
+                (Vector2){0, 0}, 0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    }
+    else
+    {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 0.0f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+        DrawTexturePro(
+            v1_jade,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xFinal, yFinal + offset, dstW, dstH},
+            (Vector2){0, 0}, 0.0f, WHITE
+        );
+    }
+}
+
+void DrawV2JadeAnim(float animTime, int w, int h)
+{
+    const float animDuration = 0.12f;
+    if (animTime < 0.0f) return;
+    float spriteW = v2_jade.width;
+    float spriteH = v2_jade.height;
+
+    float escalaJade = (h / 4.0f / personagemJade.height) * 3.5f;
+    float dstAW = personagemJade.width * escalaJade;
+    float dstAH = personagemJade.height * escalaJade;
+    float escala = escalaJade * (1.0f / 4.8f);
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    float xJade = - 560.0f;
+    float yJade = h - dstAH + 50.0f;
+    float xV1Final = xJade + dstAW * 0.78f + 120;
+    float yV1Final = yJade - dstH * 0.33f;
+    float offsetX = dstW * 0.95f + 70;
+    float offsetY = 20.0f + 40.0f;
+    float xFinal = xV1Final + offsetX;
+    float yFinal = yV1Final + offsetY;
+    if (animTime < animDuration)
+    {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal + 70.0f;
+        float yStart = yFinal + 70.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yStart + (yFinal - yStart) * easeT;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0)
+        {
+            DrawTexturePro(
+                v2_jade,
+                (Rectangle){0, 0, spriteW, spriteH},
+                (Rectangle){xAtual, yAtual, dstW, dstH},
+                (Vector2){0, 0}, 0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    }
+    else
+    {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 1.22f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+        DrawTexturePro(
+            v2_jade,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xFinal, yFinal + offset, dstW, dstH},
+            (Vector2){0, 0}, 0.0f, WHITE
+        );
+    }
+}
+
+void DrawV3JadeAnim(float animTime, int w, int h)
+{
+    const float animDuration = 0.12f;
+    if (animTime < 0.0f) return;
+
+    float spriteW = v3_jade.width;
+    float spriteH = v3_jade.height;
+    float escalaJade = (h / 4.0f / personagemJade.height) * 3.5f;
+    float escala = escalaJade * (1.0f / 5.5f);
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+
+    float margemX = 280.0f;        // Distância da esquerda
+    float margemInferior = -74.0f; // Distância do rodapé (negativo = mais pra cima)
+
+    float xFinal = margemX;
+    float yFinal = h - dstH - margemInferior;
+
+    if (animTime < animDuration)
+    {
+        float t = animTime / animDuration;
+        float easeT = t * t * (3.0f - 2.0f * t);
+        float xStart = xFinal - dstW - 80.0f;
+        float xAtual = xStart + (xFinal - xStart) * easeT;
+        float yAtual = yFinal;
+        unsigned char alpha = (unsigned char)(255 * easeT);
+        if (alpha > 0)
+        {
+            DrawTexturePro(
+                v3_jade,
+                (Rectangle){0, 0, spriteW, spriteH},
+                (Rectangle){xAtual, yAtual, dstW, dstH},
+                (Vector2){0, 0}, 0.0f, (Color){255,255,255,alpha}
+            );
+        }
+    }
+    else
+    {
+        float floatingFreq = 2.0f;
+        float floatingAmp = 8.0f;
+        float phase = 2.17f;
+        float offset = sinf(GetTime() * floatingFreq + phase) * floatingAmp;
+
+        DrawTexturePro(
+            v3_jade,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xFinal, yFinal + offset, dstW, dstH},
+            (Vector2){0, 0}, 0.0f, WHITE
+        );
+    }
+}
+
 // --- v1_hank animada próxima de Hank, menor e depois dele, e depois flutuando ---
 void DrawV1HankAnim(float animTime, int w, int h)
 {
-    const float animDuration = 0.55f;
+    const float animDuration = 0.12f;
     float spriteW = v1_hank.width;
     float spriteH = v1_hank.height;
     float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
@@ -390,7 +1110,7 @@ void DrawV1HankAnim(float animTime, int w, int h)
 // ----------- v2_hank animada (com flutuação depois) -------------
 void DrawV2HankAnim(float animTime, int w, int h)
 {
-    const float animDuration = 0.55f;
+    const float animDuration = 0.12f;
     float spriteW = v2_hank.width;
     float spriteH = v2_hank.height;
     float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
@@ -446,7 +1166,7 @@ void DrawV2HankAnim(float animTime, int w, int h)
 // ---- v3_hank animada: à direita de v2_hank, com flutuação -----
 void DrawV3HankAnim(float animTime, int w, int h)
 {
-    const float animDuration = 0.55f;
+    const float animDuration = 0.12f;
     float spriteW2 = v2_hank.width;
     float spriteH2 = v2_hank.height;
     float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
@@ -509,7 +1229,7 @@ void DrawV3HankAnim(float animTime, int w, int h)
 // --- v4_hank animada à direita/abaixo de v3_hank, e depois flutuação ---
 void DrawV4HankAnim(float animTime, int w, int h)
 {
-    const float animDuration = 0.55f;
+    const float animDuration = 0.12f;
     float spriteW2 = v2_hank.width;
     float spriteH2 = v2_hank.height;
     float escalaHank = (h / 4.0f / personagemHank.height) * 3.5f;
@@ -790,6 +1510,93 @@ void DrawAnimacaoPinceladaBg1(float elapsed, int w, int h)
     }
 }
 
+static void DrawAnimacaoBarrasBg5(float elapsed, int w, int h)
+{
+    const int bars = 96;
+    float t = elapsed / 1.15f;
+    if (t > 1.0f) t = 1.0f;
+    int barWidth = (w + bars - 1) / bars;
+    // desce bg5 sobre bg4
+    DrawTexturePro(
+        bg4,
+        (Rectangle){0,0,bg4.width,bg4.height},
+        (Rectangle){0,0,w,h},
+        (Vector2){0,0}, 0.0f, WHITE
+    );
+    for (int i = 0; i < bars; i++)
+    {
+        float barraInicio = (float)i / bars * 0.55f;
+        float randomSeed = (float)((i * 193) % 211) / 211.0f;
+        barraInicio += randomSeed * 0.12f;
+        float barraT = (t - barraInicio) / 0.3f;
+        if (barraT < 0) barraT = 0;
+        if (barraT > 1) barraT = 1;
+        barraT = barraT * barraT * (3.0f - 2.0f * barraT);
+        int yReveal = (int)(h * barraT);
+        if (yReveal > 0)
+        {
+            DrawTexturePro(
+                bg5,
+                (Rectangle){
+                    (float)(i*barWidth) * ((float)bg5.width/w),
+                    0,
+                    barWidth * ((float)bg5.width/w),
+                    yReveal * ((float)bg5.height/h)},
+                (Rectangle){
+                    i*barWidth,
+                    0,
+                    barWidth,
+                    yReveal},
+                (Vector2){0,0}, 0.0f, WHITE
+            );
+        }
+    }
+}
+
+static void DrawAnimacaoBarrasBg4(float elapsed, int w, int h)
+{
+    const int bars = 96;
+    float t = elapsed / 1.15f;
+    if (t > 1.0f) t = 1.0f;
+    int barWidth = (w + bars - 1) / bars;
+    // Desenha bg3 como base e revela o bg4 pelas barras descendo de cima pra baixo.
+    DrawTexturePro(
+        bg3,
+        (Rectangle){0,0,bg3.width,bg3.height},
+        (Rectangle){0,0,w,h},
+        (Vector2){0,0}, 0.0f, WHITE
+    );
+    for (int i = 0; i < bars; i++)
+    {
+        float barraInicio = (float)i / bars * 0.55f;
+        float randomSeed = (float)((i * 193) % 211) / 211.0f;
+        barraInicio += randomSeed * 0.12f;
+        float barraT = (t - barraInicio) / 0.3f;
+        if (barraT < 0) barraT = 0;
+        if (barraT > 1) barraT = 1;
+        barraT = barraT * barraT * (3.0f - 2.0f * barraT);
+        int yReveal = (int)(h * barraT);
+        if (yReveal > 0)
+        {
+            // De cima pra baixo (igual DrawAnimacaoBarrasBg3 para bg4)
+            DrawTexturePro(
+                bg4,
+                (Rectangle){
+                    (float)(i*barWidth) * ((float)bg4.width/w),
+                    0,
+                    barWidth * ((float)bg4.width/w),
+                    yReveal * ((float)bg4.height/h)},
+                (Rectangle){
+                    i*barWidth,
+                    0,
+                    barWidth,
+                    yReveal},
+                (Vector2){0,0}, 0.0f, WHITE
+            );
+        }
+    }
+}
+
 // --- MOD: Transição para BG2, barras verticais tipo empresa1
 static void DrawAnimacaoBarrasBg2(float elapsed, int w, int h)
 {
@@ -832,7 +1639,79 @@ static void DrawAnimacaoBarrasBg2(float elapsed, int w, int h)
         }
     }
 }
+static void DrawAnimacaoBarrasBg3(float elapsed, int w, int h)
+{
+    const int bars = 96;
+    float t = elapsed / 1.15f;
+    if (t > 1.0f) t = 1.0f;
+    int barWidth = (w + bars - 1) / bars;
 
+    // Desenha bg2 como base e revela o bg3 pelas barras descendo de cima pra baixo.
+    DrawTexturePro(
+        bg2,
+        (Rectangle){0,0,bg2.width,bg2.height},
+        (Rectangle){0,0,w,h},
+        (Vector2){0,0}, 0.0f, WHITE
+    );
+    for (int i = 0; i < bars; i++)
+    {
+        float barraInicio = (float)i / bars * 0.55f;
+        float randomSeed = (float)((i * 193) % 211) / 211.0f;
+        barraInicio += randomSeed * 0.12f;
+        float barraT = (t - barraInicio) / 0.3f;
+        if (barraT < 0) barraT = 0;
+        if (barraT > 1) barraT = 1;
+        barraT = barraT * barraT * (3.0f - 2.0f * barraT);
+        int yReveal = (int)(h * barraT);
+        if (yReveal > 0)
+        {
+            // ************* DE CIMA PRA BAIXO  *************************
+            DrawTexturePro(
+                bg3,
+                (Rectangle){
+                    (float)(i*barWidth) * ((float)bg3.width/w),
+                    0,
+                    barWidth * ((float)bg3.width/w),
+                    yReveal * ((float)bg3.height/h)},
+                (Rectangle){
+                    i*barWidth,
+                    0,
+                    barWidth,
+                    yReveal},
+                (Vector2){0,0}, 0.0f, WHITE
+            );
+        }
+    }
+}
+void DrawJadeAnim(float animTime, int w, int h)
+{
+    const float animDuration = 1.2f;
+    if (animTime < 0.0f) animTime = 0.0f;
+    if (animTime > animDuration) animTime = animDuration;
+    float t = animTime / animDuration;
+    float easeT = t * t * (3.0f - 2.0f * t);
+    float spriteW = personagemJade.width;
+    float spriteH = personagemJade.height;
+    float escala = (h / 1.4f / spriteH);
+    float dstW = spriteW * escala;
+    float dstH = spriteH * escala;
+    // Destino: canto inferior direito, 50px da borda direita
+    float xFinal = w - dstW - 50.0f;
+    float xStart = xFinal + 28.0f; // entra pela direita (da direita pra esquerda)
+    float xAtual = xStart + (xFinal - xStart) * easeT;
+    float yFinal = h - dstH - 20.0f; // 20px do rodapé
+    unsigned char alpha = (unsigned char)(255 * easeT);
+    if (alpha > 0)
+    {
+        DrawTexturePro(
+            personagemJade,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){xAtual, yFinal, dstW, dstH},
+            (Vector2){0, 0},
+            0.0f, (Color){255,255,255,alpha}
+        );
+    }
+}
 void DrawCutscenes(void)
 {
     if (ended) return;
@@ -1104,7 +1983,7 @@ void DrawCutscenes(void)
                 DrawNomeHankAnim(tempoBG1 - nomeHankStart, w, h);
 
             // Após 2 segundos de bg1 cheio, inicia transição bg2
-            float tempoAteTransicao = nomeHankStart + 1.15f + 2.0f;
+            float tempoAteTransicao = nomeHankStart + 1.3f;
             if (!bg2TransicaoIniciou && tempoBG1 > tempoAteTransicao)
             {
                 bg2TransicaoIniciou = true;
@@ -1164,8 +2043,96 @@ void DrawCutscenes(void)
                     float tempoDesdeTermino = GetTime() - aliceAnimTerminouTime;
                     if (tempoDesdeTermino > nomeAliceStart)
                         DrawNomeAliceAnim(tempoDesdeTermino - nomeAliceStart, w, h);
-                    if (!ended && tempoDesdeTermino > nomeAliceStart + 2.0f)
-                        ended = true;
+                    float tempoAposNomeAlice = 1.3f; // MESMO tempo extra usado na transição BG1->BG2
+                    if (!bg3TransicaoIniciou && tempoDesdeTermino > nomeAliceStart + tempoAposNomeAlice) {
+                        bg3TransicaoIniciou = true;
+                        bg3TransicaoStartTime = GetTime();
+                    }
+                    if (bg3TransicaoIniciou && !bg3TransicaoTerminou) {
+                        float elapsed = GetTime() - bg3TransicaoStartTime;
+                        DrawAnimacaoBarrasBg3(elapsed, w, h);
+                        if (elapsed > 1.23f) {
+                            bg3TransicaoTerminou = true;
+                            bg3MomentoTotal = GetTime();
+                        }
+                    } else if (bg3TransicaoTerminou) {
+                        DrawTexturePro(
+                            bg3,
+                            (Rectangle){0,0,bg3.width,bg3.height},
+                            (Rectangle){0,0,w,h},
+                            (Vector2){0,0}, 0.0f, WHITE
+                        );
+
+                        float tempoLevi = GetTime() - bg3MomentoTotal;
+                        float nomeLeviStart = 2.75f;
+                        DrawLeviAnim(tempoLevi, w, h);
+                        if (tempoLevi > 1.2f) DrawV1LeviAnim(tempoLevi - 1.2f, w, h);
+                        if (tempoLevi > 1.75f) DrawV2LeviAnim(tempoLevi - 1.75f, w, h);
+                        if (tempoLevi > 2.2f) DrawV3LeviAnim(tempoLevi - 2.2f, w, h);
+                        if (tempoLevi > nomeLeviStart) DrawNomeLeviAnim(tempoLevi - nomeLeviStart, w, h);
+
+                        if (!ended && tempoLevi > nomeLeviStart + 1.3f);
+                        if (!bg4TransicaoIniciou && tempoLevi > nomeLeviStart + 1.3f) {
+                            bg4TransicaoIniciou = true;
+                            bg4TransicaoStartTime = GetTime();
+                        }
+                        if (bg4TransicaoIniciou && !bg4TransicaoTerminou) {
+                            float elapsed = GetTime() - bg4TransicaoStartTime;
+                            DrawAnimacaoBarrasBg4(elapsed, w, h);
+                            if (elapsed > 1.23f) {
+                                bg4TransicaoTerminou = true;
+                                bg4MomentoTotal = GetTime();
+                            }
+                        } else if (bg4TransicaoTerminou) {
+                            DrawTexturePro(
+                                bg4,
+                                (Rectangle){0,0,bg4.width,bg4.height},
+                                (Rectangle){0,0,w,h},
+                                (Vector2){0,0}, 0.0f, WHITE
+                            );
+                            float tempoDante = GetTime() - bg4MomentoTotal;
+                            float nomeDanteStart = 2.75f;
+                            DrawDanteAnim(tempoDante, w, h);
+                            if (tempoDante > 1.2f) DrawV1DanteAnim(tempoDante - 1.2f, w, h);
+                            if (tempoDante > 1.75f) DrawV2DanteAnim(tempoDante - 1.75f, w, h);
+                            if (tempoDante > 2.2f) DrawV3DanteAnim(tempoDante - 2.2f, w, h);
+                            if (tempoDante > nomeDanteStart) DrawNomeDanteAnim(tempoDante - nomeDanteStart, w, h);
+                            if (!ended && tempoDante > nomeDanteStart + 1.3f);
+                            if (!bg5TransicaoIniciou && tempoDante > nomeDanteStart + 1.3f) {
+                                bg5TransicaoIniciou = true;
+                                bg5TransicaoStartTime = GetTime();
+                            }
+                            if (bg5TransicaoIniciou && !bg5TransicaoTerminou) {
+                                float elapsed = GetTime() - bg5TransicaoStartTime;
+                                DrawAnimacaoBarrasBg5(elapsed, w, h);
+                                if (elapsed > 1.23f) {
+                                    bg5TransicaoTerminou = true;
+                                    bg5MomentoTotal = GetTime();
+                                }
+                            } else if (bg5TransicaoTerminou) {
+                                // desenha bg5 ANTES das animações da Jade
+                                DrawTexturePro(
+                                    bg5, 
+                                    (Rectangle){0,0,bg5.width,bg5.height}, 
+                                    (Rectangle){0,0,w,h}, 
+                                    (Vector2){0,0}, 0.0f, WHITE
+                                );
+                                float tempoJade = GetTime() - bg5MomentoTotal;
+                                float nomeJadeStart = 2.75f;
+                                // ANIMAÇÕES ACIMA DO BG5
+                                DrawJadeAnim(tempoJade, w, h);
+                                if (tempoJade > 1.2f)  DrawV1JadeAnim(tempoJade - 1.2f, w, h);
+                                if (tempoJade > 1.75f) DrawV2JadeAnim(tempoJade - 1.75f, w, h);
+                                if (tempoJade > 2.2f)  DrawV3JadeAnim(tempoJade - 2.2f, w, h);
+                                if (tempoJade > nomeJadeStart) 
+                                    DrawNomeJadeAnim(tempoJade - nomeJadeStart, w, h);
+
+                                // Só termina 1s depois do nome aparecer (igual outros)
+                                if (tempoJade > nomeJadeStart + 1.3f)
+                                    ended = true;
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -1242,4 +2209,22 @@ void UnloadCutscenes(void)
     UnloadTexture(v2_alice);
     UnloadTexture(v3_alice);
     UnloadTexture(nomeAlice);
+    UnloadTexture(bg3);
+    UnloadTexture(personagemLevi);
+    UnloadTexture(v1_levi);
+    UnloadTexture(v2_levi);
+    UnloadTexture(v3_levi);
+    UnloadTexture(nomeLevi);
+    UnloadTexture(bg4);
+    UnloadTexture(personagemDante);
+    UnloadTexture(v1_dante);
+    UnloadTexture(v2_dante);
+    UnloadTexture(v3_dante);
+    UnloadTexture(nomeDante);
+    UnloadTexture(bg5);
+    UnloadTexture(personagemJade);
+    UnloadTexture(v1_jade);
+    UnloadTexture(v2_jade);
+    UnloadTexture(v3_jade);
+    UnloadTexture(nomeJade);
 }
