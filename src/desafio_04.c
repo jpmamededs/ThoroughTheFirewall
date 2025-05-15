@@ -268,6 +268,8 @@ void Update_Desafio_04(void)
             (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) {
             faz_fadeout = true; 
             fadeout_time = 0.0f;
+
+            SetD04Result(&playerStats, false, pontos);
             fase_concluida = true;
         }
         return;
@@ -283,6 +285,8 @@ void Update_Desafio_04(void)
             (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) {
             faz_fadeout = true; 
             fadeout_time = 0.0f;
+
+            SetD04Result(&playerStats, true, pontos);
             fase_concluida = true;
         }
         return;

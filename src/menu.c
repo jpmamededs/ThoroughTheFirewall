@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "generalFunctions.h"
+#include "playerStats.h"
 
 #define FRAME_COUNT 15
 #define MAX_COLUMNS 64
@@ -359,6 +360,8 @@ void UpdateMenu(void)
         {
             strncpy(gSelectedCharacterName, selectedChar->name, MAX_PLAYER_NAME);
             gSelectedCharacterName[MAX_PLAYER_NAME-1] = '\0';
+            
+            SetPlayerAndCharacter(&playerStats, gPlayerName, gSelectedCharacterName);
             PlaySound(clickSound);
             PlaySound(alertSound);
             isFadingOut = true;

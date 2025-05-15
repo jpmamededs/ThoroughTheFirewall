@@ -216,7 +216,7 @@ void Init_Desafio_03(void)
     sprEnterButton = LoadTexture("src/sprites/enter_button.png");
     
     strcpy(fala_exibida, FALA_NORMAL_03);
-    InitDialogueQuestion(&pergunta2, FALA_NORMAL_03, opcoesFase2, 5, 45.0f);
+    InitDialogueQuestion(&pergunta2, FALA_NORMAL_03, opcoesFase2, 5, 30.0f);
     InitTypeWriter(&writer, fala_exibida, 26.5f);
     AtualizaTamanhoGeminiBox();
 
@@ -350,6 +350,11 @@ void Update_Desafio_03(void)
         if (fase2_fazendo_fadeout) {
             fase2_fadeout_time += delta;
             if (fase2_fadeout_time >= FASE2_FADEOUT_DURACAO) {
+
+                bool venceu = pergunta2.opcoes[pergunta2.opcao_selecionada_usuario].correta;
+                int tempoGasto = (int)(pergunta2.timer_total - pergunta2.timer_restante);
+                SetD03Result(&playerStats, venceu, tempoGasto);
+
                 fase_concluida = true;
             }
         }

@@ -17,7 +17,7 @@ static float cameraYaw = 0.0f;
 static const float maxYaw = PI / 4.0f;
 static const float minYaw = -PI / 4.0f;
 
-static bool fase4_concluida = false; 
+static bool fase_concluida = false; 
 
 void InitFase4(void)
 {
@@ -75,5 +75,5 @@ void UnloadFase4(void)
 
 bool Fase4Concluida(void)
 {
-    return fase4_concluida;
+    return fase_concluida;
 }
