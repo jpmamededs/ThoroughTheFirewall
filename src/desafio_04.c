@@ -1,29 +1,13 @@
 #include "desafio_04.h"
-#include "generalFunctions.h"
-#include "menu.h"
-#include "raylib.h"
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
-#define FALA_NORMAL   "Preciso coletar só os arquivos certos! Não posso pegar antivírus!"
-#define FALA_VENCEU   "Isso foi moleza, consegui varios arquivos importantes deles."
-#define FALA_PERDEU   "Droga, acho que fui notado, o antivirus me reconheceu..."
-#define FALA_INTRO    "Irei precisar pegar o máximo de arquivos possíveis para mostrar toda minha capacidade, irei enviar-los para meu HD.\nNão posso deixar o antivirus me notar, se não todos podem saber da minha tentativa de invasão."
-static TypeWriter writer;
-static char fala_exibida[512];
-typedef enum { SPRITE_NORMAL=0, SPRITE_VITORIA=1, SPRITE_DERROTA=2 } SpriteStatus;
-static SpriteStatus spriteStatus = SPRITE_NORMAL;
-// Sprites personagens:
-static Texture2D sprJoao, sprJoao2, sprJoao3;
-static Texture2D sprMateus, sprMateus2, sprMateus3;
-static Texture2D sprCarlos, sprCarlos2, sprCarlos3;
-static Texture2D sprMamede, sprMamede2, sprMamede3;
-static Texture2D sprEnterButton;
-static bool sprEnterButtonLoaded = false;
-static Texture2D pergunta_img;
-static bool pergunta_img_loaded = false;
-// ------- GAMEPLAY arquivos/antivirus --------
+
+#define FALA_NORMAL_04   "Preciso coletar apenas os arquivos essenciais! Não posso pegar antivírus!"
+#define FALA_VENCEU_04   "Ótimo! Consegui reunir os arquivos certos e garantir a estabilidade do sistema."
+#define FALA_PERDEU_04   "Droga! O antivírus detectou minha ação. Preciso ser mais cuidadoso na próxima vez."
+#define FALA_INTRO       "Para demonstrar minha eficiência, preciso coletar o máximo de arquivos importantes.\nNão posso permitir que o antivírus me identifique, ou minha candidatura estará comprometida."
+#define MAX_ARQUIVOS 7
+#define FASE7_CHRONO_MAX 35.0f
+#define FADEOUT_DURACAO 0.8f
+
 typedef struct {
     Vector2 pos;
     Vector2 speed;
@@ -35,27 +19,18 @@ typedef struct {
     float animTimer;
     bool antiVirus;
 } Arquivo;
-#define MAX_ARQUIVOS 7
 static Arquivo arquivos[MAX_ARQUIVOS];
+
+typedef enum { SPRITE_NORMAL, SPRITE_VITORIA, SPRITE_DERROTA } SpriteStatus;
+
+static char fala_exibida[512];
 static int numArquivosOnda = 4;
 static int rodada = 0;
 static float tempoEntreArquivos = 0.30f;
 static float tempoDesdeUltimo = 0.0f;
 static int arquivosSpawnados = 0;
 static int pontos = 0;
-static bool jogoEncerrado = false;
-static bool venceu_fase = false;
 static int arquivosDesdeAntiVirus = 0;
-static Texture2D background;
-static bool backgroundLoaded = false;
-static Texture2D ubuntuFundo;
-static bool ubuntuFundoLoaded = false;
-static Texture2D antiVirusSprite;
-static bool antiVirusLoaded = false;
-static Texture2D folderSprite;
-static bool folderSpriteLoaded = false;
-static Texture2D ipadSprite;
-static bool ipadLoaded = false;
 static float ubuntuBaseX = 0.0f;
 static float ubuntuBaseY = 0.0f;
 static float ubuntuBaseW = 0.0f;
@@ -65,22 +40,42 @@ static float ipadScorePosX = 0.0f;
 static float ipadScorePosY = 0.0f;
 static float ipadScoreW = 0.0f;
 static float ipadScoreH = 0.0f;
-#define FASE7_CHRONO_MAX 35.0f
 static float cronometro = 0.0f;
 static float cronometro_elapsed = 0.0f;
 static float derrota_show_timer = 0.0f;
 static float vitoria_show_timer = 0.0f;
 static const float RESPOSTA_MOSTRA_SEG = 3.3f;
+static float fadeout_time = 0.0f;
+
+static bool sprEnterButtonLoaded = false;
+static bool pergunta_img_loaded = false;
+static bool venceu_fase = false;
+static bool jogoEncerrado = false;
+static bool ubuntuFundoLoaded = false;
+static bool antiVirusLoaded = false;
+static bool folderSpriteLoaded = false;
+static bool ipadLoaded = false;
 static bool podeAvancarDerrotaOuVitoria = false;
 static bool faz_fadeout = false;
-static float fadeout_time = 0.0f;
-#define FADEOUT_DURACAO 0.8f
 static bool preFalaInicial = true;
-
 static bool fase_concluida = false; 
 
-// ---------- Função para desenhar caixa de diálogo + personagem ----------
-static void DrawDialogPersonagem(int screenW, int screenH) {
+static TypeWriter writer;
+static SpriteStatus spriteStatus = SPRITE_NORMAL;
+static Texture2D sprJoao, sprJoao2, sprJoao3;
+static Texture2D sprMateus, sprMateus2, sprMateus3;
+static Texture2D sprCarlos, sprCarlos2, sprCarlos3;
+static Texture2D sprMamede, sprMamede2, sprMamede3;
+static Texture2D sprEnterButton;
+static Texture2D background;
+static Texture2D ubuntuFundo;
+static Texture2D antiVirusSprite;
+static Texture2D folderSprite;
+static Texture2D ipadSprite;
+static Texture2D pergunta_img;
+
+static void DrawDialogPersonagem(int screenW, int screenH) 
+{
     int boxX = 60;
     int marginBottom = 220;
     int boxY = screenH - marginBottom;
@@ -91,47 +86,55 @@ static void DrawDialogPersonagem(int screenW, int screenH) {
     int imgX = boxX;
     int imgY = boxY - imgH;
     const char *name = gSelectedCharacterName;
+    
+    Texture2D spr = sprJoao; 
+    float scale = 0.6f;
+    int carlosExtraOffset = 0, mamedeExtraOffset = 0;
+
+    if(strcmp(name, "Dante") == 0) 
     {
-        Texture2D spr = sprJoao; float scale = 0.6f;
-        int carlosExtraOffset = 0, mamedeExtraOffset = 0;
-        if(strcmp(name, "Dante") == 0) {
-            if (spriteStatus == SPRITE_VITORIA)  { spr = sprMateus2; scale = 0.8f; }
-            else if (spriteStatus == SPRITE_DERROTA) { spr = sprMateus3; scale = 0.8f; }
-            else { spr = sprMateus; scale = 1.3f; }
-        } else if(strcmp(name, "Alice") == 0) {
-            if (spriteStatus == SPRITE_VITORIA)  { spr = sprJoao2; scale = 0.95f; }
-            else if (spriteStatus == SPRITE_DERROTA) { spr = sprJoao3; scale = 0.95f; }
-            else { spr = sprJoao; scale = 0.6f;}
-        } else if(strcmp(name, "Jade") == 0) {
-            if (spriteStatus == SPRITE_VITORIA)  { spr = sprCarlos2; scale = 1.02f; carlosExtraOffset = -70;}
-            else if (spriteStatus == SPRITE_DERROTA) { spr = sprCarlos3; scale = 1.0f;   carlosExtraOffset = -44;}
-            else { spr = sprCarlos; scale = 0.56f; carlosExtraOffset = 0;}
-        } else if(strcmp(name, "Carlos") == 0) {
-            if (spriteStatus == SPRITE_VITORIA)  { spr = sprCarlos2; scale = 1.02f; carlosExtraOffset = -70;}
-            else if (spriteStatus == SPRITE_DERROTA) { spr = sprCarlos3; scale = 1.0f;   carlosExtraOffset = -44;}
-            else { spr = sprCarlos; scale = 0.56f; carlosExtraOffset = 0;}
-        } else if(strcmp(name, "Levi") == 0) {
-            if (spriteStatus == SPRITE_VITORIA)  { spr = sprMamede2; scale = 1.0f; }
-            else if (spriteStatus == SPRITE_DERROTA) { spr = sprMamede3; scale = 1.0f; }
-            else { spr = sprMamede; scale = 1.0f;}
-        } else if(name[0]=='\0') {
-            spr = sprJoao; scale = 0.6f;
-        }
-        float tw2 = spr.width * scale;
-        float th  = spr.height * scale;
-        Vector2 pos;
-        pos.x = imgX - 330 + (imgW - tw2)/2.0f;
-        pos.y = imgY - th + 210;
-        pos.y += 36;
-        if (strcmp(name, "Jade") == 0) pos.x += 24;
-        if (strcmp(name, "Carlos") == 0) pos.x += 30;
-        if ((strcmp(name, "Carlos") == 0) || (strcmp(name, "Jade") == 0)) pos.x += 100 + carlosExtraOffset;
-        else if (strcmp(name, "Mamede") == 0) pos.x += mamedeExtraOffset;
-        DrawTextureEx(spr, pos, 0, scale, WHITE);
+        if (spriteStatus == SPRITE_VITORIA)  { spr = sprMateus2; scale = 0.8f; }
+        else if (spriteStatus == SPRITE_DERROTA) { spr = sprMateus3; scale = 0.8f; }
+        else { spr = sprMateus; scale = 1.3f; }
+    } 
+    else if(strcmp(name, "Alice") == 0) 
+    {
+        if (spriteStatus == SPRITE_VITORIA)  { spr = sprJoao2; scale = 0.95f; }
+        else if (spriteStatus == SPRITE_DERROTA) { spr = sprJoao3; scale = 0.95f; }
+        else { spr = sprJoao; scale = 0.6f;}
+    } 
+    else if(strcmp(name, "Jade") == 0) 
+    {
+        if (spriteStatus == SPRITE_VITORIA)  { spr = sprCarlos2; scale = 1.02f; carlosExtraOffset = -70;}
+        else if (spriteStatus == SPRITE_DERROTA) { spr = sprCarlos3; scale = 1.0f;   carlosExtraOffset = -44;}
+        else { spr = sprCarlos; scale = 0.56f; carlosExtraOffset = 0;}
     }
+    else if(strcmp(name, "Levi") == 0) 
+    {
+        if (spriteStatus == SPRITE_VITORIA)  { spr = sprMamede2; scale = 1.0f; }
+        else if (spriteStatus == SPRITE_DERROTA) { spr = sprMamede3; scale = 1.0f; }
+        else { spr = sprMamede; scale = 1.0f;}
+    } 
+    else if(name[0]=='\0') {
+        spr = sprJoao; scale = 0.6f;
+    }
+
+    float tw2 = spr.width * scale;
+    float th  = spr.height * scale;
+    Vector2 pos;
+    pos.x = imgX - 330 + (imgW - tw2)/2.0f;
+    pos.y = imgY - th + 210;
+    pos.y += 36;
+    if (strcmp(name, "Jade") == 0) pos.x += 24;
+    if (strcmp(name, "Dante") == 0) pos.x += 30;
+    if (strcmp(name, "Jade") == 0) pos.x += 100 + carlosExtraOffset;
+    else if (strcmp(name, "Levi") == 0) pos.x += mamedeExtraOffset;
+    DrawTextureEx(spr, pos, 0, scale, WHITE);
+    
     int borderRadius = boxHeight/2;
     DrawRectangle(boxX, boxY, boxWidth - borderRadius, boxHeight, (Color){20,20,20,220});
     DrawCircle(boxX+boxWidth-borderRadius, boxY+borderRadius, borderRadius, (Color){20,20,20,220});
+
     if (writer.drawnChars > 0) {
         char txtbuf[512];
         strncpy(txtbuf, fala_exibida, writer.drawnChars);
@@ -139,9 +142,9 @@ static void DrawDialogPersonagem(int screenW, int screenH) {
         DrawText(txtbuf, boxX + 20, boxY + 30, 28, WHITE);
     }
 }
-// -------------
 
-static void AtualizaUbuntuBaseVars(void) {
+static void AtualizaUbuntuBaseVars(void) 
+{
     if (!ubuntuFundoLoaded) return;
     float scale = 0.656f;
     int corte = 140;
@@ -157,7 +160,8 @@ static void AtualizaUbuntuBaseVars(void) {
     ubuntuTopY  = destY;
     ubuntuAlturaVisivel = destHeight;
 }
-static void SpawnArquivo(Arquivo *a, int w, int h, bool antiVirus) {
+static void SpawnArquivo(Arquivo *a, int w, int h, bool antiVirus) 
+{
     float minX = ubuntuBaseX - ubuntuBaseW/2.0f + 32.0f;
     float maxX = ubuntuBaseX + ubuntuBaseW/2.0f - 32.0f;
     if (maxX < minX) maxX = minX;
@@ -175,35 +179,26 @@ static void SpawnArquivo(Arquivo *a, int w, int h, bool antiVirus) {
     a->animTimer = 0.0f;
     a->antiVirus = antiVirus;
 }
-void ResetArquivos(int w, int h, int total) {
+
+void ResetArquivos(int w, int h, int total) 
+{
     for (int i = 0; i < MAX_ARQUIVOS; i++) arquivos[i].active = false;
     arquivosSpawnados = 0;
     tempoDesdeUltimo = 0.0f;
     numArquivosOnda = total;
     AtualizaUbuntuBaseVars();
 }
-void ProximaOnda(int w, int h) {
+
+void ProximaOnda(int w, int h) 
+{
     rodada++;
     int qtd = GetRandomValue(2, MAX_ARQUIVOS);
     ResetArquivos(w, h, qtd);
 }
-void Init_Desafio_04(void) {
-    pontos = 0;
-    rodada = 0;
-    venceu_fase = false;
-    jogoEncerrado = false;
-    arquivosDesdeAntiVirus = 0;
-    cronometro = FASE7_CHRONO_MAX;
-    cronometro_elapsed = 0.0f;
-    derrota_show_timer = 0.0f;
-    vitoria_show_timer = 0.0f;
-    podeAvancarDerrotaOuVitoria = false;
-    faz_fadeout = false;
-    fadeout_time = 0.0f;
-    spriteStatus = SPRITE_NORMAL;
-    preFalaInicial = true;
-    fase_concluida = false;
-    if (!backgroundLoaded) { background = LoadTexture("src/sprites/pc_perfect.png"); backgroundLoaded = true; }
+
+void Init_Desafio_04(void) 
+{
+    background = LoadTexture("src/sprites/pc_perfect.png");
     if (!ubuntuFundoLoaded) { ubuntuFundo = LoadTexture("src/sprites/ubuntuFundo.png"); ubuntuFundoLoaded = true; }
     if (!antiVirusLoaded) { antiVirusSprite = LoadTexture("src/sprites/antiVirus.png"); antiVirusLoaded = true; }
     if (!folderSpriteLoaded) { folderSprite = LoadTexture("src/sprites/os/folder.png"); folderSpriteLoaded = true; }
@@ -222,25 +217,49 @@ void Init_Desafio_04(void) {
     if (!sprMamede3.id)  sprMamede3 = LoadTexture("src/sprites/mamede3.png");
     if (!sprEnterButtonLoaded) { sprEnterButton = LoadTexture("src/sprites/enter_button.png"); sprEnterButtonLoaded = true; }
     if (!pergunta_img_loaded) { pergunta_img = LoadTexture("src/sprites/pergunta3.png"); pergunta_img_loaded = true; }
+
     AtualizaUbuntuBaseVars();
-    ipadScorePosX = ipadScorePosY = ipadScoreW = ipadScoreH = 0.0f;
     strcpy(fala_exibida, FALA_INTRO);
-    InitTypeWriter(&writer, fala_exibida, 18.5f);
+    InitTypeWriter(&writer, fala_exibida, 27.5f);
+    
+    ipadScorePosX = ipadScorePosY = ipadScoreW = ipadScoreH = 0.0f;
+    pontos = 0;
+    rodada = 0;
+    venceu_fase = false;
+    jogoEncerrado = false;
+    arquivosDesdeAntiVirus = 0;
+    cronometro = FASE7_CHRONO_MAX;
+    cronometro_elapsed = 0.0f;
+    derrota_show_timer = 0.0f;
+    vitoria_show_timer = 0.0f;
+    podeAvancarDerrotaOuVitoria = false;
+    faz_fadeout = false;
+    fadeout_time = 0.0f;
+    spriteStatus = SPRITE_NORMAL;
+    preFalaInicial = true;
+    fase_concluida = false;
 }
-void Update_Desafio_04(void) {
+
+void Update_Desafio_04(void) 
+{
     float delta = GetFrameTime();
-    if (preFalaInicial) {
+
+    if (preFalaInicial) 
+    {
         UpdateTypeWriter(&writer, delta, IsKeyPressed(KEY_SPACE));
         if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             preFalaInicial = false;
-            strcpy(fala_exibida, FALA_NORMAL);
-            InitTypeWriter(&writer, fala_exibida, 18.5f);
+            strcpy(fala_exibida, FALA_NORMAL_04);
+            InitTypeWriter(&writer, fala_exibida, 27.5f);
             ResetArquivos(GetScreenWidth(), GetScreenHeight(), GetRandomValue(2, MAX_ARQUIVOS));
         }
         return;
     }
+
     if (faz_fadeout) { fadeout_time += delta; return; }
-    if (jogoEncerrado) {
+
+    if (jogoEncerrado) 
+    {
         derrota_show_timer += delta;
         UpdateTypeWriter(&writer, delta, IsKeyPressed(KEY_SPACE));
         if (derrota_show_timer > RESPOSTA_MOSTRA_SEG)
@@ -253,7 +272,9 @@ void Update_Desafio_04(void) {
         }
         return;
     }
-    if (venceu_fase) {
+
+    if (venceu_fase) 
+    {
         vitoria_show_timer += delta;
         UpdateTypeWriter(&writer, delta, IsKeyPressed(KEY_SPACE));
         if (vitoria_show_timer > RESPOSTA_MOSTRA_SEG)
@@ -266,22 +287,26 @@ void Update_Desafio_04(void) {
         }
         return;
     }
+
     cronometro_elapsed += delta;
     cronometro = FASE7_CHRONO_MAX - cronometro_elapsed;
-    if (cronometro <= 0.0f && !jogoEncerrado && !venceu_fase) {
+    if (cronometro <= 0.0f && !jogoEncerrado && !venceu_fase) 
+    {
         cronometro = 0.0f;
         venceu_fase = true;
         spriteStatus = SPRITE_VITORIA;
-        strcpy(fala_exibida, FALA_VENCEU);
-        InitTypeWriter(&writer, fala_exibida, 18.5f);
+        strcpy(fala_exibida, FALA_VENCEU_04);
+        InitTypeWriter(&writer, fala_exibida, 27.5f);
         vitoria_show_timer = 0.0f;
         podeAvancarDerrotaOuVitoria = false;
         return;
     }
+
     int w = GetScreenWidth();
     int h = GetScreenHeight();
     tempoDesdeUltimo += delta;
-    if (arquivosSpawnados < numArquivosOnda && tempoDesdeUltimo >= tempoEntreArquivos * arquivosSpawnados) {
+    if (arquivosSpawnados < numArquivosOnda && tempoDesdeUltimo >= tempoEntreArquivos * arquivosSpawnados) 
+    {
         bool antiVirus = false;
         if (arquivosDesdeAntiVirus >= 5) {
             antiVirus = true;
@@ -291,6 +316,7 @@ void Update_Desafio_04(void) {
         arquivosSpawnados++;
         if (!antiVirus) arquivosDesdeAntiVirus++;
     }
+
     int ativas = 0;
     for (int i = 0; i < numArquivosOnda; i++) {
         Arquivo *a = &arquivos[i];
@@ -308,8 +334,8 @@ void Update_Desafio_04(void) {
                 if (a->antiVirus) {
                     jogoEncerrado = true;
                     spriteStatus = SPRITE_DERROTA;
-                    strcpy(fala_exibida, FALA_PERDEU);
-                    InitTypeWriter(&writer, fala_exibida, 18.5f);
+                    strcpy(fala_exibida, FALA_PERDEU_04);
+                    InitTypeWriter(&writer, fala_exibida, 27.5f);
                     derrota_show_timer = 0.0f;
                     podeAvancarDerrotaOuVitoria = false;
                     return;
@@ -343,22 +369,32 @@ void Update_Desafio_04(void) {
             a->active = false;
         }
     }
-    if (!jogoEncerrado && !venceu_fase && arquivosSpawnados == numArquivosOnda && ativas == 0 && cronometro > 0) {
+
+    if (!jogoEncerrado && !venceu_fase && arquivosSpawnados == numArquivosOnda && ativas == 0 && cronometro > 0) 
+    {
         ProximaOnda(w, h);
     }
+
     UpdateTypeWriter(&writer, delta, IsKeyPressed(KEY_SPACE));
 }
-void Draw_Desafio_04(void) {
+
+void Draw_Desafio_04(void) 
+{
     BeginDrawing();
+
     int screenW = GetScreenWidth();
     int screenH = GetScreenHeight();
-    if (backgroundLoaded) {
-        DrawTexturePro(background,
-            (Rectangle){ 0, 0, (float)background.width, (float)background.height },
-            (Rectangle){ 0, 0, (float)screenW, (float)screenH },
-            (Vector2){0,0}, 0, WHITE);
-    } else { ClearBackground(BLUE); }
-    if (ubuntuFundoLoaded) {
+
+    DrawTexturePro(
+        background,
+        (Rectangle){ 0, 0, (float)background.width, (float)background.height },
+        (Rectangle){ 0, 0, (float)screenW, (float)screenH },
+        (Vector2){0,0},
+        0, WHITE
+    );
+
+    if (ubuntuFundoLoaded) 
+    {
         float scale = 0.656f; int corte = 140;
         float srcW = ubuntuFundo.width - 18;
         float srcH = ubuntuFundo.height - corte;
@@ -375,7 +411,9 @@ void Draw_Desafio_04(void) {
         ubuntuBaseX = destX + destWidth / 2.0f; ubuntuBaseY = destY + destHeight;
         ubuntuBaseW = destWidth; ubuntuTopY  = destY; ubuntuAlturaVisivel = destHeight;
     }
-    if (preFalaInicial) {
+
+    if (preFalaInicial) 
+    {
         DrawDialogPersonagem(screenW, screenH);
         if (sprEnterButtonLoaded) {
             float pulse = 0.07f * sinf(GetTime() * 3.0f);
@@ -394,7 +432,6 @@ void Draw_Desafio_04(void) {
         return;
     }
 
-    // ================= OCULTA ICONES QUANDO TERMINA =========================
     if (!venceu_fase && !jogoEncerrado) {
         for (int i = 0; i < numArquivosOnda; i++) {
             Arquivo *a = &arquivos[i];
@@ -418,10 +455,10 @@ void Draw_Desafio_04(void) {
             }
         }
     }
-    // ================= FIM do ocultar icones ========================
 
     float ipadScale = 0.7f, ipadOffsetX = 30.0f, ipadOffsetY = 100.0f, ipadW = 0, ipadH = 0, ipadX = 0, ipadY = 0;
-    if (ipadLoaded) {
+    if (ipadLoaded) 
+    {
         ipadW = ipadSprite.width * ipadScale;
         ipadH = ipadSprite.height * ipadScale;
         ipadX = screenW - ipadW - ipadOffsetX;
@@ -441,8 +478,11 @@ void Draw_Desafio_04(void) {
         ipadScorePosX = ipadX + (ipadW/2); ipadScorePosY = ipadY + (ipadH / 2) - 68;
         ipadScoreW = ipadW; ipadScoreH = ipadH;
     }
+
     DrawDialogPersonagem(screenW, screenH);
-    if ((venceu_fase || jogoEncerrado) && !faz_fadeout) {
+
+    if ((venceu_fase || jogoEncerrado) && !faz_fadeout) 
+    {
         float timerFinal = venceu_fase ? vitoria_show_timer : derrota_show_timer;
         int w = screenW, h = screenH;
         int layers = 5, layerThick = 20;
@@ -471,14 +511,17 @@ void Draw_Desafio_04(void) {
         EndDrawing();
         return;
     }
-    if (!jogoEncerrado && !venceu_fase && !faz_fadeout)
-        DrawChronometer(cronometro, FASE7_CHRONO_MAX, screenW - 80, 80, 55);
-    if (faz_fadeout) {
+
+    if (!jogoEncerrado && !venceu_fase && !faz_fadeout) DrawChronometer(cronometro, FASE7_CHRONO_MAX, screenW - 80, 80, 55);
+
+    if (faz_fadeout) 
+    {
         float perc = fadeout_time / FADEOUT_DURACAO;
         if (perc > 1.0f) perc = 1.0f;
         int alpha = (int)(255 * perc);
         DrawRectangle(0, 0, screenW, screenH, (Color){0,0,0, alpha});
     }
+
     EndDrawing();
 }
 
@@ -488,7 +531,7 @@ bool Fase_Desafio_04_Concluida(void)
 }
 
 void Unload_Desafio_04(void) {
-    if (backgroundLoaded) { UnloadTexture(background); backgroundLoaded = false; }
+    UnloadTexture(background);
     if (ubuntuFundoLoaded) { UnloadTexture(ubuntuFundo); ubuntuFundoLoaded = false; }
     if (antiVirusLoaded) { UnloadTexture(antiVirusSprite); antiVirusLoaded = false; }
     if (folderSpriteLoaded) { UnloadTexture(folderSprite); folderSpriteLoaded = false; }

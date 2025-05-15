@@ -16,7 +16,13 @@
         "string.h": "c",
         "menu.h": "c",
         "raylib.h": "c",
-        "loading_screen.h": "c"
+        "loading_screen.h": "c",
+        "bit": "c",
+        "compare": "c",
+        "cstddef": "c",
+        "limits": "c",
+        "type_traits": "c",
+        "xutility": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

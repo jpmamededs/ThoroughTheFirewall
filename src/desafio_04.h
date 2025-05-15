@@ -2,6 +2,13 @@
 #define FRUITNINJA_H
 
 #include <stdbool.h>
+#include "generalFunctions.h"
+#include "menu.h"
+#include "raylib.h"
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
 
 void Init_Desafio_04(void);
 void Update_Desafio_04(void);
