@@ -619,7 +619,7 @@ void Draw_Desafio_02(void)
             int segs = 8;
 
             DrawRectangleRounded((Rectangle){panelX, panelY, panelW, panelH}, round, segs, fill);
-            DrawRectangleRoundedLines((Rectangle){panelX, panelY, panelW, panelH}, round, segs, border);
+            DrawRectangleRoundedLines((Rectangle){panelX, panelY, panelW, panelH}, round, segs, 5.0f, WHITE);
 
             DrawChronometer(cronometro, FASE6_CHRONO_MAX, GetScreenWidth() - 80, 80, 55);
 
