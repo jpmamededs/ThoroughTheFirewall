@@ -33,6 +33,7 @@ typedef enum
     APP_FASE4,
     APP_UBUNTU_PROVISORIO,
     APP_FASE6,
+    APP_RANKING,
     APP_DEBUG
 } AppState;
 
@@ -44,14 +45,6 @@ typedef struct {
     const char* text; int length; int drawnChars; float accum; float speed; bool done;
 } TypeEraser;
 
-#define MAX_PERGUNTAS 4
-#define MAX_PLAYER_NAME 26
-extern int notasIA[MAX_PERGUNTAS];
-extern char relatoriosIA[MAX_PERGUNTAS][512];
-extern char relatorioGeralIA[1024];
-extern char gPlayerName[MAX_PLAYER_NAME];
-extern char gSelectedCharacterName[MAX_PLAYER_NAME];
-
 void InitTypeWriter(TypeWriter* tw, const char* text, float speed);
 void UpdateTypeWriter(TypeWriter* tw, float deltaTime, bool skip);
 void SkipTypeWriter(TypeWriter* tw);
@@ -61,7 +54,5 @@ void SkipTypeEraser(TypeEraser* te);
 float UpdateFade(float dt, float duration, bool fadeIn);
 void DrawChronometer(float timer_restante, float timer_total, int x, int y, int radius);
 void DrawDica(float posX, float posY, const char *text);
-int  SomarNotasIA(void);
-void GerarRelatorioGeralIA(char *relatorioGeral, size_t tamanho);
 
 #endif
