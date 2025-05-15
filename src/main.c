@@ -24,15 +24,19 @@
 #include "template_ubuntu_02.h"
 #include "template_3D_01.h"
 #include "template_3D_02.h"
+#include "template_3D_03.h"
 #include "tela_provisoria_01.h"
 #include "tela_provisoria_02.h"
 #include "loading_screen.h"
 #include "transition_screen.h"
+#include "playerStats.h"
 
 AppState state = APP_CUTSCENES;
 AppState PFP_Iterrogatorio;
 AppState PFP_Loading;
 AppState PFP_Trasicao;
+
+PlayerStats playerStats;
 
 typedef struct { const char *audio; const char *texto; } RoteiroHank;
 static const RoteiroHank roteiros[] = {
@@ -73,6 +77,8 @@ int main(void)
     SetMusicVolume(music, 0.9f);
     PlayMusicStream(music);
 
+    InitPlayerStats(&playerStats);
+
     InitCutscenes();
 
     static int perguntaAtual = -1;
@@ -93,6 +99,7 @@ int main(void)
     static bool template_ubuntu_02_Initialized = false;
     static bool template_3D_01_Initialized = false;
     static bool template_3D_02_Initialized = false;
+    static bool template_3D_03_Initialized = false;
     static bool tela01_Initialized = false;
     static bool tela02_Initialized = false;
     static bool loading_Initialized = false;
@@ -210,6 +217,13 @@ int main(void)
                 UnloadMenu();
                 template_3D_02_Initialized = false;
                 state = APP_TEMPLATE_3D_02;
+            }
+            if (IsKeyPressed(KEY_E))
+            {
+                PauseMusicStream(music);
+                UnloadMenu();
+                template_3D_03_Initialized = false;
+                state = APP_TEMPLATE_3D_03;
             }
             if (IsKeyPressed(KEY_J))
             {
@@ -548,7 +562,8 @@ int main(void)
             }
             Update_Template_Ubuntu_01();
             Draw_Template_Ubuntu_01();
-            if (Fase_Template_Ubuntu_01_Concluida()) {
+            if (Fase_Template_Ubuntu_01_Concluida()) 
+            {
                 Unload_Template_Ubuntu_01();
                 template_ubuntu_01_Initialized = false;
                 state = APP_DEBUG; // MUDAR O STATE AQUI!
@@ -563,7 +578,8 @@ int main(void)
             }
             Update_Template_Ubuntu_02();
             Draw_Template_Ubuntu_02();
-            if (Fase_Template_Ubuntu_02_Concluida()) {
+            if (Fase_Template_Ubuntu_02_Concluida()) 
+            {
                 Unload_Template_Ubuntu_02();
                 template_ubuntu_02_Initialized = false;
                 state = APP_DEBUG; // MUDAR O STATE AQUI!
@@ -578,7 +594,8 @@ int main(void)
             }
             Update_Template_3D_01();
             Draw_Template_3D_01();
-            if (Fase_Template_3D_01_Concluida()) {
+            if (Fase_Template_3D_01_Concluida()) 
+            {
                 Unload_Template_3D_01();
                 template_3D_01_Initialized = false;
                 state = APP_DEBUG;
@@ -593,9 +610,26 @@ int main(void)
             }
             Update_Template_3D_02();
             Draw_Template_3D_02();
-            if (Fase_Template_3D_02_Concluida()) {
+            if (Fase_Template_3D_02_Concluida()) 
+            {
                 Unload_Template_3D_02();
                 template_3D_02_Initialized = false;
+                state = APP_DEBUG;
+            }
+        }
+        else if (state == APP_TEMPLATE_3D_03)
+        {
+            if (!template_3D_03_Initialized)
+            {
+                Init_Template_3D_03();
+                template_3D_03_Initialized = true;
+            }
+            Update_Template_3D_03();
+            Draw_Template_3D_03();
+            if (Fase_Template_3D_03_Concluida())
+            {
+                Unload_Template_3D_03();
+                template_3D_03_Initialized = false;
                 state = APP_DEBUG;
             }
         }

@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include "playerStats.h"
 
 void Init_Desafio_01(void);
 void Update_Desafio_01(void);
