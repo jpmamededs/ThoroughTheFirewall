@@ -112,7 +112,7 @@ int main(void)
     extern bool interrogatorioFinalizado;
 
     // DEBUG DE SELEÇÃO DO NOME
-    strncpy(gSelectedCharacterName, "Dante", MAX_PLAYER_NAME);
+    strncpy(gSelectedCharacterName, "Jade", MAX_PLAYER_NAME);
     gSelectedCharacterName[MAX_PLAYER_NAME-1] = '\0';
 
     while (!WindowShouldClose())
