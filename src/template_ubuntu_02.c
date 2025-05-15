@@ -1,4 +1,4 @@
-#include "template_ubuntu_01.h"
+#include "template_ubuntu_02.h"
 #include "generalFunctions.h"
 #include "raylib.h"
 #include <math.h>
@@ -47,6 +47,10 @@ static bool aguardandoMensagemFinal = false;
 static const float esperaPreta = 2.0f;
 static const float tempoMensagemFinalDelay = 2.0f;
 
+static bool mostrarPostit = false;
+static Texture2D postit;
+static Sound paperSound;
+
 static bool fase_concluida = false;
 
 void Init_Template_Ubuntu_02(void)
@@ -57,6 +61,9 @@ void Init_Template_Ubuntu_02(void)
     geminiIcon = LoadTexture("src/sprites/os/gemini.png");
     bootSound = LoadSound("src/music/boot.mp3");
     geminiFont = LoadFont("src/fonts/GoogleSansMono.ttf");
+    postit = LoadTexture("src/sprites/postit.png");
+    mostrarPostit = false; // Inicialmente, não mostra o post-it
+    paperSound = LoadSound("src/music/paperSound.mp3");
 
     fadeTimer = 0.0f;
     showBackground = false;
@@ -67,8 +74,7 @@ void Init_Template_Ubuntu_02(void)
     float geminiAnimScale = 1.0f / 13.5f;
     geminiFinalPos = (Vector2){
         GetScreenWidth() - geminiIcon.width * geminiAnimScale - 20,
-        GetScreenHeight() - geminiIcon.height * geminiAnimScale - 60
-    };
+        GetScreenHeight() - geminiIcon.height * geminiAnimScale - 60};
 
     geminiAnimPos = (Vector2){GetScreenWidth(), geminiFinalPos.y};
 
@@ -99,44 +105,6 @@ void Update_Template_Ubuntu_02(void)
     {
         PlaySound(bootSound);
         bootSoundPlayed = true;
-    }
-
-    if (showBackground && !terminalChamado && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-    {
-        Vector2 mouse = GetMousePosition();
-        Rectangle terminalIconBounds = {10, 10, terminalIcon.width * 1.5f, terminalIcon.height * 2.0f};
-
-        if (CheckCollisionPointRec(mouse, terminalIconBounds))
-        {
-            char cwd[512];
-            if (_getcwd(cwd, sizeof(cwd)) != NULL)
-            {
-                char command[1024];
-                snprintf(command, sizeof(command),
-                         "start \"\" \"%s\\first_terminal.bat\"", cwd);
-                system(command);
-                terminalChamado = true;
-            }
-        }
-    }
-
-    DIR *d = opendir(".");
-    struct dirent *dir;
-    if (d)
-    {
-        while ((dir = readdir(d)) != NULL)
-        {
-            if (strcmp(dir->d_name, "dados.txt") == 0)
-            {
-                remove("dados.txt");
-
-                estadoCaixa = 2;
-                tempoMensagemFinal = 0.0f;
-                aguardandoMensagemFinal = true;
-                break;
-            }
-        }
-        closedir(d);
     }
 
     if (aguardandoMensagemFinal)
@@ -196,11 +164,41 @@ void Update_Template_Ubuntu_02(void)
             tempoAposFade += dt;
             if (tempoAposFade >= esperaPreta)
             {
-                // Isso define para Main que a fase se encerrou!
-                // Caso queira mandar para outra fase, basta apenas trocar o (state) na main
-                fase_concluida = true;
+                fase_concluida = false;
             }
         }
+    }
+
+    if (showBackground && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
+        Vector2 mouse = GetMousePosition();
+
+        // Check click on terminal icon
+        Rectangle terminalIconBounds = {
+            10,  // x position (iconMargin)
+            10,  // y position (iconMargin)
+            terminalIcon.width * 1.3f,  // width (terminalScale)
+            terminalIcon.height * 1.3f  // height (terminalScale)
+        };
+
+        if (CheckCollisionPointRec(mouse, terminalIconBounds))
+        {
+            char cwd[512];
+            if (_getcwd(cwd, sizeof(cwd)) != NULL)
+            {
+                char command[1024];
+                snprintf(command, sizeof(command),
+                         "start \"\" \"%s\\proxy_terminal.bat\"", cwd);
+                system(command);
+                terminalChamado = true;
+            }
+        }
+    }
+
+    if (IsKeyPressed(KEY_SPACE))
+    {
+        mostrarPostit = true;
+        PlaySound(paperSound);
     }
 }
 
@@ -235,25 +233,52 @@ void Draw_Template_Ubuntu_02(void)
         if (geminiAnimStarted)
             DrawTextureEx(geminiIcon, geminiAnimPos, 0.0f, geminiAnimScale, WHITE);
 
-        if (mostrarCaixaDialogo)
+        // Quadrado tracejado chamativo no canto superior direito
+        int boxSize = 400; // Quadrado 400x400
+        int boxX = GetScreenWidth() - boxSize - 20;
+        int boxY = 20;
+
+        if (mostrarPostit)
         {
-            const char *texto = (estadoCaixa == 0)
-                                    ? "Nova tarefa detectada!"
-                                : (estadoCaixa == 1)
-                                    ? "Para continuar sua tarefa. Clique no icone do terminal."
-                                    : "Parabens, voce terminou suas pendencias.";
+            // Desenhar o post-it no lugar do quadrado
+            DrawTextureEx(postit, (Vector2){boxX, boxY}, 0.0f, 1.0f, WHITE);
+        }
+        else
+        {
+            // Efeito de piscada
+            float alphaBlink = 0.5f + 0.5f * sinf(GetTime() * 4.0f);
+            Color borderColor = (Color){255, 255, 255, (unsigned char)(alphaBlink * 255)};
+            int borderThickness = 4;
+            const char *promptText = "  Aperte SPACE para\ncolar a nota na tela";
+            int fontSize = 64; // Tamanho inicial grande
 
-            int padding = 20;
-            int fontSize = 18;
-            Vector2 textSize = MeasureTextEx(geminiFont, texto, fontSize, 1);
-            int largura = (int)textSize.x + padding * 2;
-            int altura = (int)textSize.y + padding * 2;
+            // Desenho do quadrado tracejado
+            for (int i = 0; i < boxSize; i += 30)
+            {
+                DrawLineEx((Vector2){boxX + i, boxY}, (Vector2){boxX + i + 15, boxY}, borderThickness, borderColor);
+                DrawLineEx((Vector2){boxX + i, boxY + boxSize}, (Vector2){boxX + i + 15, boxY + boxSize}, borderThickness, borderColor);
+            }
+            for (int j = 0; j < boxSize; j += 30)
+            {
+                DrawLineEx((Vector2){boxX, boxY + j}, (Vector2){boxX, boxY + j + 15}, borderThickness, borderColor);
+                DrawLineEx((Vector2){boxX + boxSize, boxY + j}, (Vector2){boxX + boxSize, boxY + j + 15}, borderThickness, borderColor);
+            }
 
-            int x = geminiFinalPos.x - largura - 20;
-            int y = geminiFinalPos.y - ((altura - 110) / 8);
+            // Ajustar dinamicamente para caber no quadrado
+            Vector2 textSize = MeasureTextEx(geminiFont, promptText, fontSize, 1);
+            while ((textSize.x > boxSize - 40 || textSize.y > boxSize - 40) && fontSize > 8)
+            {
+                fontSize -= 2; // Diminui o tamanho da fonte até caber
+                textSize = MeasureTextEx(geminiFont, promptText, fontSize, 1);
+            }
 
-            DrawRectangleRounded((Rectangle){x, y, largura, altura}, 0.3f, 16, WHITE);
-            DrawTextEx(geminiFont, texto, (Vector2){x + padding, y + padding}, fontSize, 1, DARKGRAY);
+            // Centralizar o texto dentro do quadrado
+            Vector2 textPos = (Vector2){
+                boxX + (boxSize - textSize.x) / 2,
+                boxY + (boxSize - textSize.y) / 2};
+
+            // Desenhar o texto dentro do quadrado
+            DrawTextEx(geminiFont, promptText, textPos, fontSize, 1, borderColor);
         }
     }
 
@@ -278,6 +303,8 @@ void Unload_Template_Ubuntu_02(void)
     UnloadTexture(background);
     UnloadTexture(terminalIcon);
     UnloadTexture(geminiIcon);
+    UnloadTexture(postit);
     UnloadSound(bootSound);
+    UnloadSound(paperSound);
     UnloadFont(geminiFont);
 }
