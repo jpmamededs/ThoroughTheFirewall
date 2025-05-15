@@ -277,6 +277,8 @@ void Update_Desafio_01(void)
             if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) {
                 fase3_fadeout = true;
                 fase3_fadeout_time = 0.0f;
+
+                SetD01Result(&playerStats, acertou_resposta, timer_total - timer_restante);
                 fase_concluida = true;
             }
         }

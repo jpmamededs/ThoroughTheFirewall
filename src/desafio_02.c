@@ -238,6 +238,11 @@ void Update_Desafio_02(void)
             (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) {
             faz_fadeout = true;
             fadeout_time = 0.0f;
+
+            int tempoGasto = (int)cronometro_elapsed;
+            int vidasRestantes = MAX_TENTATIVAS - tentativasFalhaCount;
+            SetD02Result(&playerStats, !perdeu_a_fase, tempoGasto, vidasRestantes);
+
             fase_concluida = true;
         }
         return;
@@ -252,6 +257,11 @@ void Update_Desafio_02(void)
             (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) {
             faz_fadeout = true;
             fadeout_time = 0.0f;
+
+            int tempoGasto = (int)cronometro_elapsed;
+            int vidasRestantes = MAX_TENTATIVAS - tentativasFalhaCount;
+            SetD02Result(&playerStats, venceu_a_fase, tempoGasto, vidasRestantes);
+
             fase_concluida = true;
         }
         return;

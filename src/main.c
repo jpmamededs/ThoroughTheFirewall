@@ -28,11 +28,14 @@
 #include "tela_provisoria_02.h"
 #include "loading_screen.h"
 #include "transition_screen.h"
+#include "playerStats.h"
 
 AppState state = APP_CUTSCENES;
 AppState PFP_Iterrogatorio;
 AppState PFP_Loading;
 AppState PFP_Trasicao;
+
+PlayerStats playerStats;
 
 typedef struct { const char *audio; const char *texto; } RoteiroHank;
 static const RoteiroHank roteiros[] = {
@@ -72,6 +75,8 @@ int main(void)
     Music music = LoadMusicStream("src/music/musica.mp3");
     SetMusicVolume(music, 0.9f);
     PlayMusicStream(music);
+
+    InitPlayerStats(&playerStats);
 
     InitCutscenes();
 
