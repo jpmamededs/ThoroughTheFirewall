@@ -1,17 +1,11 @@
-#include "fase4.h"
+#include "template_3D_03.h"
 #include "raylib.h"
 #include "generalFunctions.h"
 #include <math.h>
 
-// Esse arquivo é o 3D de 
-
-extern AppState state;
-
 static Model modelo3D;
 static Model portaModel;
-
 static Texture2D portaTexture;
-
 static Camera3D camera;
 static float cameraYaw = 0.0f;
 static const float maxYaw = PI / 4.0f;
@@ -19,7 +13,7 @@ static const float minYaw = -PI / 4.0f;
 
 static bool fase_concluida = false; 
 
-void InitFase4(void)
+void Init_Template_3D_03(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
     portaModel = LoadModel("src/models/DOOR.obj");
@@ -36,7 +30,7 @@ void InitFase4(void)
     DisableCursor();
 }
 
-void UpdateFase4(void)
+void Update_Template_3D_03(void)
 {
     float mouseDeltaX = GetMouseDelta().x;
     cameraYaw += mouseDeltaX * 0.002f;
@@ -50,7 +44,7 @@ void UpdateFase4(void)
     camera.target.y = camera.position.y;
 }
 
-void DrawFase4(void)
+void Draw_Template_3D_03(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -64,7 +58,7 @@ void DrawFase4(void)
     EndDrawing();
 }
 
-void UnloadFase4(void)
+void Unload_Template_3D_03(void)
 {
     UnloadModel(modelo3D);
     UnloadModel(portaModel);
@@ -73,7 +67,7 @@ void UnloadFase4(void)
     EnableCursor();
 }
 
-bool Fase4Concluida(void)
+bool Fase_Template_3D_03_Concluida(void)
 {
     return fase_concluida;
 }
