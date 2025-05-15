@@ -1,6 +1,7 @@
 #include "tela_provisoria_02.h"
 #include "raylib.h"
 #include "generalFunctions.h"
+#include "playerStats.h"
 
 // ESSA É A TELA DO RESULTADO DO PROCESSO SELETIVO
 

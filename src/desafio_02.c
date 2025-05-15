@@ -614,12 +614,12 @@ void Draw_Desafio_02(void)
             panelX -= extraX * 0.3f;
             panelY -= extraY;
             Color fill = (Color){8, 38, 18, 200};
-            Color border = (Color){24, 90, 45, 255};
+            //Color border = (Color){24, 90, 45, 255};
             float round = 0.18f;
             int segs = 8;
 
             DrawRectangleRounded((Rectangle){panelX, panelY, panelW, panelH}, round, segs, fill);
-            DrawRectangleRoundedLines((Rectangle){panelX, panelY, panelW, panelH}, round, segs, 5.0f, WHITE);
+            //DrawRectangleRoundedLines((Rectangle){panelX, panelY, panelW, panelH}, round, segs, 5.0f, WHITE);
 
             DrawChronometer(cronometro, FASE6_CHRONO_MAX, GetScreenWidth() - 80, 80, 55);
 
