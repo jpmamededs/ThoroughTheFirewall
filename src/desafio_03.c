@@ -48,7 +48,7 @@ static bool fase2_fazendo_fadeout = false;
 static float fase2_fadeout_time = 0.0f;
 static bool fase_concluida = false; 
 static const char* gemini_help_msg_default = "Clique aqui caso precise de ajuda!";
-static const char* gemini_help_msg_ajuda = "As opções A, C e D estão erradas";
+static const char* gemini_help_msg_ajuda = "As opções A e D estão erradas";
 
 static Texture2D fundo;
 static Texture2D pergunta_img;
@@ -258,7 +258,6 @@ void Update_Desafio_03(void)
             AtualizaTamanhoGeminiBox();
             geminiRectAnim = 1.0f;
             pergunta2.opcoes[0].desabilitada = true;
-            pergunta2.opcoes[2].desabilitada = true;
             pergunta2.opcoes[3].desabilitada = true;
 
             if (pergunta2.opcoes[selectedOption].desabilitada) {

@@ -4,113 +4,113 @@
 #include <string.h>
 #include <stdio.h>
 #include "playerStats.h"
+#include "ranking.h"
 
-static char resposta[1024] = {0};
 static bool requisicaoIniciada = false;
 static float tempoDecorrido = 0.0f;
 
 void InitDebug(void) {
     requisicaoIniciada = false;
     tempoDecorrido = 0.0f;
-    memset(resposta, 0, sizeof(resposta));
 }
 
 void UpdateDebug(void) {
 
 }
 
-
-void DrawDebug(void) 
+void DrawDebug(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
 
-    int y = 10;
-    const int lineHeight = 25;
+    int   y          = 10;       /* coordenada Y inicial */
+    const int lh     = 25;       /* altura de cada linha */
+    char  info[256];             /* buffer p/ mensagens */
 
-    // Dados gerais do jogador
-    char info[256];
-
+    /* ------------------------------------------------------------------ */
+    /*  DADOS GERAIS                                                      */
+    /* ------------------------------------------------------------------ */
     snprintf(info, sizeof(info), "Nome do Jogador: %s", playerStats.playerName);
-    DrawText(info, 50, y, 20, GREEN);
-    y += lineHeight;
+    DrawText(info, 50, y, 20, GREEN);               y += lh;
 
     snprintf(info, sizeof(info), "Personagem: %s", playerStats.characterName);
-    DrawText(info, 50, y, 20, GREEN);
-    y += lineHeight;
+    DrawText(info, 50, y, 20, GREEN);               y += lh;
 
-    snprintf(info, sizeof(info), "Nota Final da IA: %d", playerStats.aiOverallScore);
-    DrawText(info, 50, y, 20, YELLOW);
-    y += lineHeight;
+    snprintf(info, sizeof(info), "Nota IA (0-100): %d", playerStats.aiOverallScore);
+    DrawText(info, 50, y, 20, YELLOW);              y += lh;
 
+    snprintf(info, sizeof(info), "Nota Geral: %.1f", playerStats.notalGeral);
+    DrawText(info, 50, y, 20, ORANGE);              y += lh;
+
+    DrawText(TextFormat("Status Seleção: %s",
+             playerStats.isPassouSelecao ? "APROVADO" : "REPROVADO"),
+             50, y, 20,
+             playerStats.isPassouSelecao ? LIME : RED);
+    y += lh * 2;   /* espaçamento extra antes dos desafios */
+
+    /* ------------------------------------------------------------------ */
+    /*  RESUMO DOS DESAFIOS                                               */
+    /* ------------------------------------------------------------------ */
     DrawText("Resumo dos Desafios:", 50, y, 20, LIGHTGRAY);
-    y += lineHeight;
+    y += lh;
 
-    // Dados do Desafio 01
-    snprintf(info, sizeof(info), "Desafio 01: %s | Duração: %d segundos", 
-             playerStats.isPassed_D01 ? "Passou" : "Falhou", playerStats.duration_D01);
-    DrawText(info, 50, y, 20, WHITE);
-    y += lineHeight;
+    snprintf(info, sizeof(info), "Desafio 01: %s | Duração: %d s",
+             playerStats.isPassed_D01 ? "Passou" : "Falhou",
+             playerStats.duration_D01);
+    DrawText(info, 50, y, 20, WHITE);               y += lh;
 
-    // Dados do Desafio 02
-    snprintf(info, sizeof(info), "Desafio 02: %s | Duração: %d segundos | Vidas Restantes: %d",
-             playerStats.isPassed_D02 ? "Passou" : "Falhou", 
-             playerStats.duration_D02, playerStats.amountOfLives_D02);
-    DrawText(info, 50, y, 20, WHITE);
-    y += lineHeight;
+    snprintf(info, sizeof(info), "Desafio 02: %s | Duração: %d s | Vidas: %d",
+             playerStats.isPassed_D02 ? "Passou" : "Falhou",
+             playerStats.duration_D02,
+             playerStats.amountOfLives_D02);
+    DrawText(info, 50, y, 20, WHITE);               y += lh;
 
-    // Dados do Desafio 03
-    snprintf(info, sizeof(info), "Desafio 03: %s | Duração: %d segundos", 
-             playerStats.isPassed_D03 ? "Passou" : "Falhou", playerStats.duration_D03);
-    DrawText(info, 50, y, 20, WHITE);
-    y += lineHeight;
+    snprintf(info, sizeof(info), "Desafio 03: %s | Duração: %d s",
+             playerStats.isPassed_D03 ? "Passou" : "Falhou",
+             playerStats.duration_D03);
+    DrawText(info, 50, y, 20, WHITE);               y += lh;
 
-    // Dados do Desafio 04
-    snprintf(info, sizeof(info), "Desafio 04: %s | Ícones Coletados: %d", 
-             playerStats.isPassed_D04 ? "Passou" : "Falhou", playerStats.quantityOfIcons_D04);
-    DrawText(info, 50, y, 20, WHITE);
-    y += lineHeight;
+    snprintf(info, sizeof(info), "Desafio 04: %s | Ícones: %d",
+             playerStats.isPassed_D04 ? "Passou" : "Falhou",
+             playerStats.quantityOfIcons_D04);
+    DrawText(info, 50, y, 20, WHITE);               y += lh * 2;
 
-    // Mostrar a nota total calculada
-    int notaTotal = SomarNotasIA();
-    snprintf(info, sizeof(info), "Nota Total da IA: %d", notaTotal);
-    DrawText(info, 50, y, 20, YELLOW);
-    y += lineHeight * 2;  // Espaçamento adicional entre seções
-
-    // Exibir notas detalhadas de cada pergunta
+    /* ------------------------------------------------------------------ */
+    /*  NOTAS POR PERGUNTA                                                */
+    /* ------------------------------------------------------------------ */
     DrawText("Notas por Pergunta:", 50, y, 20, LIGHTGRAY);
-    y += lineHeight;
+    y += lh;
 
     for (int i = 0; i < MAX_PERGUNTAS; i++) {
-        if (notasIA[i] >= 0) {
-            snprintf(info, sizeof(info), "Pergunta %d: Nota %d", i + 1, notasIA[i]);
-            DrawText(info, 50, y, 20, GREEN);
-            y += lineHeight;
-        }
+        snprintf(info, sizeof(info), "Pergunta %d: %d", i + 1, notasIA[i]);
+        DrawText(info, 50, y, 20, GREEN);
+        y += lh;
     }
 
-    y += lineHeight * 2;  // Espaçamento para o relatório
+    y += lh;   /* espaço antes do relatório */
 
-    // Exibir o relatório geral
-    char relatorioFinal[1024];
-    GerarRelatorioGeralIA(relatorioFinal, sizeof(relatorioFinal));
+    /* ------------------------------------------------------------------ */
+    /*  RELATÓRIO GERAL                                                   */
+    /* ------------------------------------------------------------------ */
     DrawText("Relatório Geral:", 50, y, 20, LIGHTGRAY);
-    y += lineHeight;
+    y += lh;
 
-    // Quebrar relatório em várias linhas
-    char relatorioTemp[1024];
-    strncpy(relatorioTemp, relatorioFinal, sizeof(relatorioTemp));
-    char *linha = strtok(relatorioTemp, "\n");
-    while (linha != NULL) 
-    {
+    /* percorre cada linha do relatório, quebrando por '\n' */
+    char relatorioTmp[sizeof(playerStats.relatorioGeral)];
+    strncpy(relatorioTmp, playerStats.relatorioGeral, sizeof(relatorioTmp) - 1);
+    relatorioTmp[sizeof(relatorioTmp) - 1] = '\0';
+
+    char *linha = strtok(relatorioTmp, "\n");
+    while (linha) {
         DrawText(linha, 50, y, 20, WHITE);
-        y += lineHeight;
+        y += lh;
         linha = strtok(NULL, "\n");
     }
 
     EndDrawing();
 }
 
-void UnloadDebug(void) {
-    // Nada a descarregar no momento
+void UnloadDebug(void)
+{
+
 }

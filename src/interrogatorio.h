@@ -2,6 +2,7 @@
 #define FASE1_3_H
 
 #include "generalFunctions.h"
+#include "playerStats.h"
 
 typedef struct { 
     const char *pergunta;

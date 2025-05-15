@@ -2,8 +2,10 @@
 #define PLAYER_STATS_H
 
 #include <stdbool.h>
+#include <string.h>
 
-#define NAME_MAX_LEN 30
+#define MAX_PERGUNTAS 4
+#define MAX_PLAYER_NAME 26
 
 typedef struct {
     /* Desafio 01 */
@@ -24,10 +26,19 @@ typedef struct {
     int   quantityOfIcons_D04;
 
     /* Dados gerais */
+    char  playerName[MAX_PLAYER_NAME];
+    char  characterName[MAX_PLAYER_NAME];
     int   aiOverallScore; 
-    char  playerName[NAME_MAX_LEN];
-    char  characterName[NAME_MAX_LEN];
+    bool  isPassouSelecao;
+    float notalGeral;
+    char  relatorioGeral[1024];
 } PlayerStats;
+
+extern int  notasIA[MAX_PERGUNTAS];
+extern char relatoriosIA[MAX_PERGUNTAS][512];
+extern char relatorioGeralIA[1024];
+extern char gPlayerName[MAX_PLAYER_NAME];
+extern char gSelectedCharacterName[MAX_PLAYER_NAME];
 
 extern PlayerStats playerStats;
 
@@ -36,7 +47,7 @@ void SetD01Result(PlayerStats *stats, bool passed, int duration);
 void SetD02Result(PlayerStats *stats, bool passed, int duration, int lives);
 void SetD03Result(PlayerStats *stats, bool passed, int duration);
 void SetD04Result(PlayerStats *stats, bool passed, int icons);
-void SetAIOverallScore(PlayerStats *stats, int score);
-void SetPlayerAndCharacter(PlayerStats *stats, const char *playerName, const char *characterName);
+
+void SetPlayerGeneralStats(PlayerStats *ps);
 
 #endif

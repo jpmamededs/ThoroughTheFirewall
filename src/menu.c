@@ -360,8 +360,6 @@ void UpdateMenu(void)
         {
             strncpy(gSelectedCharacterName, selectedChar->name, MAX_PLAYER_NAME);
             gSelectedCharacterName[MAX_PLAYER_NAME-1] = '\0';
-            
-            SetPlayerAndCharacter(&playerStats, gPlayerName, gSelectedCharacterName);
             PlaySound(clickSound);
             PlaySound(alertSound);
             isFadingOut = true;
