@@ -1,6 +1,7 @@
 #include "ligacao_desconhecido.h"
 #include "raylib.h"
 #include "generalFunctions.h"
+#include "playerStats.h"
 #include <string.h>
 #include <math.h>
 

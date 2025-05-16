@@ -10,8 +10,8 @@
 #define FADEOUT_DURACAO 0.8f
 #define GEMINI_RECT_PADRAO 550
 #define GEMINI_PAD_X 36
-#define FASE6_CHRONO_MAX 60.0f
-#define FALA_NORMAL_02 "Essa senha está criptografada... Preciso voltar duas letras para decifrá-la. Não posso errar!"
+#define FASE6_CHRONO_MAX 70.0f
+#define FALA_NORMAL_02 "A senha está criptografada usando uma cifra de deslocamento. Para decifrá-la, devo voltar exatamente duas letras.\nNão posso errar!"
 #define FALA_VENCEU_02 "JOÃO! A senha está correta! Estou pronto para o próximo desafio."
 #define FALA_PERDEU_02 "Não deu tempo... A criptografia me venceu. Hank vai me dispensar..."
 
@@ -614,12 +614,12 @@ void Draw_Desafio_02(void)
             panelX -= extraX * 0.3f;
             panelY -= extraY;
             Color fill = (Color){8, 38, 18, 200};
-            Color border = (Color){24, 90, 45, 255};
+            //Color border = (Color){24, 90, 45, 255};
             float round = 0.18f;
             int segs = 8;
 
             DrawRectangleRounded((Rectangle){panelX, panelY, panelW, panelH}, round, segs, fill);
-            DrawRectangleRoundedLines((Rectangle){panelX, panelY, panelW, panelH}, round, segs, border);
+            //DrawRectangleRoundedLines((Rectangle){panelX, panelY, panelW, panelH}, round, segs, 5.0f, WHITE);
 
             DrawChronometer(cronometro, FASE6_CHRONO_MAX, GetScreenWidth() - 80, 80, 55);
 

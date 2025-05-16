@@ -2,6 +2,7 @@
 #include "ligacao_desconhecido.h"
 #include "generalFunctions.h"
 #include <math.h>
+#include "playerStats.h"
 
 extern AppState state;
 

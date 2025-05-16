@@ -7,6 +7,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include "playerStats.h"
 
 static void UpdateApresentacao(float dt);
 static void UpdateFalaHank(float dt);

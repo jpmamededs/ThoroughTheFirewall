@@ -360,8 +360,6 @@ void UpdateMenu(void)
         {
             strncpy(gSelectedCharacterName, selectedChar->name, MAX_PLAYER_NAME);
             gSelectedCharacterName[MAX_PLAYER_NAME-1] = '\0';
-            
-            SetPlayerAndCharacter(&playerStats, gPlayerName, gSelectedCharacterName);
             PlaySound(clickSound);
             PlaySound(alertSound);
             isFadingOut = true;
@@ -482,34 +480,9 @@ void DrawMenu(void)
     EndDrawing();
 }
 
-bool MenuStartGame(void)
-{
-    return currentScreen == MENU_FINISHED;
-}
+bool MenuStartGame(void) { return currentScreen == MENU_FINISHED; }
 
-int MenuSelectedCharacter(void)
-{
-    if (!selectedChar) return 0;
-    CharacterNode *node = head;
-    int index = 0;
-    while (node && node != selectedChar)
-    {
-        node = node->next;
-        index++;
-        if (node == head)
-            break;
-    }
-    if (index < 0 || index > 3)
-        index = 0;
-    return index;
-}
-
-const char *MenuSelectedCharacterName(void)
-{
-    if (!selectedChar || !selectedChar->name[0])
-        return "Alice";
-    return selectedChar->name;
-}
+bool ComecouJogo(void) { return !(currentScreen == MENU_MAIN); }
 
 void UnloadMenu(void)
 {
@@ -534,8 +507,6 @@ void UnloadMenu(void)
             node = node->next;
         } while (node != head);
     }
-    // Libere a lista!
-    // (Para segurança, já que você usou malloc em CreateCharacterList)
     if (head)
     {
         CharacterNode* iter = head->next;

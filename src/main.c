@@ -30,6 +30,7 @@
 #include "loading_screen.h"
 #include "transition_screen.h"
 #include "playerStats.h"
+#include "ranking.h"
 
 AppState state = APP_CUTSCENES;
 AppState PFP_Iterrogatorio;
@@ -69,8 +70,8 @@ int main(void)
     int screenHeight = GetMonitorHeight(0);
 
     InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
-    SetTargetFPS(1000);
-    SetWindowPosition(0, 0);
+    SetTargetFPS(900);
+    SetWindowPosition(0, 0); 
 
     InitAudioDevice();
     Music music = LoadMusicStream("src/music/musica.mp3");
@@ -104,6 +105,9 @@ int main(void)
     static bool tela02_Initialized = false;
     static bool loading_Initialized = false;
     static bool transicao_Initialized = false;
+    static bool ranking_Initialized = false;
+    static bool menu_Initialized = false;
+    static bool debug_Initialized = false;
 
     extern bool interrogatorioFinalizado;
 
@@ -122,15 +126,26 @@ int main(void)
             if (CutscenesEnded())
             {
                 UnloadCutscenes();
-                InitMenu();
                 ResumeMusicStream(music);
                 state = APP_MENU;
             }
         }
         else if (state == APP_MENU)
         {
+            if (!menu_Initialized)
+            {
+                InitMenu();
+                menu_Initialized = true;
+            }
             UpdateMenu();
             DrawMenu();
+            if (!ComecouJogo() && IsKeyPressed(KEY_R))
+            {
+                UnloadMenu();
+                ranking_Initialized = false;
+                menu_Initialized = false;
+                state = APP_RANKING;
+            }
             if (MenuStartGame())
             {
                 PauseMusicStream(music);
@@ -663,8 +678,28 @@ int main(void)
                 state = APP_DEBUG;
             }
         }
+        else if (state == APP_RANKING)
+        {
+            if (!ranking_Initialized)
+            {
+                Init_Ranking();
+                ranking_Initialized = true;
+            }
+            Update_Ranking();
+            Draw_Ranking();
+            if (Ranking_Concluido()) {
+                Unload_Ranking();
+                ranking_Initialized = false;
+                state = APP_MENU;
+            }
+        }
         else if (state == APP_DEBUG)
         {
+            if (!debug_Initialized)
+            {
+                SetPlayerGeneralStats(&playerStats);
+                debug_Initialized = true;
+            }
             UpdateDebug();
             DrawDebug();
         }

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "playerStats.h"
 
 #define INTRO_TEXT_SPEED 42
 #define INTRO_PARTS 3

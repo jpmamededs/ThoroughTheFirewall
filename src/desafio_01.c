@@ -143,7 +143,7 @@ void Init_Desafio_01(void)
 
     timer_restante = timer_total;
     fase3_fadeout_time = 0.0f;
-    timer_total = 45.0f;
+    timer_total = 40.0f;
     geminiRectAnim = 0.0f;
     timer_feedback = 0.0f;
     respostaShowTimer = 0.0f;
