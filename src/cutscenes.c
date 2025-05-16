@@ -137,7 +137,7 @@ void InitCutscenes(void)
     v1_alice        = LoadTexture("src/sprites/intro/v1_alice.png");
     v2_alice        = LoadTexture("src/sprites/intro/v2_alice.png");
     v3_alice = LoadTexture("src/sprites/intro/v3_alice.png");
-    logo = LoadTexture("src/sprites/intro/logo.png");
+    logo = LoadTexture("src/sprites/logo_jogo.png");
     bgFinal = LoadTexture("src/sprites/intro/bgFinal.png");
     nomeAlice = LoadTexture("src/sprites/intro/nomeAlice.png");
     empresa1        = LoadTexture("src/sprites/intro/empresa1.jpg");
@@ -255,17 +255,31 @@ void UpdateCutscenes(void)
     }
 
     if (ended) return;
-        float time = GetTime() - startTime;
-        if (aguardandoFimBgFinal) {
-            if (IsKeyPressed(KEY_SPACE)) {
-                ended = true;
-                aguardandoFimBgFinal = false;
-            }
-            return; // não pula para outras cenas
+
+    if (IsKeyPressed(KEY_SPACE))
+    {
+        if (!aguardandoFimBgFinal) {
+            // Vá direto para a tela final (os valores dependem do seu sistema de estados, adapte!)
+            mostrandoBgFinal = true;
+            animZoomFinalIniciou = true;
+            aguardandoFimBgFinal = true;
+            estadoPiscadaAtual = 4; // pula piscadas se quiser
+            animZoomFinalStart = GetTime();
+            // Faça outras flags de transição se quiser cortar animações intermediárias
+            // Você pode remover telas intermediárias aqui também.
         }
-        // (restante igual...)
-        if (IsKeyPressed(KEY_SPACE) && time < 5.8f)
-            startTime = GetTime() - 5.8f;
+        else {
+            // Já está esperando, então encerra de verdade
+            ended = true;
+            aguardandoFimBgFinal = false;
+        }
+        return;
+    }
+
+    //float time = GetTime() - startTime;
+    if (aguardandoFimBgFinal) {
+        return;
+    }
 }
 
 // --- HANK Antigo ---
@@ -2194,16 +2208,16 @@ void DrawCutscenes(void)
         float logoH = logo.height;
         // ESCALA: Reduz se quiser, ex: 1.0 = original, 0.5 = metade
         float tempo = GetTime();
-        float escalaLogoBase = 1.0f;            // ESCALA BASE padrão da sua logo
-        float intensidadePulse = 0.04f;          // Intensidade do pulso (quanto varia, 0.09 = ~9%)
-        float velocidadePulse = 1.4f;            // Velocidade, 1.0 = um segundo por ciclo
+        float escalaLogoBase = 0.38f;            // ESCALA BASE padrão da sua logo
+        float intensidadePulse = 0.01f;          // Intensidade do pulso (quanto varia, 0.09 = ~9%)
+        float velocidadePulse = 1.8f;            // Velocidade, 1.0 = um segundo por ciclo
 
         float escalaLogo = escalaLogoBase + intensidadePulse * sinf(tempo * velocidadePulse);
 
         float dstW = logoW * escalaLogo;
         float dstH = logoH * escalaLogo;
         float xLogo = w/2.0f - dstW/2.0f;
-        float yLogo = (h/2.0f - dstH/2.0f)-200; // centralizado
+        float yLogo = (h/2.0f - dstH/2.0f)-260; // centralizado
         DrawTexturePro(
             logo,
             (Rectangle){0,0,logoW,logoH},
