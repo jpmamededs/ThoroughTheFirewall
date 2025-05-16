@@ -4,6 +4,15 @@
 
 #define NUM_COSTAS 4
 
+#ifndef Clamp
+static inline float Clamp(float value, float min, float max)
+{
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+}
+#endif
+
 // --- Variáveis globais de cutscene ---
 static Texture2D empresa1, empresa2, empresa3, empresa4;
 static Texture2D detetiveNaEmpresa4;
@@ -40,6 +49,12 @@ static Texture2D costasJade, costasLevi, costasAlice, costasDante;
 static Texture2D bgSemiFinal;
 static Texture2D aliceComemora;
 static Texture2D fotosTodos;
+static Texture2D rejDante;
+static Texture2D rejJade;
+static Texture2D rejAlice;
+static Texture2D rejLevi;
+static Texture2D bgFinal;
+static Texture2D logo;
 
 static bool hackerTransicaoIniciou = false;
 static bool hackerTransicaoTerminou = false;
@@ -51,6 +66,11 @@ static float startTime = 0.0f;
 static bool ended = false;
 
 
+// --- Estados da animação de piscada final após rejeição --- 
+static bool animPiscadasComecou = false;
+static float animPiscadasStartTime = 0.0f;
+static int estadoPiscadaAtual = 0; // 0 = não começou, 1=blink1, 2=blink2, 3=blink3, 4=acabou
+static bool mostrandoBgFinal = false;
 // Transição pincelada
 static bool pinceladaIniciou = false;
 static float pinceisStartTime = 0.0f;
@@ -78,7 +98,7 @@ static Texture2D v1_levi;
 static Texture2D v2_levi;
 static Texture2D v3_levi;
 static Texture2D nomeLevi;
-
+static bool aguardandoFimBgFinal = false;
 static bool bg4TransicaoIniciou = false;
 static float bg4TransicaoStartTime = 0.0f;
 static bool bg4TransicaoTerminou = false;
@@ -87,7 +107,9 @@ static bool danteApareceu = false;
 static float danteStartTime = 0.0f;
 static bool danteAnimTerminou = false;
 static float danteAnimTerminouTime = 0.0f;
-
+static bool animZoomFinalIniciou = false;
+static float animZoomFinalStart = 0.0f;
+static bool animZoomFinalTerminou = false;
 
 static bool bg5TransicaoIniciou = false;
 static float bg5TransicaoStartTime = 0.0f;
@@ -115,6 +137,8 @@ void InitCutscenes(void)
     v1_alice        = LoadTexture("src/sprites/intro/v1_alice.png");
     v2_alice        = LoadTexture("src/sprites/intro/v2_alice.png");
     v3_alice = LoadTexture("src/sprites/intro/v3_alice.png");
+    logo = LoadTexture("src/sprites/intro/logo.png");
+    bgFinal = LoadTexture("src/sprites/intro/bgFinal.png");
     nomeAlice = LoadTexture("src/sprites/intro/nomeAlice.png");
     empresa1        = LoadTexture("src/sprites/intro/empresa1.jpg");
     empresa2        = LoadTexture("src/sprites/intro/empresa2.jpg");
@@ -157,7 +181,10 @@ void InitCutscenes(void)
     bgSemiFinal     = LoadTexture("src/sprites/intro/bgSemiFinal.png");
     aliceComemora   = LoadTexture("src/sprites/intro/aliceComemora.png");
     fotosTodos      = LoadTexture("src/sprites/intro/fotosTodos.png");
-
+    rejDante = LoadTexture("src/sprites/intro/rejDante.png");
+    rejJade = LoadTexture("src/sprites/intro/rejJade.png");
+    rejAlice = LoadTexture("src/sprites/intro/rejAlice.png");
+    rejLevi = LoadTexture("src/sprites/intro/rejLevi.png");
     
     startTime = GetTime();
     ended = false;
@@ -207,13 +234,33 @@ void InitCutscenes(void)
     
 }
 
+void DrawPiscadaOlho(float t, int w, int h)
+{
+    // 't' de 0.0 (aberto) até 1.0 (fechado)
+    t = Clamp(t,0.0f,1.0f);
+    // Animação suave, pode fazer spring se quiser!
+    float easeT = t*t*(3-2*t);
+
+    // Alpha da pálpebra: aberto=0, fechado=1
+    unsigned char alpha = (unsigned char)(255.0f * easeT);
+
+    DrawRectangle(0,0,w,h, (Color){0,0,0,alpha});
+}
+
 void UpdateCutscenes(void)
 {
     if (ended) return;
-    float time = GetTime() - startTime;
-    if (IsKeyPressed(KEY_SPACE)) ended = true;
-    if (IsKeyPressed(KEY_SPACE) && time < 5.8f)
-        startTime = GetTime() - 5.8f;
+        float time = GetTime() - startTime;
+        if (aguardandoFimBgFinal) {
+            if (IsKeyPressed(KEY_SPACE)) {
+                ended = true;
+                aguardandoFimBgFinal = false;
+            }
+            return; // não pula para outras cenas
+        }
+        // (restante igual...)
+        if (IsKeyPressed(KEY_SPACE) && time < 5.8f)
+            startTime = GetTime() - 5.8f;
 }
 
 // --- HANK Antigo ---
@@ -333,6 +380,183 @@ static void DrawGlitchTransitionBg5ToHacker(float glitchT, int w, int h)
         if (fadeAlpha > 255) fadeAlpha = 255;
         DrawRectangle(0,0,w,h,(Color){0,0,0,fadeAlpha});
     }
+}
+
+// Rejeita o Levi: animação de carimbo igual Alice, mas 100px à direita do rejAlice
+void DrawAnimacaoCarimboSobreFotosLevi(float elapsed, int w, int h, Rectangle fotosRect, Texture2D carimbo)
+{
+    // Copiado e adaptado de DrawAnimacaoCarimboSobreFotosAlice
+
+    const float tempoQueda   = 0.36f;
+    const float tempoSquash  = 0.14f;
+    const float squashScaleY = 0.61f;
+    const float squashScaleX = 1.25f;
+    float dstW = fotosRect.width / 5.2f;
+    float dstH = fotosRect.height / 5.2f;
+
+    // Posição do carimbo Levi: igual Alice + 100 pixels à direita
+    float dstX = (fotosRect.x + (fotosRect.width - dstW) * 0.54f) + 510;
+    float dstY = (fotosRect.y + (fotosRect.height - dstH) * 0.54f) + 130;
+    float carimboW = carimbo.width;
+    float carimboH = carimbo.height;
+    float squashX = 1.0f;
+    float squashY = 1.0f;
+    float angulo = 12.0f;
+    float fadeIn = 1.0f;
+    float yOff = 0;
+
+    if (elapsed < tempoQueda) {
+        float t = elapsed / tempoQueda;
+        yOff = -fotosRect.height * (1.1f - t);
+        angulo = 26.0f - 18.0f * t;
+        fadeIn = 0.1f + 0.89f * t;
+    }
+    else if (elapsed < tempoQueda + tempoSquash) {
+        float t = (elapsed - tempoQueda) / tempoSquash;
+        squashX = squashScaleX - (squashScaleX - 1) * t;
+        squashY = squashScaleY + (1 - squashScaleY) * t;
+        yOff = 0.f;
+        fadeIn = 1.0f;
+        angulo = 8.0f + 7.0f * (1-t);
+    }
+    else {
+        squashX = 1;
+        squashY = 1;
+        yOff = 0.f;
+        fadeIn = 1.0f;
+        angulo = 12.0f;
+    }
+
+    unsigned char alpha = (unsigned char)(255 * fadeIn);
+    float cx = dstX + dstW/2.0f;
+    float cy = dstY + dstH/2.0f + yOff;
+    Rectangle dst = { cx - (dstW*squashX)/2, cy - (dstH*squashY)/2, dstW*squashX, dstH*squashY };
+
+    DrawTexturePro(
+        carimbo,
+        (Rectangle){0,0,carimboW,carimboH},
+        dst,
+        (Vector2){dst.width/2, dst.height/2},
+        angulo,
+        (Color){255,255,255,alpha}
+    );
+}
+
+void DrawAnimacaoCarimboSobreFotosAlice(float elapsed, int w, int h, Rectangle fotosRect, Texture2D carimbo)
+{
+    // Anim: baseada no rejJade, mas desloca +80px para a direita
+
+    const float tempoQueda   = 0.36f;
+    const float tempoSquash  = 0.14f;
+    const float squashScaleY = 0.61f;
+    const float squashScaleX = 1.25f;
+
+    float dstW = fotosRect.width / 5.2f;
+    float dstH = fotosRect.height / 5.2f;
+
+    // Base do carimbo Jade:
+    // float dstX = (fotosRect.x + (fotosRect.width - dstW) * 0.54f) - 80;
+    // float dstY = (fotosRect.y + (fotosRect.height - dstH) * 0.54f) + 150;
+
+    // Para Alice: +80 à direita do Jade:
+    float dstX = (fotosRect.x + (fotosRect.width - dstW) * 0.54f) + 160;
+    float dstY = (fotosRect.y + (fotosRect.height - dstH) * 0.54f) + 188;
+
+    float carimboW = carimbo.width;
+    float carimboH = carimbo.height;
+    float squashX = 1.0f;
+    float squashY = 1.0f;
+    float angulo = 12.0f; // pode escolher outro ângulo se quiser
+    float fadeIn = 1.0f;
+    float yOff = 0;
+    if (elapsed < tempoQueda) {
+        float t = elapsed / tempoQueda;
+        yOff = -fotosRect.height * (1.1f - t);
+        angulo = 26.0f - 18.0f * t; // como Jade
+        fadeIn = 0.1f + 0.89f * t;
+    }
+    else if (elapsed < tempoQueda + tempoSquash) {
+        float t = (elapsed - tempoQueda) / tempoSquash;
+        squashX = squashScaleX - (squashScaleX - 1) * t;
+        squashY = squashScaleY + (1 - squashScaleY) * t;
+        yOff = 0.f;
+        fadeIn = 1.0f;
+        angulo = 8.0f + 7.0f * (1-t);
+    }
+    else {
+        squashX = 1;
+        squashY = 1;
+        yOff = 0.f;
+        fadeIn = 1.0f;
+        angulo = 12.0f;
+    }
+    unsigned char alpha = (unsigned char)(255 * fadeIn);
+    float cx = dstX + dstW/2.0f;
+    float cy = dstY + dstH/2.0f + yOff;
+    Rectangle dst = { cx - (dstW*squashX)/2, cy - (dstH*squashY)/2, dstW*squashX, dstH*squashY };
+    DrawTexturePro(
+        carimbo,
+        (Rectangle){0,0,carimboW,carimboH},
+        dst,
+        (Vector2){dst.width/2, dst.height/2},
+        angulo,
+        (Color){255,255,255,alpha}
+    );
+}
+
+void DrawAnimacaoCarimboSobreFotosJade(float elapsed, int w, int h, Rectangle fotosRect, Texture2D carimbo)
+{
+    // ANIMAÇÃO DE CARIMBO (JADE)
+    const float tempoQueda = 0.36f;
+    const float tempoSquash = 0.14f;
+    // const float tempoFade = 0.15f; // sem fade out
+    const float squashScaleY = 0.61f;
+    const float squashScaleX = 1.25f;
+    float dstW = fotosRect.width / 6.0f;
+    float dstH = fotosRect.height / 6.0f;
+    // --- 60px à direita do carimbo anterior --- (+60 no X)
+    float dstX = (fotosRect.x + (fotosRect.width - dstW) * 0.54f) - 80;
+    float dstY = (fotosRect.y + (fotosRect.height - dstH) * 0.54f) + 150;
+    float carimboW = carimbo.width;
+    float carimboH = carimbo.height;
+    float squashX = 1.0f;
+    float squashY = 1.0f;
+    float angulo = 6.0f; // <--- ângulo diferente
+    float fadeIn = 1.0f;
+    float yOff = 0;
+    if (elapsed < tempoQueda) {
+        float t = elapsed / tempoQueda;
+        yOff = -fotosRect.height * (1.1f - t);
+        angulo = 26.0f - 18.0f * t; // diferente do Dante
+        fadeIn = 0.1f + 0.89f * t;
+    }
+    else if (elapsed < tempoQueda + tempoSquash) {
+        float t = (elapsed - tempoQueda) / tempoSquash;
+        squashX = squashScaleX - (squashScaleX - 1) * t;
+        squashY = squashScaleY + (1 - squashScaleY) * t;
+        yOff = 0.f;
+        fadeIn = 1.0f;
+        angulo = 8.0f + 7.0f * (1-t);
+    }
+    else {
+        squashX = 1;
+        squashY = 1;
+        yOff = 0.f;
+        fadeIn = 1.0f;
+        angulo = 12.0f; // Fixo diferente
+    }
+    unsigned char alpha = (unsigned char)(255 * fadeIn);
+    float cx = dstX + dstW/2.0f;
+    float cy = dstY + dstH/2.0f + yOff;
+    Rectangle dst = { cx - (dstW*squashX)/2, cy - (dstH*squashY)/2, dstW*squashX, dstH*squashY };
+    DrawTexturePro(
+        carimbo,
+        (Rectangle){0,0,carimboW,carimboH},
+        dst,
+        (Vector2){dst.width/2, dst.height/2},
+        angulo,
+        (Color){255,255,255,alpha}
+    );
 }
 
 void DrawLeviAnim(float animTime, int w, int h)
@@ -1447,7 +1671,45 @@ void DrawNomeHankAnim(float animTime, int w, int h)
         );
     }
 }
+static void DrawZoomOutBgFinal(float t, int w, int h)
+{
+    // t: 0.0 (zoom máximo, só o centro) -- até -- 1.0 (imagem normal)
+    if (t < 0.0f) t = 0.0f;
+    if (t > 1.0f) t = 1.0f;
+    // SmoothStep para suavizar
+    float easeT = t * t * (3.0f - 2.0f * t);
 
+    float srcW = bgFinal.width;
+    float srcH = bgFinal.height;
+    //float dstW = (float)w;
+    //float dstH = (float)h;
+    // Zoom máximo: escolha quanto de zoom dá no começo (ex: 2.0x, pode ser mais/melhor)
+    float maxZoom = 2.65f;
+
+    // Zoom "atual" (começa em maxZoom, termina em 1.0)
+    float zoom = maxZoom - (maxZoom - 1.0f) * easeT;
+
+    // --- Centraliza o recorte ---
+    float cropW = srcW / zoom;
+    float cropH = srcH / zoom;
+    float cropX = (srcW - cropW) / 2.0f;
+    float cropY = (srcH - cropH) / 2.0f;
+
+    // (Opcional: fade-in!)
+    unsigned char alpha = 255;
+    // Exemplo de fade'n com t<0.10:
+    if (t < 0.08f) alpha = (unsigned char) (255*(t/0.08f));
+    else alpha = 255;
+
+    DrawTexturePro(
+        bgFinal,
+        (Rectangle){cropX, cropY, cropW, cropH},
+        (Rectangle){0, 0, w, h},
+        (Vector2){0, 0},
+        0.0f,
+        (Color){255,255,255, alpha}
+    );
+}
 void DrawNomeAliceAnim(float animTime, int w, int h)
 {
     const float animDur = 1.00f;
@@ -1801,6 +2063,84 @@ static void DrawAnimacaoBarrasBg3(float elapsed, int w, int h)
         }
     }
 }
+void DrawAnimacaoCarimboSobreFotos(float elapsed, int w, int h, Rectangle fotosRect, Texture2D carimbo)
+{
+    // ANIMAÇÃO DE CARIMBO (DANTE)
+    // elapsed: tempo desde que a animação começou (em segundos)
+    const float tempoQueda = 0.36f;
+    const float tempoSquash = 0.13f;
+    // const float tempoFade = 0.15f; // Não precisamos mais fazer o fade out
+
+    const float squashScaleY = 0.67f; // quanto "achata" ao bater
+    const float squashScaleX = 1.21f; // quanto "alarga" ao bater
+
+    // Posição final pretendida (ex: centro da foto)
+    float dstW = fotosRect.width / 5.0f;
+    float dstH = fotosRect.height / 5.0f;
+    float dstX = (fotosRect.x + (fotosRect.width - dstW) * 0.54f)-322; // leve desvio
+    float dstY = (fotosRect.y + (fotosRect.height - dstH) * 0.54f)+100;
+    // Você pode mudar a posição acima se quiser!
+
+    float carimboW = carimbo.width;
+    float carimboH = carimbo.height;
+
+    // [1] FASE DE QUEDA
+    float squashX = 1.0f;
+    float squashY = 1.0f;
+    //float angulo = -29.0f;
+    float fadeIn = 1.0f;
+    float yOff = 0;
+
+    if (elapsed < tempoQueda) {
+        // durante a queda...
+        float t = elapsed / tempoQueda;
+        // Da posição inicial (acima e girado) para o ponto do carimbo
+        yOff = -fotosRect.height * (1.1f - t); // vem de cima
+        //angulo = -50.0f + 21.0f * t;           // gira ao cair
+        fadeIn = 0.1f + 0.89f * t;
+    }
+    else if (elapsed < tempoQueda + tempoSquash) {
+        // [2] FASE DE IMPACTO (SQUASH)
+        float t = (elapsed - tempoQueda) / tempoSquash;
+        // squash e retorno suave à forma
+        squashX = squashScaleX - (squashScaleX - 1) * t;
+        squashY = squashScaleY + (1 - squashScaleY) * t; // volta para 1
+        yOff = 0.f;
+        fadeIn = 1.0f;
+        //angulo = -29.0f + 6.0f * (1-t); // só um micro ajuste
+    }
+    else {
+        // [3] PARADO
+        squashX = 1;
+        squashY = 1;
+        yOff = 0.f;
+        fadeIn = 1.0f;
+        //angulo = -28.0f;
+    }
+
+    // *** NÃO faz fade out ao final! ***
+    // if (elapsed > tempoQueda + tempoSquash + 1.7f) {
+    //     float fadeT = Clamp((elapsed - tempoQueda - tempoSquash - 1.7f) / tempoFade, 0.0f, 1.0f);
+    //     fadeIn = 1.0f - fadeT;
+    // }
+
+    unsigned char alpha = (unsigned char)(255 * fadeIn);
+
+    // PREPARA RECTANGULO DE DESTINO (apply squash scale usando centro)
+    float cx = dstX + dstW/2.0f;
+    float cy = dstY + dstH/2.0f + yOff;
+    Rectangle dst = { cx - (dstW*squashX)/2, cy - (dstH*squashY)/2, dstW*squashX, dstH*squashY };
+
+    float angulo2 = 10.0f;
+    DrawTexturePro(
+        carimbo,
+        (Rectangle){0,0,carimboW,carimboH},
+        dst,
+        (Vector2){dst.width/2, dst.height/2},
+        angulo2,
+        (Color){255,255,255,alpha}
+    );
+}
 void DrawJadeAnim(float animTime, int w, int h)
 {
     const float animDuration = 1.2f;
@@ -1833,6 +2173,44 @@ void DrawJadeAnim(float animTime, int w, int h)
 void DrawCutscenes(void)
 {
     if (ended) return;
+        if (aguardandoFimBgFinal) {
+        int w = GetScreenWidth();
+        int h = GetScreenHeight();
+        BeginDrawing();
+        DrawTexturePro(
+            bgFinal,
+            (Rectangle){0, 0, bgFinal.width, bgFinal.height},
+            (Rectangle){0, 0, w, h},
+            (Vector2){0, 0}, 0.0f, WHITE
+        );
+
+        // --- ADICIONE AQUI ---
+        float logoW = logo.width;
+        float logoH = logo.height;
+        // ESCALA: Reduz se quiser, ex: 1.0 = original, 0.5 = metade
+        float tempo = GetTime();
+        float escalaLogoBase = 1.0f;            // ESCALA BASE padrão da sua logo
+        float intensidadePulse = 0.04f;          // Intensidade do pulso (quanto varia, 0.09 = ~9%)
+        float velocidadePulse = 1.4f;            // Velocidade, 1.0 = um segundo por ciclo
+
+        float escalaLogo = escalaLogoBase + intensidadePulse * sinf(tempo * velocidadePulse);
+
+        float dstW = logoW * escalaLogo;
+        float dstH = logoH * escalaLogo;
+        float xLogo = w/2.0f - dstW/2.0f;
+        float yLogo = (h/2.0f - dstH/2.0f)-200; // centralizado
+        DrawTexturePro(
+            logo,
+            (Rectangle){0,0,logoW,logoH},
+            (Rectangle){xLogo, yLogo, dstW, dstH},
+            (Vector2){0,0},
+            0.0f, WHITE
+        );
+        // Opcional: Mostra um texto de prompt
+        DrawText("Pressione ESPAÇO para continuar", w/2-MeasureText("Pressione ESPAÇO para continuar",30)/2, h-80, 30, (Color){0,0,0,160});
+        EndDrawing();
+        return;
+    }
     int w = GetScreenWidth();
     int h = GetScreenHeight();
     float time = GetTime() - startTime;
@@ -2347,6 +2725,7 @@ void DrawCutscenes(void)
                                         }
 
                                         // 3. FotosTodos após Alice terminar + 0.5s (topo direita)
+                                        // 3. FotosTodos após Alice terminar + 0.5s (topo direita)
                                         if (aliceComemoraAnimTerminou) {
                                             float tempoDesdeAliceFim = GetTime() - aliceComemoraTerminoTime;
                                             if (!fotosTodosApareceu && tempoDesdeAliceFim > 0.5f)
@@ -2355,24 +2734,144 @@ void DrawCutscenes(void)
                                             if (fotosTodosApareceu) {
                                                 float fotosW = fotosTodos.width;
                                                 float fotosH = fotosTodos.height;
-                                                float escFotos = (w/6.3f) / fotosW;
-                                                if (escFotos*fotosH > h/5.0f) escFotos = (h/4.5f)/fotosH;
+                                                float escFotos = (w / fotosW) / 1.6;
                                                 float dstWF = fotosW * escFotos;
                                                 float dstHF = fotosH * escFotos;
-                                                float margemTOPO   = 34.0f;
+                                                float margemTOPO = 34.0f;
                                                 float margemDIREITA = 44.0f;
                                                 // Fade-in
                                                 float fadeFotos = tempoDesdeAliceFim - 0.5f;
                                                 float alphaFotos = 255.0f;
                                                 if (fadeFotos >= 0.0f && fadeFotos < 0.45f)
-                                                    alphaFotos = 255.0f * (fadeFotos/0.45f);
+                                                    alphaFotos = 255.0f * (fadeFotos / 0.45f);
                                                 if (alphaFotos > 255.0f) alphaFotos = 255.0f;
+                                                Rectangle fotosRect = { w - dstWF - margemDIREITA, margemTOPO, dstWF, dstHF };
                                                 DrawTexturePro(
                                                     fotosTodos,
-                                                    (Rectangle){0,0,fotosW,fotosH},
-                                                    (Rectangle){w - dstWF - margemDIREITA, margemTOPO, dstWF, dstHF},
-                                                    (Vector2){0,0}, 0.0f, (Color){255,255,255,(unsigned char)(alphaFotos)}
+                                                    (Rectangle){0, 0, fotosW, fotosH},
+                                                    fotosRect,
+                                                    (Vector2){0, 0}, 0.0f, (Color){255,255,255,(unsigned char)(alphaFotos)}
                                                 );
+                                                // ---- ANIMAÇÃO DE CARIMBO SOBRE FOTOS ----
+                                                float startCarimbo = 0.32f;        // quando inicia o PRIMEIRO carimbo
+                                                float intervaloCarimbo = 0.42f;    // intervalo de 0.42s entre cada um
+                                                if (fadeFotos >= 0.37f) { // quando fotos já está quase cheia
+                                                    // Dante
+                                                    float tDante = fadeFotos - startCarimbo;
+                                                    if (tDante < 0.0f) tDante = 0.0f;
+                                                    if (fadeFotos >= (0.37f + 0*intervaloCarimbo))
+                                                        DrawAnimacaoCarimboSobreFotos(tDante, w, h, fotosRect, rejDante);
+                                                    // Jade
+                                                    float tJade = fadeFotos - startCarimbo - 1*intervaloCarimbo;
+                                                    if (tJade < 0.0f) tJade = 0.0f;
+                                                    if (fadeFotos >= (0.37f + 1*intervaloCarimbo))
+                                                        DrawAnimacaoCarimboSobreFotosJade(tJade, w, h, fotosRect, rejJade);
+                                                    // Alice
+                                                    float tAlice = fadeFotos - startCarimbo - 2*intervaloCarimbo;
+                                                    if (tAlice < 0.0f) tAlice = 0.0f;
+                                                    if (fadeFotos >= (0.37f + 2*intervaloCarimbo))
+                                                        DrawAnimacaoCarimboSobreFotosAlice(tAlice, w, h, fotosRect, rejAlice);
+                                                    // Levi -- SOMENTE UMA DECLARAÇÃO!!!
+                                                    float tLevi = fadeFotos - startCarimbo - 3*intervaloCarimbo;
+                                                    if (tLevi < 0.0f) tLevi = 0.0f;
+                                                    if (fadeFotos >= (0.37f + 3*intervaloCarimbo))
+                                                        DrawAnimacaoCarimboSobreFotosLevi(tLevi, w, h, fotosRect, rejLevi);
+
+                                                    // ---- INÍCIO DA LÓGICA DAS PISCADAS ----
+                                                    if (!animPiscadasComecou && tLevi > 0.7f) {
+                                                        animPiscadasComecou = true;
+                                                        animPiscadasStartTime = GetTime();
+                                                        estadoPiscadaAtual = 1; // primeira piscada
+                                                    }
+
+                                                    if (animPiscadasComecou && estadoPiscadaAtual <= 3) {
+                                                        float tPiscada = GetTime() - animPiscadasStartTime;
+                                                        // Durações das piscadas
+                                                        const float dur1 = 0.8f;
+                                                        const float durMeio1 = 0.17f; // tempo “olho fechado” antes de abrir de novo
+                                                        const float dur2 = 0.6f;
+                                                        const float durMeio2 = 0.14f;
+                                                        const float dur3 = 0.4f;
+                                                        const float durMeio3 = 0.19f;
+                                                        float t = tPiscada; // tempo relativo
+
+                                                        if (estadoPiscadaAtual == 1) { // BLINK 1
+                                                            // Fechar
+                                                            if (t < dur1)
+                                                                DrawPiscadaOlho(t/dur1, w, h);
+                                                            // Fica fechado um pouco
+                                                            else if (t < dur1 + durMeio1)
+                                                                DrawPiscadaOlho(1.0f, w, h);
+                                                            // Abrindo de volta...
+                                                            else if (t < dur1 + durMeio1 + dur1)
+                                                                DrawPiscadaOlho(1.0f - ((t - (dur1+durMeio1))/dur1), w, h);
+                                                            else {
+                                                                estadoPiscadaAtual = 2;
+                                                                animPiscadasStartTime = GetTime();
+                                                            }
+                                                        }
+                                                        else if (estadoPiscadaAtual == 2) { // BLINK 2 (mais rápido)
+                                                            t = tPiscada;
+                                                            if (t < dur2)
+                                                                DrawPiscadaOlho(t/dur2, w, h);
+                                                            else if (t < dur2 + durMeio2)
+                                                                DrawPiscadaOlho(1.0f, w, h);
+                                                            else if (t < dur2 + durMeio2 + dur2)
+                                                                DrawPiscadaOlho(1.0f - ((t - (dur2+durMeio2))/dur2), w, h);
+                                                            else {
+                                                                estadoPiscadaAtual = 3;
+                                                                animPiscadasStartTime = GetTime(); // Próxima!
+                                                            }
+                                                        }
+                                                        else if (estadoPiscadaAtual == 3) { // BLINK 3 (mais rápido; ao abrir, fica branco)
+                                                            if (!mostrandoBgFinal) mostrandoBgFinal = true;
+                                                            t = tPiscada;
+                                                            if (t < dur3)
+                                                                DrawPiscadaOlho(t/dur3, w, h);
+                                                            else if (t < dur3 + durMeio3)
+                                                                DrawPiscadaOlho(1.0f, w, h);
+                                                            else if (t < dur3 + durMeio3 + dur3) {
+                                                                // ABRE O OLHO MOSTRANDO O ZOOM-OUT NO BGFINAL!
+                                                                float tAbre = (t - (dur3+durMeio3))/dur3;
+                                                                tAbre = Clamp(tAbre, 0.0f, 1.0f);
+
+                                                                // Inicia flag de animação de zoom (segurança, caso use normal)
+                                                                if (!animZoomFinalIniciou) {
+                                                                    animZoomFinalIniciou = true;
+                                                                    animZoomFinalStart = GetTime();
+                                                                    animZoomFinalTerminou = false;
+                                                                }
+
+                                                                // --- Chame o efeito ---
+                                                                DrawZoomOutBgFinal(tAbre, w, h);
+                                                                // --- ADICIONE O LOGO AQUI TAMBÉM ---
+                                                                float logoW = logo.width;
+                                                                float logoH = logo.height;
+                                                                float escalaLogo = 0.47f;
+                                                                float dstW = logoW * escalaLogo;
+                                                                float dstH = logoH * escalaLogo;
+                                                                float xLogo = w/2.0f - dstW/2.0f;
+                                                                float yLogo = h/2.0f - dstH/2.0f;
+                                                                DrawTexturePro(
+                                                                    logo,
+                                                                    (Rectangle){0,0,logoW,logoH},
+                                                                    (Rectangle){xLogo, yLogo, dstW, dstH},
+                                                                    (Vector2){0,0},
+                                                                    0.0f, WHITE
+                                                                );
+                                                                // Pálpebra cobrindo (preto total até abrir)
+                                                                DrawPiscadaOlho(1.0f - tAbre, w, h);
+                                                            }
+                                                            else { // ACABOU, FICA PRESO ATÉ BARRA DE ESPAÇO
+                                                                estadoPiscadaAtual = 4;
+                                                                animPiscadasComecou = false;
+                                                                aguardandoFimBgFinal = true;
+                                                            }
+                                                        }
+                                                        // IMPORTANTE: As piscadas sobrepõem as imagens! Só desenhe por cima do resto.
+                                                    }
+                                                    // ---- FIM LÓGICA DAS PISCADAS ----
+                                                }
                                             }
                                         }
 
@@ -2487,4 +2986,10 @@ void UnloadCutscenes(void)
     UnloadTexture(bgSemiFinal);
     UnloadTexture(aliceComemora);
     UnloadTexture(fotosTodos);
+    UnloadTexture(rejDante);
+    UnloadTexture(rejJade);
+    UnloadTexture(rejAlice);
+    UnloadTexture(rejLevi);
+    UnloadTexture(bgFinal);
+    UnloadTexture(logo);
 }
