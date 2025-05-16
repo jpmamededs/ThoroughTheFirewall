@@ -15,6 +15,8 @@ static Texture2D calvoRevelation;
 static Texture2D deBoneRevelationSilhouette;
 static Texture2D deBoneRevelation;
 static Texture2D cybertechShield;
+
+static Sound medal;
 // Timer para controlar o aparecimento do escudo
 static float shieldAppearTimer = 0.0f;
 static bool shieldStartTimer = false; // Controla início da contagem do shield
@@ -62,6 +64,7 @@ void Init_Tela_02(void)
     deBoneRevelation = LoadTexture("src/sprites/revelation/deBoneRevelation.png");
     cybertechShield = LoadTexture("src/sprites/revelation/cybertechShield.png");
     congrats = LoadSound("src/music/congrats.wav");
+    medal = LoadSound("src/music/medal.mp3");
     // Carregar áudio
     writtenInTheStars = LoadMusicStream("src/music/writtenInTheStars.mp3");
     surpriseSound = LoadSound("src/music/surprise.mp3"); // Carregar o som de surpresa
@@ -273,7 +276,7 @@ void Draw_Tela_02(void)
     int shieldFinalY = 20;    // Canto superior esquerdo (Y) <<< AJUSTADO AQUI
     int shieldStartX = -cybertechShield.width * scale; // Começa fora da tela
     int shieldY = shieldFinalY;
-
+    PlaySound(medal);
     if (shieldAnimActive)
     {
         float alongamento = 4.0f;           // mais alto = mais longa a sensação de movimento
@@ -311,4 +314,5 @@ void Unload_Tela_02(void)
     UnloadMusicStream(writtenInTheStars);
     UnloadSound(surpriseSound);
     UnloadSound(congrats);
+    UnloadSound(medal);
 }
