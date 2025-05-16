@@ -7,56 +7,83 @@
 
 static bool fase_concluida = false;
 
-// Definir as variáveis para armazenar as texturas dos sprites
+// Texturas
 static Texture2D carinhaRevelationSilhouette;
 static Texture2D carinhaRevelation;
 static Texture2D meninaRevelationSilhouette;
+static Texture2D meninaRevelation;
 static Texture2D calvoRevelationSilhouette;
+static Texture2D calvoRevelation;
 static Texture2D deBoneRevelationSilhouette;
-static Texture2D deBoneRevelation; // Nova textura para Jade
+static Texture2D deBoneRevelation;
 
-// Definir a variável para carregar a música
+static Texture2D cybertechShield;
+// Timer para controlar o aparecimento do escudo
+static float shieldAppearTimer = 0.0f;
+static bool shieldAppeared = false;
+
+// Áudio
 static Music writtenInTheStars;
+static Sound surpriseSound; // Novo som para o efeito de flash
+static Sound congrats;
 
-// Variáveis para controle de movimento
-static float offsetXIncrement = 0.0f;
-static float tempoMovimento = 0.0f;
+// Variáveis de controle
+static float parallaxTimer = 0.0f;
+static const float parallaxDuration = 13.0f;
 static bool movimentoFinalizado = false;
+static float parallaxProgress = 0.0f;
+static bool surprisePlayed = false; // Para controlar se o som já foi tocado
 
-// Variáveis para controle de troca de sprites
-static float tempoTrocaSprite = 0.0f;
+// Posições finais
+static const int initialPos = 700;
+static const int finalPosMenina = 800;
+static const int finalPosCalvo = 900;
+static const int finalPosDeBone = 1000;
+
+// Variáveis para animação
 static bool spriteTrocaRealizada = false;
-static bool deBoneTrocaRealizada = false; // Nova flag para controle de Jade
-
-// Variáveis para animação do carinha
-static float transicaoTempo = 0.0f;
-static float scaleCarinha = 0.4f;
-static float offsetCarinha = 0.0f;
-
-// Variáveis para animação do deBone (Jade)
-static float transicaoDeBoneTempo = 0.0f;
-static float scaleDeBone = 1.0f;
-static float offsetDeBone = 0.0f;
+static bool deBoneTrocaRealizada = false;
+static bool meninaTrocaRealizada = false;
+static bool calvoTrocaRealizada = false;
 
 // Variáveis para efeito de flash
 static float flashAlpha = 0.0f;
 static bool flashAtivo = false;
-static float flashDuration = 0.6f;
+static const float flashDuration = 0.6f;
 static float flashTimer = 0.0f;
 
 void Init_Tela_02(void)
 {
     fase_concluida = false;
 
+    // Carregar texturas
     carinhaRevelationSilhouette = LoadTexture("src/sprites/revelation/carinhaRevelationSilhouette.png");
     carinhaRevelation = LoadTexture("src/sprites/revelation/carinhaRevelation.png");
     meninaRevelationSilhouette = LoadTexture("src/sprites/revelation/meninaRevelationSilhouette.png");
+    meninaRevelation = LoadTexture("src/sprites/revelation/meninaRevelation.png");
     calvoRevelationSilhouette = LoadTexture("src/sprites/revelation/calvoRevelationSilhouette.png");
+    calvoRevelation = LoadTexture("src/sprites/revelation/calvoRevelation.png");
     deBoneRevelationSilhouette = LoadTexture("src/sprites/revelation/deBoneRevelationSilhouette.png");
-    deBoneRevelation = LoadTexture("src/sprites/revelation/deBoneRevelation.png"); // Carregar o novo sprite para Jade
+    deBoneRevelation = LoadTexture("src/sprites/revelation/deBoneRevelation.png");
+    cybertechShield = LoadTexture("src/sprites/revelation/cybertechShield.png");
+    congrats = LoadSound("src/music/congrats.wav");
 
+    // Carregar áudio
     writtenInTheStars = LoadMusicStream("src/music/writtenInTheStars.mp3");
+    surpriseSound = LoadSound("src/music/surprise.mp3"); // Carregar o som de surpresa
     PlayMusicStream(writtenInTheStars);
+    SetMusicVolume(writtenInTheStars, 0.5f);
+    PlaySound(congrats);
+
+    // Inicializar variáveis
+    parallaxTimer = 0.0f;
+    parallaxProgress = 0.0f;
+    movimentoFinalizado = false;
+    spriteTrocaRealizada = false;
+    deBoneTrocaRealizada = false;
+    meninaTrocaRealizada = false;
+    calvoTrocaRealizada = false;
+    surprisePlayed = false;
 }
 
 void Update_Tela_02(void)
@@ -68,110 +95,37 @@ void Update_Tela_02(void)
 
     UpdateMusicStream(writtenInTheStars);
 
+    // Atualizar movimento parallax
     if (!movimentoFinalizado)
     {
-        tempoMovimento += GetFrameTime();
-        offsetXIncrement += 0.05f;
+        parallaxTimer += GetFrameTime();
+        parallaxProgress = parallaxTimer / parallaxDuration;
 
-        if (tempoMovimento >= 13.0f)
+        if (parallaxProgress >= 1.0f)
         {
+            parallaxProgress = 1.0f;
             movimentoFinalizado = true;
-        }
-    }
 
-    // Lógica para Dante (carinha)
-    if (strcmp(gSelectedCharacterName, "Dante") == 0 && !spriteTrocaRealizada)
-    {
-        tempoTrocaSprite += GetFrameTime();
-
-        if (tempoTrocaSprite >= 13.0f)
-        {
-            spriteTrocaRealizada = true;
-            transicaoTempo = 0.0f;
+            // Ativar flash e troca de sprites quando o movimento terminar
             flashAtivo = true;
             flashTimer = 0.0f;
-        }
-    }
-    // Lógica para Jade (deBone)
-    else if (strcmp(gSelectedCharacterName, "Jade") == 0 && !deBoneTrocaRealizada)
-    {
-        tempoTrocaSprite += GetFrameTime();
+            surprisePlayed = false; // Resetar para poder tocar o som novamente
 
-        if (tempoTrocaSprite >= 13.0f)
-        {
-            deBoneTrocaRealizada = true;
-            transicaoDeBoneTempo = 0.0f;
-            flashAtivo = true;
-            flashTimer = 0.0f;
-        }
-    }
-
-    // Animação para Dante (carinha)
-    if (spriteTrocaRealizada)
-    {
-        transicaoTempo += GetFrameTime() * 5.0f;
-
-        if (transicaoTempo < 0.35f)
-        {
-            scaleCarinha = 0.4f + transicaoTempo * 0.57f;
-            offsetCarinha = transicaoTempo * -1200.0f;
-        }
-        else
-        {
-            scaleCarinha = 0.5f;
-            
-            static float movimentoLentoTimer = 0.0f;
-            static bool movimentoLentoAtivo = false;
-            
-            if (!movimentoLentoAtivo)
+            if (strcmp(gSelectedCharacterName, "Dante") == 0)
             {
-                movimentoLentoAtivo = true;
-                movimentoLentoTimer = 0.0f;
+                spriteTrocaRealizada = true;
             }
-            
-            if (movimentoLentoTimer < 5.0f)
+            else if (strcmp(gSelectedCharacterName, "Jade") == 0)
             {
-                movimentoLentoTimer += GetFrameTime();
-                offsetCarinha = -200.0f + (movimentoLentoTimer * -20.0f);
+                deBoneTrocaRealizada = true;
             }
-            else
+            else if (strcmp(gSelectedCharacterName, "Alice") == 0)
             {
-                offsetCarinha = -300.0f;
+                meninaTrocaRealizada = true;
             }
-        }
-    }
-
-    // Animação para Jade (deBone) - mesma lógica que para Dante
-    if (deBoneTrocaRealizada)
-    {
-        transicaoDeBoneTempo += GetFrameTime() * 5.0f;
-
-        if (transicaoDeBoneTempo < 0.35f)
-        {
-            scaleDeBone = 1.0f + transicaoDeBoneTempo * 0.5f; // Cresce de 1.0 até ~1.35
-            offsetDeBone = transicaoDeBoneTempo * -1200.0f;    // Move rápido para esquerda
-        }
-        else
-        {
-            scaleDeBone = 1.35f;
-            
-            static float movimentoLentoTimer = 0.0f;
-            static bool movimentoLentoAtivo = false;
-            
-            if (!movimentoLentoAtivo)
+            else if (strcmp(gSelectedCharacterName, "Levi") == 0)
             {
-                movimentoLentoAtivo = true;
-                movimentoLentoTimer = 0.0f;
-            }
-            
-            if (movimentoLentoTimer < 5.0f)
-            {
-                movimentoLentoTimer += GetFrameTime();
-                offsetDeBone = -200.0f + (movimentoLentoTimer * -20.0f);
-            }
-            else
-            {
-                offsetDeBone = -300.0f;
+                calvoTrocaRealizada = true;
             }
         }
     }
@@ -179,18 +133,36 @@ void Update_Tela_02(void)
     // Efeito de flash
     if (flashAtivo)
     {
-        flashTimer += GetFrameTime();
-        if (flashTimer < flashDuration)
+        // Tocar o som de surpresa apenas uma vez quando o flash começar
+        if (!surprisePlayed)
         {
-            if (flashTimer < flashDuration/2)
-                flashAlpha = flashTimer * 2.0f / flashDuration;
-            else
-                flashAlpha = 1.0f - (flashTimer - flashDuration/2) * 2.0f / flashDuration;
+            PlaySound(surpriseSound);
+            flashAlpha = 1.0f; // Começa imediatamente com flash total
+            surprisePlayed = true;
         }
-        else
+
+        flashTimer += GetFrameTime();
+
+        // Apenas fade out na segunda metade da duração
+        if (flashTimer >= flashDuration / 2)
+        {
+            flashAlpha = 1.0f - (flashTimer - flashDuration / 2) * 2.0f / flashDuration;
+        }
+
+        if (flashTimer >= flashDuration)
         {
             flashAtivo = false;
             flashAlpha = 0.0f;
+        }
+
+        if (!shieldAppeared)
+        {
+            shieldAppearTimer += GetFrameTime();
+            if (shieldAppearTimer >= 16.0f)
+            {
+                shieldAppeared = true;
+                shieldAppearTimer = 0.0f;
+            }
         }
     }
 }
@@ -200,67 +172,129 @@ void Draw_Tela_02(void)
     BeginDrawing();
     ClearBackground(BLACK);
 
-    int baseY = GetScreenHeight();
+    int screenHeight = GetScreenHeight();
 
-    float scaleMenina = 0.6f;
-    float scaleCalvo = 0.8f;
-    float currentScaleDeBone = deBoneTrocaRealizada ? scaleDeBone : 1.0f;
+    // Fatores de escala
+    const float scaleCarinha = 0.4f;
+    const float scaleMenina = 0.6f;
+    const float scaleCalvo = 0.8f;
+    const float scaleDeBone = 1.0f;
+
+    // Calcular posições atuais com base no progresso
+    int xMenina = initialPos + (finalPosMenina - initialPos) * parallaxProgress;
+    int xCalvo = initialPos + (finalPosCalvo - initialPos) * parallaxProgress;
+    int xDeBone = initialPos + (finalPosDeBone - initialPos) * parallaxProgress;
 
     // Posições Y (altura)
-    int yCarinha = baseY - carinhaRevelationSilhouette.height * 0.4f; // Sempre usa a silhueta com escala 0.4
-    int yMenina = baseY - meninaRevelationSilhouette.height * scaleMenina;
-    int yCalvo = baseY - calvoRevelationSilhouette.height * scaleCalvo;
-    int yDeBone = baseY - (deBoneTrocaRealizada ? deBoneRevelation.height : deBoneRevelationSilhouette.height) * currentScaleDeBone;
-
-    // Posições X (horizontal)
-    int xMenina = 700 + offsetXIncrement;
-    int xCalvo = xMenina + offsetXIncrement;
-    int xDeBone = xCalvo + offsetXIncrement + (deBoneTrocaRealizada ? offsetDeBone : 0);
-    int xCarinha = 700; // Posição fixa para a silhueta
+    int yCarinha = screenHeight - carinhaRevelationSilhouette.height * scaleCarinha;
+    int yMenina = screenHeight - meninaRevelationSilhouette.height * scaleMenina;
+    int yCalvo = screenHeight - calvoRevelationSilhouette.height * scaleCalvo;
+    int yDeBone = screenHeight - deBoneRevelationSilhouette.height * scaleDeBone;
 
     // DESENHAR OS SPRITES NA ORDEM CORRETA:
 
-    // 1. Primeiro o carinha (sempre a silhueta)
-    Rectangle destRectCarinha = {xCarinha, yCarinha, 
-                               carinhaRevelationSilhouette.width * 0.4f, 
-                               carinhaRevelationSilhouette.height * 0.4f};
-    DrawTexturePro(carinhaRevelationSilhouette, 
-                  (Rectangle){0, 0, carinhaRevelationSilhouette.width, carinhaRevelationSilhouette.height}, 
-                  destRectCarinha, (Vector2){0, 0}, 0.0f, WHITE);
-
-    // 2. Os outros sprites (menina e calvo)
-    Rectangle destRectMenina = {xMenina, yMenina, meninaRevelationSilhouette.width * scaleMenina, meninaRevelationSilhouette.height * scaleMenina};
-    Rectangle destRectCalvo = {xCalvo, yCalvo, calvoRevelationSilhouette.width * scaleCalvo, calvoRevelationSilhouette.height * scaleCalvo};
-    
-    DrawTexturePro(meninaRevelationSilhouette, (Rectangle){0, 0, meninaRevelationSilhouette.width, meninaRevelationSilhouette.height}, destRectMenina, (Vector2){0, 0}, 0.0f, WHITE);
-    DrawTexturePro(calvoRevelationSilhouette, (Rectangle){0, 0, calvoRevelationSilhouette.width, calvoRevelationSilhouette.height}, destRectCalvo, (Vector2){0, 0}, 0.0f, WHITE);
-
-    // 3. deBone (pode ser a versão normal ou revelada)
-    Texture2D currentDeBoneTexture = deBoneTrocaRealizada ? deBoneRevelation : deBoneRevelationSilhouette;
-    Rectangle destRectDeBone = {xDeBone, yDeBone, 
-                               currentDeBoneTexture.width * currentScaleDeBone, 
-                               currentDeBoneTexture.height * currentScaleDeBone};
-    DrawTexturePro(currentDeBoneTexture, 
-                 (Rectangle){0, 0, currentDeBoneTexture.width, currentDeBoneTexture.height}, 
-                 destRectDeBone, (Vector2){0, 0}, 0.0f, WHITE);
-
-    // 4. Se for Dante, desenhar o carinha revelado por cima
+    // 1. Dante (silhueta ou revelado)
     if (strcmp(gSelectedCharacterName, "Dante") == 0 && spriteTrocaRealizada)
     {
-        Rectangle destRectCarinhaRevelation = {700 + offsetCarinha, 
-                                             baseY - carinhaRevelation.height * scaleCarinha,
-                                             carinhaRevelation.width * scaleCarinha,
-                                             carinhaRevelation.height * scaleCarinha};
-        DrawTexturePro(carinhaRevelation, 
-                      (Rectangle){0, 0, carinhaRevelation.width, carinhaRevelation.height}, 
-                      destRectCarinhaRevelation, (Vector2){0, 0}, 0.0f, WHITE);
+        DrawTexturePro(carinhaRevelation,
+                       (Rectangle){0, 0, carinhaRevelation.width, carinhaRevelation.height},
+                       (Rectangle){initialPos, yCarinha,
+                                   carinhaRevelation.width * scaleCarinha,
+                                   carinhaRevelation.height * scaleCarinha},
+                       (Vector2){0, 0}, 0.0f, WHITE);
+    }
+    else
+    {
+        DrawTexturePro(carinhaRevelationSilhouette,
+                       (Rectangle){0, 0, carinhaRevelationSilhouette.width, carinhaRevelationSilhouette.height},
+                       (Rectangle){initialPos, yCarinha,
+                                   carinhaRevelationSilhouette.width * scaleCarinha,
+                                   carinhaRevelationSilhouette.height * scaleCarinha},
+                       (Vector2){0, 0}, 0.0f, WHITE);
     }
 
-    // Efeito de flash (por cima de tudo)
+    // 2. Alice (silhueta ou revelada)
+    if (strcmp(gSelectedCharacterName, "Alice") == 0 && meninaTrocaRealizada)
+    {
+        DrawTexturePro(meninaRevelation,
+                       (Rectangle){0, 0, meninaRevelation.width, meninaRevelation.height},
+                       (Rectangle){xMenina, yMenina,
+                                   meninaRevelation.width * scaleMenina,
+                                   meninaRevelation.height * scaleMenina},
+                       (Vector2){0, 0}, 0.0f, WHITE);
+    }
+    else
+    {
+        DrawTexturePro(meninaRevelationSilhouette,
+                       (Rectangle){0, 0, meninaRevelationSilhouette.width, meninaRevelationSilhouette.height},
+                       (Rectangle){xMenina, yMenina,
+                                   meninaRevelationSilhouette.width * scaleMenina,
+                                   meninaRevelationSilhouette.height * scaleMenina},
+                       (Vector2){0, 0}, 0.0f, WHITE);
+    }
+
+    // 3. Levi (silhueta ou revelado)
+    if (strcmp(gSelectedCharacterName, "Levi") == 0 && calvoTrocaRealizada)
+    {
+        DrawTexturePro(calvoRevelation,
+                       (Rectangle){0, 0, calvoRevelation.width, calvoRevelation.height},
+                       (Rectangle){xCalvo, yCalvo,
+                                   calvoRevelation.width * scaleCalvo,
+                                   calvoRevelation.height * scaleCalvo},
+                       (Vector2){0, 0}, 0.0f, WHITE);
+    }
+    else
+    {
+        DrawTexturePro(calvoRevelationSilhouette,
+                       (Rectangle){0, 0, calvoRevelationSilhouette.width, calvoRevelationSilhouette.height},
+                       (Rectangle){xCalvo, yCalvo,
+                                   calvoRevelationSilhouette.width * scaleCalvo,
+                                   calvoRevelationSilhouette.height * scaleCalvo},
+                       (Vector2){0, 0}, 0.0f, WHITE);
+    }
+
+    // 4. Jade (silhueta ou revelada)
+    if (strcmp(gSelectedCharacterName, "Jade") == 0 && deBoneTrocaRealizada)
+    {
+        DrawTexturePro(deBoneRevelation,
+                       (Rectangle){0, 0, deBoneRevelation.width, deBoneRevelation.height},
+                       (Rectangle){xDeBone, yDeBone,
+                                   deBoneRevelation.width * scaleDeBone,
+                                   deBoneRevelation.height * scaleDeBone},
+                       (Vector2){0, 0}, 0.0f, WHITE);
+    }
+    else
+    {
+        DrawTexturePro(deBoneRevelationSilhouette,
+                       (Rectangle){0, 0, deBoneRevelationSilhouette.width, deBoneRevelationSilhouette.height},
+                       (Rectangle){xDeBone, yDeBone,
+                                   deBoneRevelationSilhouette.width * scaleDeBone,
+                                   deBoneRevelationSilhouette.height * scaleDeBone},
+                       (Vector2){0, 0}, 0.0f, WHITE);
+    }
+
+    // Efeito de flash
     if (flashAlpha > 0.0f)
     {
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), 
-                     (Color){255, 255, 255, (unsigned char)(flashAlpha * 255)});
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                      (Color){255, 255, 255, (unsigned char)(flashAlpha * 255)});
+    }
+
+    if (shieldAppeared)
+    {
+        int shieldX = 50;                                            // Posição X (meio e perto do canto esquerdo)
+        int shieldY = screenHeight / 2 - cybertechShield.height / 2; // Posição Y (centralizado verticalmente)
+
+        // Aplica a escala 0.5x ao escudo
+        float scale = 0.5f;
+
+        // Desenha o escudo com escala aplicada
+        DrawTexturePro(cybertechShield,
+                       (Rectangle){0, 0, cybertechShield.width, cybertechShield.height},
+                       (Rectangle){shieldX, shieldY,
+                                   cybertechShield.width * scale,
+                                   cybertechShield.height * scale},
+                       (Vector2){0, 0}, 0.0f, WHITE);
     }
 
     EndDrawing();
@@ -276,10 +310,15 @@ void Unload_Tela_02(void)
     UnloadTexture(carinhaRevelationSilhouette);
     UnloadTexture(carinhaRevelation);
     UnloadTexture(meninaRevelationSilhouette);
+    UnloadTexture(meninaRevelation);
     UnloadTexture(calvoRevelationSilhouette);
+    UnloadTexture(calvoRevelation);
     UnloadTexture(deBoneRevelationSilhouette);
     UnloadTexture(deBoneRevelation);
+    UnloadTexture(cybertechShield);
 
     StopMusicStream(writtenInTheStars);
     UnloadMusicStream(writtenInTheStars);
+    UnloadSound(surpriseSound); // Descarregar o som de surpresa
+    UnloadSound(congrats);
 }
