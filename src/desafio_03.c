@@ -19,7 +19,7 @@ typedef struct {
 } DialogueQuestion;
 
 #define FASE2_FADEOUT_DURACAO 0.8f
-#define FALA_NORMAL_03 "Você recebe um e-mail com o assunto: 'Parabéns! Você ganhou um prêmio exclusivo! Clique no link para resgatar agora.'\nO e-mail parece vir de uma empresa conhecida, mas contém erros gramaticais e um link encurtado. O que você faz?"
+#define FALA_NORMAL_03 "Você recebe um e-mail com o assunto: 'Parabéns! Você ganhou um prêmio exclusivo! Clique no link para resgatar agora.'\nO e-mail contém erros gramaticais e um link suspeito. O que você faz?"
 #define FALA_ACERTO_03  "Escolha certeira! Hank deve ter anotado meu cuidado — estou um passo à frente na vaga."
 #define FALA_ERRO_03    "Putz… decisão errada! O sistema de monitoramento disparou e Hank vai notar esse deslize."
 #define FALA_JOAO_ACERTO "Ufa, passei por essa sem suar. Venha o próximo desafio!"
@@ -62,11 +62,11 @@ static Texture2D sprEnterButton;
 static DialogueQuestion pergunta2;
 static DialogueOption opcoesFase2[] = 
 {
-    {"A) Ignora o e-mail e exclui.", false, false},
-    {"B) Encaminha para os amigos para receberem o prémio.", false, false},
-    {"C) Clica no link imediatamente para não perder o prêmio.", false, false},
-    {"D) Manda seus dados pessoais, afinal, é melhor garantir o prêmio.", false, false},
-    {"E) Verifica a origem do e-mail e pesquisa sobre a mensagem antes de agir.", true, false},
+    {"A) Manda seus dados pessoais", false, false},
+    {"B) Abre o e-mail e lê com atenção.", false, false},
+    {"C) Encaminha para os amigos para receberem o prémio.", false, false},
+    {"D) Clica no link imediatamente para não perder o prêmio.", false, false},
+    {"E) Alerta amigos e familiares sobre o possível golpe.", true, false},
 };
 
 static void AtualizaTamanhoGeminiBox(void)
@@ -216,7 +216,7 @@ void Init_Desafio_03(void)
     sprEnterButton = LoadTexture("src/sprites/enter_button.png");
     
     strcpy(fala_exibida, FALA_NORMAL_03);
-    InitDialogueQuestion(&pergunta2, FALA_NORMAL_03, opcoesFase2, 5, 30.0f);
+    InitDialogueQuestion(&pergunta2, FALA_NORMAL_03, opcoesFase2, 5, 60.0f);
     InitTypeWriter(&writer, fala_exibida, 26.5f);
     AtualizaTamanhoGeminiBox();
 

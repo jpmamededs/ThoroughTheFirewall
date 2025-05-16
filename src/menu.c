@@ -13,6 +13,7 @@
 #define SPRITE_BTN_WIDTH (SPRITE_SRC_WIDTH * SPRITE_SCALE)
 #define SPRITE_BTN_HEIGHT (SPRITE_SRC_HEIGHT * SPRITE_SCALE)
 #define MAX_HOVER_BTNS 32
+#define MENU_Y_OFFSET (-60)
 
 typedef struct CharacterNode
 {
@@ -31,7 +32,7 @@ typedef enum
 
 static MenuScreen currentScreen = MENU_MAIN;
 static Texture2D backgroundMatrix;
-static Texture2D logoTexture;
+static Texture2D fundoBg;
 static Texture2D hacker1, hacker2;
 static Texture2D menina1, menina2;
 static Texture2D meninoPdavida1, meninoPdavida2;
@@ -50,6 +51,7 @@ static Sound alertSound;
 static bool wasHoveredLastFrame = false;
 static bool isFadingOut = false;
 static float fadeAlpha = 0.0f;
+static bool rankingRequested = false;
 
 static void PlayCharacterSound(CharacterNode *node)
 {
@@ -157,7 +159,7 @@ void InitMenu(void)
     if (!IsAudioDeviceReady()) InitAudioDevice();
 
     backgroundMatrix = LoadTexture("src/sprites/Matrix.png");
-    logoTexture = LoadTexture("src/sprites/jogo.png");
+    fundoBg = LoadTexture("src/sprites/logo_jogo.png");
     hacker1 = LoadTexture("src/sprites/hacker1-unselected.png");
     hacker2 = LoadTexture("src/sprites/hacker2-selected.png");
     menina1 = LoadTexture("src/sprites/menina-unselected.png");
@@ -182,6 +184,7 @@ void InitMenu(void)
     wasHoveredLastFrame = false;
     isFadingOut = false;
     fadeAlpha = 0.0f;
+    rankingRequested = false;
 
     CharacterNode *node = head;
     do
@@ -229,16 +232,32 @@ void UpdateMenu(void)
     /* ----------------------   TELA INICIAL   ---------------------------- */
     if (currentScreen == MENU_MAIN)
     {
-        Rectangle startBtn = {screenWidth / 2 - 150, screenHeight - 180, 300, 80};
-        bool hovered = CheckCollisionPointRec(mouse, startBtn);
-        PlayHoverSound(startBtn, hovered);
+        const int btnW = 300, btnH = 80;
+        const int spacing = 20;
 
-        if ((hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER))
+        int startY = (screenHeight - 260) + MENU_Y_OFFSET;
+        Rectangle startBtn   = {screenWidth/2 - btnW/2, startY, btnW, btnH};
+        Rectangle rankingBtn = {screenWidth/2 - btnW/2, startY + btnH + spacing, btnW, btnH};
+
+        bool hoverStart = CheckCollisionPointRec(mouse, startBtn);
+        PlayHoverSound(startBtn, hoverStart);
+        if ((hoverStart && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) ||
+            IsKeyPressed(KEY_ENTER))
         {
             PlaySound(clickSound);
             memset(gPlayerName, 0, sizeof(gPlayerName));
             currentScreen = MENU_INPUT_NAME;
         }
+
+        bool hoverRank = CheckCollisionPointRec(mouse, rankingBtn);
+        PlayHoverSound(rankingBtn, hoverRank);
+        if (hoverRank && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+        {
+            PlaySound(clickSound);
+            rankingRequested = true;
+        }
+
+        return;
     }
 
     /* ----------------------   TELA DIGITAR NOME   ----------------------- */
@@ -397,14 +416,27 @@ void DrawMenu(void)
     
     if (currentScreen == MENU_MAIN)
     {
-        float imgScale = 0.2f;
-        float imgW = logoTexture.width * imgScale;
-        float imgH = logoTexture.height * imgScale;
-        DrawTextureEx(logoTexture, (Vector2){(screenWidth - imgW) / 2, (screenHeight - imgH) / 2}, 0.0f, imgScale, WHITE);
-        Rectangle startBtn = {screenWidth / 2 - 150, screenHeight - 180, 300, 80};
-        Color btnColor = CheckCollisionPointRec(GetMousePosition(), startBtn) ? DARKGREEN : GREEN;
-        DrawRectangleRec(startBtn, btnColor);
-        DrawText("Iniciar Jogo", startBtn.x + 50, startBtn.y + 20, 36, WHITE);
+        float imgScale = 0.65f;
+        float imgW = fundoBg.width  * imgScale;
+        float imgH = fundoBg.height * imgScale;
+        float logoY = (screenHeight - imgH)/2 + MENU_Y_OFFSET;
+        DrawTextureEx(fundoBg, (Vector2){(screenWidth - imgW)/2, logoY}, 0.0f, imgScale, WHITE);
+
+        const int btnW = 300, btnH = 80, spacing = 20;
+        int startY = (screenHeight - 260) + MENU_Y_OFFSET;
+        Rectangle startBtn   = {screenWidth/2 - btnW/2, startY, btnW, btnH};
+        Rectangle rankingBtn = {screenWidth/2 - btnW/2, startY + btnH + spacing, btnW, btnH};
+
+        Color startClr = CheckCollisionPointRec(GetMousePosition(), startBtn)
+                        ? DARKGREEN : GREEN;
+        Color rankClr  = CheckCollisionPointRec(GetMousePosition(), rankingBtn)
+                        ? DARKGREEN : GREEN;
+
+        DrawRectangleRec(startBtn,   startClr);
+        DrawRectangleRec(rankingBtn, rankClr);
+
+        DrawText("Iniciar Jogo", startBtn.x + 50,   startBtn.y   + 20, 36, WHITE);
+        DrawText("Ranking",      rankingBtn.x + 76, rankingBtn.y + 20, 36, WHITE);
     }
 
     else if (currentScreen == MENU_INPUT_NAME)
@@ -482,13 +514,13 @@ void DrawMenu(void)
 
 bool MenuStartGame(void) { return currentScreen == MENU_FINISHED; }
 
-bool ComecouJogo(void) { return !(currentScreen == MENU_MAIN); }
+bool MenuShowRanking(void) { return rankingRequested; }
 
 void UnloadMenu(void)
 {
     UnloadSound(clickSound);
     UnloadSound(alertSound);
-    UnloadTexture(logoTexture);
+    UnloadTexture(fundoBg);
     UnloadTexture(backgroundMatrix);
     UnloadTexture(hacker1);
     UnloadTexture(hacker2);
