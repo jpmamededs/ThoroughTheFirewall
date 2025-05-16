@@ -11,7 +11,7 @@
 #define GEMINI_RECT_PADRAO 550
 #define GEMINI_PAD_X 36
 #define FASE6_CHRONO_MAX 70.0f
-#define FALA_NORMAL_02 "A senha está criptografada usando uma cifra de deslocamento. Para decifrá-la, devo voltar exatamente duas letras.\nNão posso errar!"
+#define FALA_NORMAL_02 "A senha foi criptografada usando uma cifra de deslocamento.\nPara decifrá-la, devo retroceder exatamente duas posições no alfabeto para cada letra!"
 #define FALA_VENCEU_02 "JOÃO! A senha está correta! Estou pronto para o próximo desafio."
 #define FALA_PERDEU_02 "Não deu tempo... A criptografia me venceu. Hank vai me dispensar..."
 

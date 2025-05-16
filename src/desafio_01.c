@@ -44,7 +44,7 @@ static bool geminiMouseOver = false;
 static bool geminiHelpClicked = false;
 static float geminiAnimSpeed = 6.0f;
 static bool fase_concluida = false; 
-static float timer_total = 45.0f;
+static float timer_total = 60.0f;
 static float timer_restante = 0.0f;
 static bool timer_explodiu = false;
 static float switchX[NUM_SWITCHES];

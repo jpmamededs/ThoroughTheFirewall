@@ -70,7 +70,7 @@ int main(void)
     int screenHeight = GetMonitorHeight(0);
 
     InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
-    SetTargetFPS(900);
+    SetTargetFPS(870);
     SetWindowPosition(0, 0); 
 
     InitAudioDevice();
@@ -139,7 +139,7 @@ int main(void)
             }
             UpdateMenu();
             DrawMenu();
-            if (!ComecouJogo() && IsKeyPressed(KEY_R))
+            if (MenuShowRanking())
             {
                 UnloadMenu();
                 ranking_Initialized = false;

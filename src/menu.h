@@ -8,6 +8,6 @@ void UpdateMenu(void);
 void DrawMenu(void);
 void UnloadMenu(void);
 bool MenuStartGame(void);
-bool ComecouJogo(void);
+bool MenuShowRanking(void);
 
 #endif 

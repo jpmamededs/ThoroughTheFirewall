@@ -27,7 +27,8 @@
         "tela_provisoria_01.h": "c",
         "transition_screen.h": "c",
         "playerstats.h": "c",
-        "ranking.h": "c"
+        "ranking.h": "c",
+        "xiosbase": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
