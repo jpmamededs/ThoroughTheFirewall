@@ -1,4 +1,4 @@
-#include "servidor_proxy.h"
+#include "proxy3D.h"
 #include "raylib.h"
 #include <math.h>
 
@@ -122,7 +122,7 @@ void UpdateMovement(float dt) {
     UpdateFootstepsSound(moving);
 }
 
-void Init_ServidorProxy(void) {
+void Init_Proxy3D(void) {
     // Carrega modelos e texturas
     modelo3D       = LoadModel("src/models/old-computer.obj");
     portaModel     = LoadModel("src/models/DOOR.obj");
@@ -174,7 +174,7 @@ void Init_ServidorProxy(void) {
     fase_concluida = false;
 }
 
-void Update_ServidorProxy(void) {
+void Update_Proxy3D(void) {
     float dt = GetFrameTime();
 
     UpdateCameraWithMouse();
@@ -219,7 +219,7 @@ void Update_ServidorProxy(void) {
     }
 }
 
-void Draw_ServidorProxy(void) {
+void Draw_Proxy3D(void) {
     BeginDrawing();
     ClearBackground(BLACK);
 
@@ -255,11 +255,11 @@ void Draw_ServidorProxy(void) {
     EndDrawing();
 }
 
-bool Fase_ServidorProxy_Concluida(void) {
+bool Fase_Proxy3D_Concluida(void) {
     return fase_concluida;
 }
 
-void Unload_ServidorProxy(void) {
+void Unload_Proxy3D(void) {
     UnloadModel(modelo3D);
     UnloadModel(portaModel);
     UnloadModel(serverModel);

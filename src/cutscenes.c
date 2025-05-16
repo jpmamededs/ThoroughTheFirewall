@@ -249,6 +249,11 @@ void DrawPiscadaOlho(float t, int w, int h)
 
 void UpdateCutscenes(void)
 {
+    if (IsKeyPressed(KEY_SPACE))
+    {
+        ended = true;
+    }
+
     if (ended) return;
 
     if (IsKeyPressed(KEY_SPACE))

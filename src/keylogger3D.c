@@ -1,4 +1,4 @@
-#include "template_3D_01.h"
+#include "keylogger3D.h"
 #include "raylib.h"
 #include "generalFunctions.h"
 #include <math.h>
@@ -14,7 +14,7 @@ static float cameraYaw = 0.0f;
 static const float maxYaw = PI / 4.0f;
 static const float minYaw = -PI / 4.0f;
 
-static bool fase_template_3D_01_concluida = false;
+static bool fase_concluida = false;
 static float timeElapsed = 0.0f;
 
 static float phonePosY = 0.0f;
@@ -23,7 +23,7 @@ static bool animationComplete = false;
 static bool reverseAnimation = false; // Controle da animação reversa
 static const float phoneSpeed = 2000.0f; // Velocidade rápida da subida
 
-void Init_Template_3D_01(void)
+void Init_Keylogger3D(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
     portaModel = LoadModel("src/models/DOOR.obj");
@@ -44,7 +44,7 @@ void Init_Template_3D_01(void)
     phonePosY = GetScreenHeight();
 }
 
-void Update_Template_3D_01(void)
+void Update_Keylogger3D(void)
 {
     float mouseDeltaX = GetMouseDelta().x;
     cameraYaw += mouseDeltaX * 0.002f;
@@ -97,7 +97,7 @@ void Update_Template_3D_01(void)
     }
 }
 
-void Draw_Template_3D_01(void)
+void Draw_Keylogger3D(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -126,7 +126,12 @@ void Draw_Template_3D_01(void)
     EndDrawing();
 }
 
-void Unload_Template_3D_01(void)
+bool Fase_Keylogger3D_Concluida(void)
+{
+    return fase_concluida;
+}
+
+void Unload_Keylogger3D(void)
 {
     UnloadModel(modelo3D);
     UnloadModel(portaModel);
@@ -136,7 +141,3 @@ void Unload_Template_3D_01(void)
     EnableCursor();
 }
 
-bool Fase_Template_3D_01_Concluida(void)
-{
-    return fase_template_3D_01_concluida;
-}

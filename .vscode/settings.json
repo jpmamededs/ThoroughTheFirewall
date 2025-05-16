@@ -28,7 +28,11 @@
         "transition_screen.h": "c",
         "playerstats.h": "c",
         "ranking.h": "c",
-        "xiosbase": "c"
+        "xiosbase": "c",
+        "iosfwd": "c",
+        "time.h": "c",
+        "terminal_proxy.h": "c",
+        "template_ubuntu_01.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

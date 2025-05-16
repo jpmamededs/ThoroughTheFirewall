@@ -1,4 +1,4 @@
-#include "template_ubuntu_01.h"
+#include "keyloggerUbuntu.h"
 #include "generalFunctions.h"
 #include "raylib.h"
 #include <math.h>
@@ -53,7 +53,7 @@ static const float tempoMensagemFinalDelay = 2.0f;
 
 static bool fase_concluida = false;
 
-void Init_Template_Ubuntu_01(void)
+void Init_KeyloggerUbuntu(void)
 {
     wallpaper = LoadTexture("src/sprites/os/wallpaper.png");
     background = LoadTexture("src/sprites/os/background.jpg");
@@ -92,7 +92,7 @@ void Init_Template_Ubuntu_01(void)
     aguardandoMensagemFinal = false;
 }
 
-void Update_Template_Ubuntu_01(void)
+void Update_KeyloggerUbuntu(void)
 {
     float dt = GetFrameTime();
     fadeTimer += dt;
@@ -219,7 +219,7 @@ void Update_Template_Ubuntu_01(void)
     }
 }
 
-void Draw_Template_Ubuntu_01(void)
+void Draw_KeyloggerUbuntu(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -297,12 +297,12 @@ void Draw_Template_Ubuntu_01(void)
     EndDrawing();
 }
 
-bool Fase_Template_Ubuntu_01_Concluida(void)
+bool Fase_KeyloggerUbuntu_Concluida(void)
 {
     return fase_concluida;
 }
 
-void Unload_Template_Ubuntu_01(void)
+void Unload_KeyloggerUbuntu(void)
 {
     UnloadTexture(wallpaper);
     UnloadTexture(background);
