@@ -44,10 +44,12 @@ void SetD04Result(PlayerStats *stats, bool passed, int icons)
 
 static void SetPlayerAndCharacter(PlayerStats *stats, const char *playerName, const char *characterName)
 {
-    if (playerName) {
+    if (playerName == NULL || playerName[0] == '\0' || strspn(playerName, " ") == strlen(playerName))
+        strncpy(stats->playerName, "Sem Nome", MAX_PLAYER_NAME - 1);
+    else
         strncpy(stats->playerName, playerName, MAX_PLAYER_NAME - 1);
-        stats->playerName[MAX_PLAYER_NAME - 1] = '\0';
-    }
+    stats->playerName[MAX_PLAYER_NAME - 1] = '\0';
+
     if (characterName) {
         strncpy(stats->characterName, characterName, MAX_PLAYER_NAME - 1);
         stats->characterName[MAX_PLAYER_NAME - 1] = '\0';

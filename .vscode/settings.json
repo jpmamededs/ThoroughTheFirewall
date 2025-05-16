@@ -28,7 +28,8 @@
         "transition_screen.h": "c",
         "playerstats.h": "c",
         "ranking.h": "c",
-        "xiosbase": "c"
+        "xiosbase": "c",
+        "iosfwd": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

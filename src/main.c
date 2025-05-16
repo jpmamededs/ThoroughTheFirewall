@@ -697,7 +697,8 @@ int main(void)
         {
             if (!debug_Initialized)
             {
-                SetPlayerGeneralStats(&playerStats);
+                SetPlayerGeneralStats(&playerStats); // Carregaga os dados do jogador
+                AppendPlayerToRankingFile(&playerStats, "ranking.txt"); // Set no ranking
                 debug_Initialized = true;
             }
             UpdateDebug();

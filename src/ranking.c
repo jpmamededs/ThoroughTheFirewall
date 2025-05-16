@@ -15,6 +15,24 @@ static int currentPage  = 0;
 static Font cyberFont;
 static Sound clickSound;
 
+void AppendPlayerToRankingFile(PlayerStats *ps, char *file)
+{
+    if (!ps || !file) return;
+
+    FILE *fp = fopen(file, "a");
+
+    if (!fp) return;
+
+    fprintf(fp, "%s, %s, %.2f, %d\n",
+            ps->playerName,
+            ps->characterName,
+            ps->notalGeral, 
+            ps->isPassouSelecao ? 1 : 0
+    );
+
+    fclose(fp);
+}
+
 static void LoadRankingFromFile(const char *file)
 {
     FILE *fp = fopen(file, "r");
@@ -28,7 +46,7 @@ static void LoadRankingFromFile(const char *file)
         float pontuacao = 0;
         int   passouInt = 0;
 
-        if (sscanf(line, " %25[^,], %25[^,], %f, %d", playerName, characterName, &pontuacao, &passouInt) == 4)
+        if (sscanf(line, "%25[^,], %25[^,], %f, %d", playerName, characterName, &pontuacao, &passouInt) == 4)
         {
             bool isPassou = (passouInt != 0);
 
