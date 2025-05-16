@@ -1,4 +1,4 @@
-#include "template_ubuntu_02.h"
+#include "proxyUbuntu.h"
 #include "generalFunctions.h"
 #include "raylib.h"
 #include <math.h>
@@ -53,7 +53,7 @@ static Sound paperSound;
 
 static bool fase_concluida = false;
 
-void Init_Template_Ubuntu_02(void)
+void Init_ProxyUbuntu(void)
 {
     wallpaper = LoadTexture("src/sprites/os/wallpaper.png");
     background = LoadTexture("src/sprites/os/background.jpg");
@@ -93,7 +93,7 @@ void Init_Template_Ubuntu_02(void)
     aguardandoMensagemFinal = false;
 }
 
-void Update_Template_Ubuntu_02(void)
+void Update_ProxyUbuntu(void)
 {
     float dt = GetFrameTime();
     fadeTimer += dt;
@@ -202,7 +202,7 @@ void Update_Template_Ubuntu_02(void)
     }
 }
 
-void Draw_Template_Ubuntu_02(void)
+void Draw_ProxyUbuntu(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -292,12 +292,12 @@ void Draw_Template_Ubuntu_02(void)
     EndDrawing();
 }
 
-bool Fase_Template_Ubuntu_02_Concluida(void)
+bool Fase_ProxyUbuntu_Concluida(void)
 {
     return fase_concluida;
 }
 
-void Unload_Template_Ubuntu_02(void)
+void Unload_ProxyUbuntu(void)
 {
     UnloadTexture(wallpaper);
     UnloadTexture(background);

@@ -6,7 +6,7 @@
 #include "porta_batendo.h"
 #include "interrogatorio.h"
 #include "desafio_01.h"
-#include "servidor_proxy.h"
+#include "proxy3D.h"
 #include "desafio_02.h"
 #include "desafio_03.h"
 #include "pendrive.h"
@@ -20,9 +20,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include "raylib.h"
-#include "template_ubuntu_01.h"
-#include "template_ubuntu_02.h"
-#include "template_3D_01.h"
+#include "keyloggerUbuntu.h"
+#include "proxyUbuntu.h"
+#include "keylogger3D.h"
 #include "template_3D_02.h"
 #include "template_3D_03.h"
 #include "tela_provisoria_01.h"
@@ -95,10 +95,10 @@ int main(void)
     static bool desafio_02_Initialized = false;
     static bool interrogatorio_Initialized = false;
     static bool pendrive_Initialized = false;
-    static bool servidorProxy_Initialized = false;
-    static bool template_ubuntu_01_Initialized = false;
-    static bool template_ubuntu_02_Initialized = false;
-    static bool template_3D_01_Initialized = false;
+    static bool proxy3D_Initialized = false;
+    static bool keyloggerUbuntu_Initialized = false;
+    static bool proxyUbuntu_Initialized = false;
+    static bool keylogger3D_Initialized = false;
     static bool template_3D_02_Initialized = false;
     static bool template_3D_03_Initialized = false;
     static bool tela01_Initialized = false;
@@ -209,22 +209,22 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                template_ubuntu_01_Initialized = false;
-                state = APP_TEMPLATE_UBUNTU_01;
+                keyloggerUbuntu_Initialized = false;
+                state = APP_KEYLOGGER_UBUNTU;
             }
             if (IsKeyPressed(KEY_X))
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                template_ubuntu_02_Initialized = false;
-                state = APP_TEMPLATE_UBUNTU_02;
+                proxyUbuntu_Initialized = false;
+                state = APP_PROXY_UBUNTU;
             }
             if (IsKeyPressed(KEY_C))
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                template_3D_01_Initialized = false;
-                state = APP_TEMPLATE_3D_01;
+                keylogger3D_Initialized = false;
+                state = APP_KEYLOGGER_3D;
             }
             if (IsKeyPressed(KEY_V))
             {
@@ -244,8 +244,8 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                servidorProxy_Initialized = false;
-                state = APP_SERVIDOR_PROXY;
+                proxy3D_Initialized = false;
+                state = APP_PROXY_3D;
             }
             if (IsKeyPressed(KEY_M))
             { 
@@ -286,6 +286,21 @@ int main(void)
                 state = APP_TRANSICAO;
             }
             // FIM DEBUG
+        }
+        else if (state == APP_RANKING)
+        {
+            if (!ranking_Initialized)
+            {
+                Init_Ranking();
+                ranking_Initialized = true;
+            }
+            Update_Ranking();
+            Draw_Ranking();
+            if (Ranking_Concluido()) {
+                Unload_Ranking();
+                ranking_Initialized = false;
+                state = APP_MENU;
+            }
         }
         else if (state == APP_INTRO)
         {
@@ -417,26 +432,41 @@ int main(void)
 
                 state = APP_LOADING_SCREEN;
                 PFP_Loading = INTERROGATORIO;
-                PFP_Iterrogatorio = APP_SERVIDOR_PROXY;
+                PFP_Iterrogatorio = APP_PROXY_3D;
             }
         }
-        else if (state == APP_SERVIDOR_PROXY)
+        else if (state == APP_PROXY_3D)
         {
-            if (!servidorProxy_Initialized)
+            if (!proxy3D_Initialized)
             {
-                Init_ServidorProxy();
-                servidorProxy_Initialized = true;
+                Init_Proxy3D();
+                proxy3D_Initialized = true;
             }
-            Update_ServidorProxy();
-            Draw_ServidorProxy();
-            if (Fase_ServidorProxy_Concluida()) 
+            Update_Proxy3D();
+            Draw_Proxy3D();
+            if (Fase_Proxy3D_Concluida()) 
             {
-                Unload_ServidorProxy();
-                servidorProxy_Initialized = false;
+                Unload_Proxy3D();
+                proxy3D_Initialized = false;
+                state = APP_PROXY_UBUNTU;
+            }
+        }
+        else if (state == APP_PROXY_UBUNTU)
+        {
+            if (!proxyUbuntu_Initialized)
+            {
+                Init_ProxyUbuntu();
+                proxyUbuntu_Initialized = true;
+            }
+            Update_ProxyUbuntu();
+            Draw_ProxyUbuntu();
+            if (Fase_ProxyUbuntu_Concluida()) 
+            {
+                Unload_ProxyUbuntu();
+                proxyUbuntu_Initialized = false;
 
                 Init_TransitionScreen(2, "Cifra De Cesar");
                 transicao_Initialized = true;
-
                 state = APP_TRANSICAO;
                 PFP_Trasicao = APP_DESAFIO_02;
             }
@@ -457,10 +487,45 @@ int main(void)
 
                 state = APP_LOADING_SCREEN;
                 PFP_Loading = INTERROGATORIO;
-                PFP_Iterrogatorio = APP_DESAFIO_03; // KEYLOGGER!!!!!
+                PFP_Iterrogatorio = APP_KEYLOGGER_3D;
             }
         }
-        // KEYLOGGER!!!!!
+        else if (state == APP_KEYLOGGER_3D)
+        {
+            if (!keylogger3D_Initialized)
+            {
+                Init_Keylogger3D();
+                keylogger3D_Initialized = true;
+            }
+            Update_Keylogger3D();
+            Draw_Keylogger3D();
+            if (Fase_Keylogger3D_Concluida()) 
+            {
+                Unload_Keylogger3D();
+                keylogger3D_Initialized = false;
+                state = APP_KEYLOGGER_UBUNTU;
+            }
+        }
+        else if (state == APP_KEYLOGGER_UBUNTU)
+        {
+            if (!keyloggerUbuntu_Initialized)
+            {
+                Init_KeyloggerUbuntu();
+                keyloggerUbuntu_Initialized = true;
+            }
+            Update_KeyloggerUbuntu();
+            Draw_KeyloggerUbuntu();
+            if (Fase_KeyloggerUbuntu_Concluida()) 
+            {
+                Unload_KeyloggerUbuntu();
+                keyloggerUbuntu_Initialized = false;
+
+                Init_TransitionScreen(3, "Depois eu mudo isso daqui!");
+                transicao_Initialized = true;
+                state = APP_TRANSICAO;
+                PFP_Trasicao = APP_DESAFIO_03;
+            }
+        }
         else if (state == APP_DESAFIO_03)
         {
             if (!desafio_03_Initialized)
@@ -512,7 +577,6 @@ int main(void)
 
                 Init_TransitionScreen(4, "Fruit Ninja");
                 transicao_Initialized = true;
-
                 state = APP_TRANSICAO;
                 PFP_Trasicao = APP_DESAFIO_04;
             }
@@ -565,54 +629,6 @@ int main(void)
             if (Fase_Ubuntu_Provisorio_Concluida()) {
                 Unload_Ubuntu_Provisorio();
                 ubuntoProvisorio_Initialized = false;
-                state = APP_DEBUG;
-            }
-        }
-        else if (state == APP_TEMPLATE_UBUNTU_01)
-        {
-            if (!template_ubuntu_01_Initialized)
-            {
-                Init_Template_Ubuntu_01();
-                template_ubuntu_01_Initialized = true;
-            }
-            Update_Template_Ubuntu_01();
-            Draw_Template_Ubuntu_01();
-            if (Fase_Template_Ubuntu_01_Concluida()) 
-            {
-                Unload_Template_Ubuntu_01();
-                template_ubuntu_01_Initialized = false;
-                state = APP_DEBUG; // MUDAR O STATE AQUI!
-            }
-        }
-        else if (state == APP_TEMPLATE_UBUNTU_02)
-        {
-            if (!template_ubuntu_02_Initialized)
-            {
-                Init_Template_Ubuntu_02();
-                template_ubuntu_02_Initialized = true;
-            }
-            Update_Template_Ubuntu_02();
-            Draw_Template_Ubuntu_02();
-            if (Fase_Template_Ubuntu_02_Concluida()) 
-            {
-                Unload_Template_Ubuntu_02();
-                template_ubuntu_02_Initialized = false;
-                state = APP_DEBUG; // MUDAR O STATE AQUI!
-            }
-        }
-        else if (state == APP_TEMPLATE_3D_01)
-        {
-            if (!template_3D_01_Initialized)
-            {
-                Init_Template_3D_01();
-                template_3D_01_Initialized = true;
-            }
-            Update_Template_3D_01();
-            Draw_Template_3D_01();
-            if (Fase_Template_3D_01_Concluida()) 
-            {
-                Unload_Template_3D_01();
-                template_3D_01_Initialized = false;
                 state = APP_DEBUG;
             }
         }
@@ -678,21 +694,6 @@ int main(void)
                 state = APP_DEBUG;
             }
         }
-        else if (state == APP_RANKING)
-        {
-            if (!ranking_Initialized)
-            {
-                Init_Ranking();
-                ranking_Initialized = true;
-            }
-            Update_Ranking();
-            Draw_Ranking();
-            if (Ranking_Concluido()) {
-                Unload_Ranking();
-                ranking_Initialized = false;
-                state = APP_MENU;
-            }
-        }
         else if (state == APP_DEBUG)
         {
             if (!debug_Initialized)
@@ -737,8 +738,8 @@ int main(void)
         Unload_Firewall();
     else if (state == APP_BRUTEFORCE)
         Unload_BruteForce();
-    else if (state == APP_SERVIDOR_PROXY)
-        Unload_ServidorProxy();
+    else if (state == APP_PROXY_3D)
+        Unload_Proxy3D();
     else if (state == APP_DEBUG)
         UnloadDebug();
 
