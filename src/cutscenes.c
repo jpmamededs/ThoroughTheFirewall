@@ -250,17 +250,31 @@ void DrawPiscadaOlho(float t, int w, int h)
 void UpdateCutscenes(void)
 {
     if (ended) return;
-        float time = GetTime() - startTime;
-        if (aguardandoFimBgFinal) {
-            if (IsKeyPressed(KEY_SPACE)) {
-                ended = true;
-                aguardandoFimBgFinal = false;
-            }
-            return; // não pula para outras cenas
+
+    if (IsKeyPressed(KEY_SPACE))
+    {
+        if (!aguardandoFimBgFinal) {
+            // Vá direto para a tela final (os valores dependem do seu sistema de estados, adapte!)
+            mostrandoBgFinal = true;
+            animZoomFinalIniciou = true;
+            aguardandoFimBgFinal = true;
+            estadoPiscadaAtual = 4; // pula piscadas se quiser
+            animZoomFinalStart = GetTime();
+            // Faça outras flags de transição se quiser cortar animações intermediárias
+            // Você pode remover telas intermediárias aqui também.
         }
-        // (restante igual...)
-        if (IsKeyPressed(KEY_SPACE) && time < 5.8f)
-            startTime = GetTime() - 5.8f;
+        else {
+            // Já está esperando, então encerra de verdade
+            ended = true;
+            aguardandoFimBgFinal = false;
+        }
+        return;
+    }
+
+    //float time = GetTime() - startTime;
+    if (aguardandoFimBgFinal) {
+        return;
+    }
 }
 
 // --- HANK Antigo ---
