@@ -32,6 +32,7 @@
 #include "playerStats.h"
 #include "ranking.h"
 #include "transicao_proxy.h"
+#include "transicao_proxy2.h"
 
 AppState state = APP_CUTSCENES;
 AppState PFP_Iterrogatorio;
@@ -110,6 +111,7 @@ int main(void)
     static bool menu_Initialized = false;
     static bool debug_Initialized = false;
     static bool transicao_proxy_Initialized = false;
+    static bool transicao_proxy2_Initialized = false;
 
     extern bool interrogatorioFinalizado;
 
@@ -285,7 +287,7 @@ int main(void)
                 PauseMusicStream(music);
                 UnloadMenu();
                 transicao_proxy_Initialized = false;
-                state = APP_TRANSICAO_PROXY;
+                state = APP_TRANSICAO_PROXY2;
             }
             if (IsKeyPressed(KEY_F))
             {
@@ -472,11 +474,9 @@ int main(void)
             {
                 Unload_ProxyUbuntu();
                 proxyUbuntu_Initialized = false;
-
-                Init_TransitionScreen(2, "Cifra De Cesar");
-                transicao_Initialized = true;
-                state = APP_TRANSICAO;
-                PFP_Trasicao = APP_DESAFIO_02;
+                Init_Transicao_Proxy2();
+                transicao_proxy2_Initialized = true;
+                state = APP_TRANSICAO_PROXY2;
             }
         }
         else if (state == APP_DESAFIO_02)
@@ -601,6 +601,20 @@ int main(void)
                 Unload_Transicao_Proxy();
                 transicao_proxy_Initialized = false;
                 state = APP_PROXY_3D;           // Aqui vai para o proxy!
+            }
+        }
+        else if (state == APP_TRANSICAO_PROXY2)
+        {
+            if (!transicao_proxy2_Initialized) {
+                Init_Transicao_Proxy2();
+                transicao_proxy2_Initialized = true;
+            }
+            Update_Transicao_Proxy2();
+            Draw_Transicao_Proxy2();
+            if (Transicao_Proxy2_Done()) {
+                Unload_Transicao_Proxy2();
+                transicao_proxy2_Initialized = false;
+                state = APP_DESAFIO_02;           // Aqui vai para o proxy!
             }
         }
         else if (state == APP_DESAFIO_04)
@@ -766,6 +780,8 @@ int main(void)
         UnloadDebug();
     else if (state == APP_TRANSICAO_PROXY)
         Unload_Transicao_Proxy();
+    else if (state == APP_TRANSICAO_PROXY2)
+        Unload_Transicao_Proxy2();
 
     UnloadMusicStream(music);
     CloseAudioDevice();
