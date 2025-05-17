@@ -547,7 +547,7 @@ void Draw_Transicao_Proxy2()
     bool drawUnknownNow = (interromperTelefone && typeStarted && !personagemTypeStarted);
     if (drawUnknownNow)
     {
-        int imgWidth = hankFalaSprite.width;
+        //int imgWidth = hankFalaSprite.width;
         int imgHeight = hankFalaSprite.height;
         int x = 40;
         int y = GetScreenHeight() - 220 - imgHeight + 200;
