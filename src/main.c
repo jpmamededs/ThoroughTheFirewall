@@ -259,7 +259,7 @@ int main(void)
                 PauseMusicStream(music);
                 UnloadMenu();
                 perguntaAtual++;
-                Init_Interrogatorio(-1, NULL, NULL);
+                Init_Interrogatorio(perguntaAtual, roteiros[perguntaAtual].audio, roteiros[perguntaAtual].texto);
                 interrogatorio_Initialized = true;
                 PFP_Iterrogatorio = APP_DESAFIO_01;
                 state = INTERROGATORIO;

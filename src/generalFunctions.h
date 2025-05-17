@@ -54,5 +54,6 @@ void SkipTypeEraser(TypeEraser* te);
 float UpdateFade(float dt, float duration, bool fadeIn);
 void DrawChronometer(float timer_restante, float timer_total, int x, int y, int radius);
 void DrawDica(float posX, float posY, const char *text);
+void DrawPromptBox(Rectangle rec, Color base, const char *txt, bool pulse);
 
 #endif

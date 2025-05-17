@@ -137,3 +137,20 @@ void DrawDica(float posX, float posY, const char *text)
 
     DrawText(text, textPosX, textPosY, fontSize, WHITE);
 }
+
+void DrawPromptBox(Rectangle rec, Color base, const char *txt, bool pulse)
+{
+    float alp = base.a / 255.0f;
+
+    Color shadow = Fade(BLACK, 0.35f * alp);
+    Rectangle sh = { rec.x + 3, rec.y + 3, rec.width, rec.height };
+    DrawRectangleRounded(sh, 0.25f, 8, shadow);
+
+    DrawRectangleRounded(rec, 0.25f, 8, Fade(base, 0.75f));
+    DrawRectangleRoundedLines(rec, 0.25f, 8, base);
+
+    Vector2 tp = { rec.x + 14, rec.y + 8 };
+    DrawText(txt, tp.x+1, tp.y+1, 22, BLACK);
+    DrawText(txt, tp.x,   tp.y,   22, RAYWHITE);
+}
+

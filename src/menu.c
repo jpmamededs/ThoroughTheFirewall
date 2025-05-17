@@ -34,6 +34,7 @@ typedef enum
 
 static MenuScreen currentScreen = MENU_MAIN;
 static Texture2D logo_jogo;
+static Texture2D alerta;
 static Texture2D background;
 static Texture2D hacker1, hacker2;
 static Texture2D menina1, menina2;
@@ -157,6 +158,7 @@ void InitMenu(void)
     btnRanking    = LoadTexture("src/sprites/btnRanking.png");
     btnInitHover    = LoadTexture("src/sprites/btnInitHover.png");
     btnRankingHover = LoadTexture("src/sprites/btnRankingHover.png");
+    alerta = LoadTexture("src/sprites/alerta.png");
     CreateCharacterList();
     wasHoveredLastFrame = false;
     isFadingOut = false;
@@ -359,7 +361,6 @@ void DrawMenu(void)
         float logoY = (screenHeight - imgH)/2 + (MENU_Y_OFFSET - 130);
         DrawTextureEx(logo_jogo, (Vector2){ (screenWidth - imgW)/2, logoY }, 0.0f, imgScale, WHITE);
 
-        // ==== ALTERADO: ESCALA, POSIÇÃO, DISTÂNCIA ====
         float btnScale = 0.4f;
         int btnW = btnInit.width  * btnScale;
         int btnH = btnInit.height * btnScale;
@@ -369,7 +370,6 @@ void DrawMenu(void)
         int baseY = (screenHeight - btnH)/2 + 84;
         Rectangle startBtn   = { baseX,                 baseY, btnW, btnH };
         Rectangle rankingBtn = { baseX + btnW + distancia, baseY, btnW, btnH };
-
         bool hoveringInit    = CheckCollisionPointRec(GetMousePosition(), startBtn);
         bool hoveringRanking = CheckCollisionPointRec(GetMousePosition(), rankingBtn);
         Texture2D texInit    = (hoveringInit    && btnInitHover.id > 0)    ? btnInitHover    : btnInit;
@@ -391,11 +391,11 @@ void DrawMenu(void)
         int titleFontSize = 36;
         int titleWidth = MeasureText(title, titleFontSize);
         int titleX = (screenWidth - titleWidth) / 2;
-        int titleY = screenHeight / 2 - 120;
+        int titleY = screenHeight / 2 - 120-130;
         DrawText(title, titleX, titleY, titleFontSize, RAYWHITE);
         /* Caixa de texto */
         int boxW = 560, boxH = 70;
-        Rectangle box = {screenWidth/2 - boxW/2, screenHeight/2 - boxH/2, boxW, boxH};
+        Rectangle box = {screenWidth/2 - boxW/2, screenHeight/2 - boxH/2-130, boxW, boxH};
         DrawRectangleRec(box, DARKGRAY);
         DrawRectangleLinesEx(box, 4, GREEN);
         /* Texto digitado + cursor piscante */
@@ -411,9 +411,26 @@ void DrawMenu(void)
         /* Dica de confirmação */
         if (strlen(gPlayerName) > 0)
             DrawText("Pressione ENTER para confirmar", screenWidth/2 - 190, box.y + box.height + 20, 24, BLACK);
-        // Exibe feedback se o nome estiver no limite
+
+        // EXIBIÇÃO DO ALERTA QUANDO ULTRAPASSA O LIMITE DE CARACTERES
         if (strlen(gPlayerName) == MAX_PLAYER_NAME - 1)
-            DrawText("Limite de caracteres atingido!", 50, 120, 20, RED);
+        {
+            int avisoY = 120;
+            int avisoFont = 20;
+            float alertaScale = 0.5f;
+            int alertaW = alerta.width * alertaScale;
+            int alertaH = alerta.height * alertaScale;
+            int imgX = 50 + 16 + 320; // 100px mais para a direita
+            int imgY = avisoY-80;
+            // Desenha o PNG
+            DrawTextureEx(alerta, (Vector2){ imgX, imgY }, 0.0f, alertaScale, WHITE);
+            // Texto centralizado logo abaixo da imagem
+            const char *msg = "Limite de caracteres atingido!";
+            int textoW = MeasureText(msg, avisoFont);
+            int textoX = (imgX + (alertaW - textoW)/2)+238;
+            int textoY = imgY + alertaH - 102; // 2px abaixo do PNG, bem próximo
+            DrawText(msg, textoX, textoY, avisoFont, RED);
+        }
     }
     else if (currentScreen == MENU_SELECT_CHAR)
     {
@@ -464,6 +481,7 @@ void UnloadMenu(void)
     UnloadTexture(btnRanking);
     UnloadTexture(btnInitHover);
     UnloadTexture(btnRankingHover);
+    UnloadTexture(alerta);
     CharacterNode *node = head;
     if (node)
     {
