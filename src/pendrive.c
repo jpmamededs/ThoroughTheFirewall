@@ -20,6 +20,8 @@ static bool pendriveSelecionado = false;
 static bool pendriveUsavel = false;
 
 static Vector3 usbWorldPos = {-2.0f, 0.5f, 2.0f};
+static Vector3 computerWorldPos = { 0.0f, 0.0f, -2.0f };
+static bool   mostrarUsarPendrive = false;
 
 static TypeWriter tw;
 static bool mensagemInicialFinalizada = false;
@@ -35,8 +37,19 @@ static const float velocidadeDica = 300.0f;
 static Sound steam_som;
 static bool steam_tocando = false;
 
+static bool mostrarPegarPendrive = false;
+static const float yawAlvo = 0.15f; 
+
 static Vector3 Vector3SubtractManual(Vector3 a, Vector3 b) {
     return (Vector3){a.x - b.x, a.y - b.y, a.z - b.z};
+}
+
+static float YawDiff(float yawA, float yawB)
+{
+    float d = yawA - yawB;
+    if (d >  PI)  d -= 2.0f * PI;
+    if (d < -PI)  d += 2.0f * PI;
+    return fabsf(d);
 }
 
 void Init_Pendrive(void)
@@ -63,6 +76,9 @@ void Init_Pendrive(void)
     camera.fovy = 60.0f;
     camera.projection = CAMERA_PERSPECTIVE;
 
+    SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+    DisableCursor();
+
     pendriveSelecionado = false;
     pendriveUsavel = false;
     mensagemInicialFinalizada = false;
@@ -82,68 +98,61 @@ void Init_Pendrive(void)
 
 void Update_Pendrive(void)
 {
-    float delta = GetFrameTime();
-    tempoDesdeInicio += delta;
+    float dt = GetFrameTime();
+    tempoDesdeInicio += dt;
 
+    /* Texto inicial ---------------------------------------------------- */
     if (!mensagemInicialFinalizada) {
-        UpdateTypeWriter(&tw, delta, IsKeyPressed(KEY_SPACE));
+        UpdateTypeWriter(&tw, dt, IsKeyPressed(KEY_SPACE));
         if (tw.done) mensagemInicialFinalizada = true;
     }
 
-    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) cameraYaw -= 0.002f;
-    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) cameraYaw += 0.002f;
-
+    /* Rotação da câmera ------------------------------------------------ */
+    cameraYaw += GetMouseDelta().x * 0.002f;
     if (cameraYaw > maxYaw) cameraYaw = maxYaw;
     if (cameraYaw < minYaw) cameraYaw = minYaw;
 
-    float distance = 1.0f;
-    camera.target.x = camera.position.x + sinf(cameraYaw) * distance;
-    camera.target.z = camera.position.z - cosf(cameraYaw) * distance;
-    camera.target.y = camera.position.y;
+    float dist = 1.0f;
+    camera.target = (Vector3){
+        camera.position.x + sinf(cameraYaw) * dist,
+        camera.position.y,
+        camera.position.z - cosf(cameraYaw) * dist
+    };
 
-    if (!pendriveSelecionado && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        Vector2 pendriveScreenPos = GetWorldToScreen(usbWorldPos, camera);
-        Vector2 mouse = GetMousePosition();
-        float distancia = sqrtf((mouse.x - pendriveScreenPos.x)*(mouse.x - pendriveScreenPos.x) +
-                                (mouse.y - pendriveScreenPos.y)*(mouse.y - pendriveScreenPos.y));
-        if (distancia < 50.0f) {
-            pendriveSelecionado = true;
+    Vector3 dirPendrive  = Vector3SubtractManual(usbWorldPos,      camera.position);
+    Vector3 dirComputer  = Vector3SubtractManual(computerWorldPos, camera.position);
+
+    float yawPendrive = atan2f(dirPendrive.x,  -dirPendrive.z);
+    float yawComputer = atan2f(dirComputer.x,  -dirComputer.z);
+
+    /* --- Diferenças ao alvo -------------------------------------- */
+    float diffPendrive = YawDiff(yawPendrive, cameraYaw);
+    float diffComputer = YawDiff(yawComputer, cameraYaw);
+
+    mostrarPegarPendrive = (!pendriveSelecionado && diffPendrive < yawAlvo);
+    mostrarUsarPendrive  = (pendriveSelecionado  && diffComputer < yawAlvo);
+
+    /* Interações ------------------------------------------------------- */
+    if (mostrarPegarPendrive && IsKeyPressed(KEY_SPACE))
+        pendriveSelecionado = true;
+
+    if (mostrarUsarPendrive && IsKeyPressed(KEY_SPACE))
+        fase_concluida = true;
+
+    pendriveUsavel = mostrarUsarPendrive;   // usado no desenho antigo
+
+    /* Dica animada (inalterada) ---------------------------------------- */
+    if (tempoDesdeInicio >= 2.0f && !dicaVisivel) { dicaVisivel = dicaAnimando = true; }
+    if (dicaVisivel) {
+        dicaTimer += dt;
+        if (dicaAnimando && dicaTimer < 1.0f) {
+            posicaoDicaX += velocidadeDica * dt;
+            if (posicaoDicaX >= 20.0f) { posicaoDicaX = 20.0f; dicaAnimando = false; }
         }
-    }
-
-    if (pendriveSelecionado && fabsf(cameraYaw) < 0.1f) {
-        pendriveUsavel = true;
-    }
-
-    if (tempoDesdeInicio >= 2.0f && !dicaVisivel) 
-    {
-        dicaVisivel = true;
-        dicaAnimando = true;
-    }
-
-    if (dicaVisivel) 
-    {
-        dicaTimer += delta;
-
-        if (dicaAnimando && dicaTimer < 1.0f) 
-        {
-            posicaoDicaX += velocidadeDica * delta;
-            if (posicaoDicaX >= 20.0f) 
-            {
-                posicaoDicaX = 20.0f;
-                dicaAnimando = false;
-            }
-        }
-
-        if (dicaTimer >= 5.0f && dicaTimer < 7.0f) 
-        {
+        if (dicaTimer >= 5.0f && dicaTimer < 7.0f) {
             dicaAnimando = true;
-            posicaoDicaX -= velocidadeDica * delta;
-            if (posicaoDicaX <= -420.0f) 
-            {
-                posicaoDicaX = -422.0f;
-                dicaVisivel = false;
-            }
+            posicaoDicaX -= velocidadeDica * dt;
+            if (posicaoDicaX <= -420.0f) { posicaoDicaX = -422.0f; dicaVisivel = false; }
         }
     }
 }
@@ -191,20 +200,16 @@ void Draw_Pendrive(void)
         DrawText(buffer, 40, GetScreenHeight() - 160, 22, WHITE);
     }
 
-    if (pendriveUsavel) {
-        Rectangle btn = {
-            GetScreenWidth() / 2 - 100,
-            GetScreenHeight() - 140,
-            200,
-            40
-        };
-        DrawRectangleRec(btn, GREEN);
-        DrawText("Usar Pendrive", btn.x + 20, btn.y + 10, 20, WHITE);
+    if (mostrarPegarPendrive) {
+        Rectangle r = { GetScreenWidth()/2 - 160, GetScreenHeight() - 140, 320, 48 };
+        Color     c = (Color){  38, 142, 255, 255 };   // azul “neon”
+        DrawPromptBox(r, c, "Pegar Pendrive [SPACE]", true);
+    }
 
-        Vector2 mouse = GetMousePosition();
-        if (CheckCollisionPointRec(mouse, btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            fase_concluida = true;
-        }
+    if (mostrarUsarPendrive) {
+        Rectangle r = { GetScreenWidth()/2 - 140, GetScreenHeight() - 400, 280, 48 };
+        Color     c = (Color){  46, 191,  87, 255 };   // verde vibrante
+        DrawPromptBox(r, c, "Usar Pendrive [SPACE]", false);
     }
 
     if (dicaVisivel) 
@@ -235,4 +240,5 @@ void Unload_Pendrive(void)
         UnloadTexture(usbTextures[i]);
     }
     UnloadSound(steam_som);
+    EnableCursor();
 } 
