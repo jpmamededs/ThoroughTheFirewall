@@ -4,9 +4,9 @@
 #include <string.h>
 #include "generalFunctions.h"
 #include "playerStats.h"
+#include <math.h>
 
 #define FRAME_COUNT 15
-#define MAX_COLUMNS 64
 #define SPRITE_SRC_WIDTH 480
 #define SPRITE_SRC_HEIGHT 960
 #define SPRITE_SCALE 0.6f
@@ -14,6 +14,9 @@
 #define SPRITE_BTN_HEIGHT (SPRITE_SRC_HEIGHT * SPRITE_SCALE)
 #define MAX_HOVER_BTNS 32
 #define MENU_Y_OFFSET (-60)
+#define LOGO_BASE_SCALE     0.50f   // tamanho médio da logo
+#define LOGO_PULSE_AMPL     0.05f   // quanto ela “respira”
+#define LOGO_PULSE_SPEED    2.5f    // ciclos por segundo
 
 typedef struct CharacterNode
 {
@@ -31,18 +34,15 @@ typedef enum
 } MenuScreen;
 
 static MenuScreen currentScreen = MENU_MAIN;
-static Texture2D backgroundMatrix;
-static Texture2D fundoBg;
+static Texture2D logo_jogo;
+static Texture2D background;
 static Texture2D hacker1, hacker2;
 static Texture2D menina1, menina2;
 static Texture2D meninoPdavida1, meninoPdavida2;
 static Texture2D deBone1, deBone2;
-static Rectangle matrixFrames[FRAME_COUNT];
 static int currentFrame = 0;
 static float frameTime = 0.05f;
 static float lastUpdate = 0.0f;
-static float rainY[MAX_COLUMNS] = {0};
-static bool matrixInitialized = false;
 
 static CharacterNode *head = NULL, *selectedChar = NULL;
 static int charCount = 0;
@@ -158,8 +158,8 @@ void InitMenu(void)
 
     if (!IsAudioDeviceReady()) InitAudioDevice();
 
-    backgroundMatrix = LoadTexture("src/sprites/Matrix.png");
-    fundoBg = LoadTexture("src/sprites/logo_jogo.png");
+    background = LoadTexture("src/sprites/intro/bgFinal.png");
+    logo_jogo = LoadTexture("src/sprites/logo_jogo.png");
     hacker1 = LoadTexture("src/sprites/hacker1-unselected.png");
     hacker2 = LoadTexture("src/sprites/hacker2-selected.png");
     menina1 = LoadTexture("src/sprites/menina-unselected.png");
@@ -171,16 +171,7 @@ void InitMenu(void)
     clickSound = LoadSound("src/music/buttonPress.wav");
     alertSound = LoadSound("src/music/welcome-to-the-game-hacking-alert_sm4UxhuM.mp3");
 
-    Rectangle frames[] = {
-        {0, 512, 512, 512}, {0, 1024, 512, 512}, {0, 1536, 512, 512}, {512, 0, 512, 512}, {512, 512, 512, 512}, {512, 1024, 512, 512}, {512, 1536, 512, 512}, {1024, 0, 512, 512}, {1024, 512, 512, 512}, {1024, 1024, 512, 512}, {1024, 1536, 512, 512}, {1536, 0, 512, 512}, {1536, 512, 512, 512}, {1536, 1024, 512, 512}, {1536, 1536, 512, 512}
-    };
-
-    for (int i = 0; i < FRAME_COUNT; i++) {
-        matrixFrames[i] = frames[i];
-    }
-
     CreateCharacterList();
-    matrixInitialized = false;
     wasHoveredLastFrame = false;
     isFadingOut = false;
     fadeAlpha = 0.0f;
@@ -288,12 +279,6 @@ void UpdateMenu(void)
             PlaySound(clickSound);
             currentScreen = MENU_SELECT_CHAR;
         }
-
-        // Exibe feedback se o nome estiver no limite
-        if (strlen(gPlayerName) == MAX_PLAYER_NAME - 1)
-        {
-            DrawText("Limite de caracteres atingido!", 50, 120, 20, RED);
-        }
     }
 
     /* ----------------   SELEÇÃO DE PERSONAGENS   ------------------------ */
@@ -393,34 +378,25 @@ void DrawMenu(void)
     int screenHeight = GetScreenHeight();
     BeginDrawing();
     ClearBackground(BLACK);
-    float scale = 0.3f;
-    int spriteW = 512 * scale;
-    int spriteH = 512 * scale;
-    int columns = screenWidth / spriteW + 2;
-    if (!matrixInitialized)
-    {
-        for (int i = 0; i < MAX_COLUMNS; i++)
-            rainY[i] = GetRandomValue(-spriteH, screenHeight);
-        matrixInitialized = true;
-    }
-    float speed = 100.0f * GetFrameTime();
-    Color green = (Color){0, 255, 0, 60};
-    for (int i = 0; i < columns && i < MAX_COLUMNS; i++)
-    {
-        rainY[i] += speed;
-        if (rainY[i] > screenHeight)
-            rainY[i] = -spriteH;
-        DrawTexturePro(backgroundMatrix, matrixFrames[currentFrame],
-                       (Rectangle){i * spriteW, rainY[i], spriteW, spriteH}, (Vector2){0, 0}, 0.0f, green);
-    }
+
+    // IMAGEM DE FUNDO
+    float imgW = (float)screenWidth;
+    float imgH = (float)screenHeight;
+    DrawTexturePro(background, 
+        (Rectangle){0, 0, (float)background.width, (float)background.height}, 
+        (Rectangle){0, 0, imgW, imgH}, 
+        (Vector2){0, 0}, 
+        0.0f, 
+        WHITE
+    );
     
     if (currentScreen == MENU_MAIN)
     {
-        float imgScale = 0.65f;
-        float imgW = fundoBg.width  * imgScale;
-        float imgH = fundoBg.height * imgScale;
-        float logoY = (screenHeight - imgH)/2 + MENU_Y_OFFSET;
-        DrawTextureEx(fundoBg, (Vector2){(screenWidth - imgW)/2, logoY}, 0.0f, imgScale, WHITE);
+        float imgScale = LOGO_BASE_SCALE + LOGO_PULSE_AMPL * sinf(GetTime() * LOGO_PULSE_SPEED);
+        float imgW = logo_jogo.width  * imgScale;
+        float imgH = logo_jogo.height * imgScale;
+        float logoY = (screenHeight - imgH)/2 + (MENU_Y_OFFSET - 130);
+        DrawTextureEx(logo_jogo, (Vector2){ (screenWidth - imgW)/2, logoY }, 0.0f, imgScale, WHITE);
 
         const int btnW = 300, btnH = 80, spacing = 20;
         int startY = (screenHeight - 260) + MENU_Y_OFFSET;
@@ -472,8 +448,13 @@ void DrawMenu(void)
 
         /* Dica de confirmação */
         if (strlen(gPlayerName) > 0)
-            DrawText("Pressione ENTER para confirmar", screenWidth/2 - 190, box.y + box.height + 20, 24, LIGHTGRAY);
+            DrawText("Pressione ENTER para confirmar", screenWidth/2 - 190, box.y + box.height + 20, 24, BLACK);
+
+        // Exibe feedback se o nome estiver no limite
+        if (strlen(gPlayerName) == MAX_PLAYER_NAME - 1)
+            DrawText("Limite de caracteres atingido!", 50, 120, 20, RED);
     }
+
     else if (currentScreen == MENU_SELECT_CHAR)
     {
         int spacing = 30;
@@ -505,10 +486,10 @@ void DrawMenu(void)
         DrawRectangleRec(confirmBtn, confirmColor);
         DrawText("Confirmar", confirmBtn.x + 50, confirmBtn.y + 12, 32, WHITE);
     }
+
     if (isFadingOut)
-    {
         DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, (unsigned char)(fadeAlpha * 255)});
-    }
+
     EndDrawing();
 }
 
@@ -520,8 +501,8 @@ void UnloadMenu(void)
 {
     UnloadSound(clickSound);
     UnloadSound(alertSound);
-    UnloadTexture(fundoBg);
-    UnloadTexture(backgroundMatrix);
+    UnloadTexture(logo_jogo);
+    UnloadTexture(background);
     UnloadTexture(hacker1);
     UnloadTexture(hacker2);
     UnloadTexture(menina1);

@@ -44,3 +44,7 @@ Carlos, Dante, 76.7, 0
 Pedro, Levi, 88.3, 1
 Ana, Levi, 95.0, 1
 Dudu 00, Alice, 10.00, 0
+Sem Nome, Alice, 0.00, 0
+Sem Nome, Alice, 23.20, 0
+Sem Nome, Alice, 0.00, 0
+Sem Nome, Alice, 0.00, 0

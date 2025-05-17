@@ -70,7 +70,7 @@ int main(void)
     int screenHeight = GetMonitorHeight(0);
 
     InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
-    SetTargetFPS(870);
+    SetTargetFPS(800);
     SetWindowPosition(0, 0); 
 
     InitAudioDevice();
@@ -150,7 +150,7 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                float temposIntroShow[3] = {12.0f, 8.0f, 10.0f};
+                float temposIntroShow[3] = {11.0f, 8.0f, 10.0f};
                 float temposIntroEraser[3] = {1.5f, 1.5f, 1.5f};
                 InitIntro(temposIntroShow, temposIntroEraser);
                 state = APP_INTRO;
@@ -575,7 +575,7 @@ int main(void)
                 Unload_BruteForce();
                 bruteforce_Initialized = false;
 
-                Init_TransitionScreen(4, "Fruit Ninja");
+                Init_TransitionScreen(4, "Adquira Arquivos");
                 transicao_Initialized = true;
                 state = APP_TRANSICAO;
                 PFP_Trasicao = APP_DESAFIO_04;

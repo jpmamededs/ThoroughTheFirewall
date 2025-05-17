@@ -249,35 +249,8 @@ void DrawPiscadaOlho(float t, int w, int h)
 
 void UpdateCutscenes(void)
 {
-    if (IsKeyPressed(KEY_SPACE))
-    {
+    if (IsKeyPressed(KEY_SPACE)) {
         ended = true;
-    }
-
-    if (ended) return;
-
-    if (IsKeyPressed(KEY_SPACE))
-    {
-        if (!aguardandoFimBgFinal) {
-            // Vá direto para a tela final (os valores dependem do seu sistema de estados, adapte!)
-            mostrandoBgFinal = true;
-            animZoomFinalIniciou = true;
-            aguardandoFimBgFinal = true;
-            estadoPiscadaAtual = 4; // pula piscadas se quiser
-            animZoomFinalStart = GetTime();
-            // Faça outras flags de transição se quiser cortar animações intermediárias
-            // Você pode remover telas intermediárias aqui também.
-        }
-        else {
-            // Já está esperando, então encerra de verdade
-            ended = true;
-            aguardandoFimBgFinal = false;
-        }
-        return;
-    }
-
-    //float time = GetTime() - startTime;
-    if (aguardandoFimBgFinal) {
         return;
     }
 }
@@ -1690,45 +1663,46 @@ void DrawNomeHankAnim(float animTime, int w, int h)
         );
     }
 }
-static void DrawZoomOutBgFinal(float t, int w, int h)
-{
-    // t: 0.0 (zoom máximo, só o centro) -- até -- 1.0 (imagem normal)
-    if (t < 0.0f) t = 0.0f;
-    if (t > 1.0f) t = 1.0f;
-    // SmoothStep para suavizar
-    float easeT = t * t * (3.0f - 2.0f * t);
+//static void DrawZoomOutBgFinal(float t, int w, int h)
+//{
+//    // t: 0.0 (zoom máximo, só o centro) -- até -- 1.0 (imagem normal)
+//    if (t < 0.0f) t = 0.0f;
+//    if (t > 1.0f) t = 2.0f;
+//    // SmoothStep para suavizar
+//    float easeT = t * t * (3.0f - 2.0f * t);
+//
+//    float srcW = bgFinal.width;
+//    float srcH = bgFinal.height;
+//    //float dstW = (float)w;
+//    //float dstH = (float)h;
+//    // Zoom máximo: escolha quanto de zoom dá no começo (ex: 2.0x, pode ser mais/melhor)
+//    float maxZoom = 2.65f;
+//
+//    // Zoom "atual" (começa em maxZoom, termina em 1.0)
+//    float zoom = maxZoom - (maxZoom - 1.0f) * easeT;
+//
+//    // --- Centraliza o recorte ---
+//    float cropW = srcW / zoom;
+//    float cropH = srcH / zoom;
+//    float cropX = (srcW - cropW) / 2.0f;
+//    float cropY = (srcH - cropH) / 2.0f;
+//
+//    // (Opcional: fade-in!)
+//    unsigned char alpha = 255;
+//    // Exemplo de fade'n com t<0.10:
+//    if (t < 0.08f) alpha = (unsigned char) (255*(t/0.08f));
+//    else alpha = 255;
+//
+//    DrawTexturePro(
+//        bgFinal,
+//        (Rectangle){cropX, cropY, cropW, cropH},
+//        (Rectangle){0, 0, w, h},
+//        (Vector2){0, 0},
+//        0.0f,
+//        (Color){255,255,255, alpha}
+//    );
+//}
 
-    float srcW = bgFinal.width;
-    float srcH = bgFinal.height;
-    //float dstW = (float)w;
-    //float dstH = (float)h;
-    // Zoom máximo: escolha quanto de zoom dá no começo (ex: 2.0x, pode ser mais/melhor)
-    float maxZoom = 2.65f;
-
-    // Zoom "atual" (começa em maxZoom, termina em 1.0)
-    float zoom = maxZoom - (maxZoom - 1.0f) * easeT;
-
-    // --- Centraliza o recorte ---
-    float cropW = srcW / zoom;
-    float cropH = srcH / zoom;
-    float cropX = (srcW - cropW) / 2.0f;
-    float cropY = (srcH - cropH) / 2.0f;
-
-    // (Opcional: fade-in!)
-    unsigned char alpha = 255;
-    // Exemplo de fade'n com t<0.10:
-    if (t < 0.08f) alpha = (unsigned char) (255*(t/0.08f));
-    else alpha = 255;
-
-    DrawTexturePro(
-        bgFinal,
-        (Rectangle){cropX, cropY, cropW, cropH},
-        (Rectangle){0, 0, w, h},
-        (Vector2){0, 0},
-        0.0f,
-        (Color){255,255,255, alpha}
-    );
-}
 void DrawNomeAliceAnim(float animTime, int w, int h)
 {
     const float animDur = 1.00f;
@@ -2192,44 +2166,13 @@ void DrawJadeAnim(float animTime, int w, int h)
 void DrawCutscenes(void)
 {
     if (ended) return;
-        if (aguardandoFimBgFinal) {
-        int w = GetScreenWidth();
-        int h = GetScreenHeight();
-        BeginDrawing();
-        DrawTexturePro(
-            bgFinal,
-            (Rectangle){0, 0, bgFinal.width, bgFinal.height},
-            (Rectangle){0, 0, w, h},
-            (Vector2){0, 0}, 0.0f, WHITE
-        );
 
-        // --- ADICIONE AQUI ---
-        float logoW = logo.width;
-        float logoH = logo.height;
-        // ESCALA: Reduz se quiser, ex: 1.0 = original, 0.5 = metade
-        float tempo = GetTime();
-        float escalaLogoBase = 0.38f;            // ESCALA BASE padrão da sua logo
-        float intensidadePulse = 0.01f;          // Intensidade do pulso (quanto varia, 0.09 = ~9%)
-        float velocidadePulse = 1.8f;            // Velocidade, 1.0 = um segundo por ciclo
-
-        float escalaLogo = escalaLogoBase + intensidadePulse * sinf(tempo * velocidadePulse);
-
-        float dstW = logoW * escalaLogo;
-        float dstH = logoH * escalaLogo;
-        float xLogo = w/2.0f - dstW/2.0f;
-        float yLogo = (h/2.0f - dstH/2.0f)-260; // centralizado
-        DrawTexturePro(
-            logo,
-            (Rectangle){0,0,logoW,logoH},
-            (Rectangle){xLogo, yLogo, dstW, dstH},
-            (Vector2){0,0},
-            0.0f, WHITE
-        );
-        // Opcional: Mostra um texto de prompt
-        DrawText("Pressione ESPAÇO para continuar", w/2-MeasureText("Pressione ESPAÇO para continuar",30)/2, h-80, 30, (Color){0,0,0,160});
-        EndDrawing();
+    if (aguardandoFimBgFinal)
+    {
+        ended = true;
         return;
     }
+    
     int w = GetScreenWidth();
     int h = GetScreenHeight();
     float time = GetTime() - startTime;
@@ -2844,7 +2787,7 @@ void DrawCutscenes(void)
                                                         }
                                                         else if (estadoPiscadaAtual == 3) { // BLINK 3 (mais rápido; ao abrir, fica branco)
                                                             if (!mostrandoBgFinal) mostrandoBgFinal = true;
-                                                            t = tPiscada;
+                                                                t = tPiscada;
                                                             if (t < dur3)
                                                                 DrawPiscadaOlho(t/dur3, w, h);
                                                             else if (t < dur3 + durMeio3)
@@ -2862,28 +2805,10 @@ void DrawCutscenes(void)
                                                                 }
 
                                                                 // --- Chame o efeito ---
-                                                                DrawZoomOutBgFinal(tAbre, w, h);
-                                                                // --- ADICIONE O LOGO AQUI TAMBÉM ---
-                                                                float logoW = logo.width;
-                                                                float logoH = logo.height;
-                                                                float escalaLogo = 0.47f;
-                                                                float dstW = logoW * escalaLogo;
-                                                                float dstH = logoH * escalaLogo;
-                                                                float xLogo = w/2.0f - dstW/2.0f;
-                                                                float yLogo = h/2.0f - dstH/2.0f;
-                                                                DrawTexturePro(
-                                                                    logo,
-                                                                    (Rectangle){0,0,logoW,logoH},
-                                                                    (Rectangle){xLogo, yLogo, dstW, dstH},
-                                                                    (Vector2){0,0},
-                                                                    0.0f, WHITE
-                                                                );
-                                                                // Pálpebra cobrindo (preto total até abrir)
-                                                                DrawPiscadaOlho(1.0f - tAbre, w, h);
+                                                                //DrawZoomOutBgFinal(tAbre, w, h);
                                                             }
                                                             else { // ACABOU, FICA PRESO ATÉ BARRA DE ESPAÇO
                                                                 estadoPiscadaAtual = 4;
-                                                                animPiscadasComecou = false;
                                                                 aguardandoFimBgFinal = true;
                                                             }
                                                         }
