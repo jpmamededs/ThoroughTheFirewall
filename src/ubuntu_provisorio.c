@@ -210,8 +210,8 @@ void Draw_Ubuntu_Provisorio(void)
         if (mostrarCaixaDialogo)
         {
             const char *texto = (estadoCaixa == 0)
-                                    ? "Ola, sou a Gemini. Vou te instruir sempre que precisar."
-                                    : "Para continuar sua tarefa. Clique no icone do terminal.";
+                                    ? "Tarefa final detectada."
+                                    : "Clique na pasta para ver os seus arquivos.";
 
             int padding = 20;
             int fontSize = 18;

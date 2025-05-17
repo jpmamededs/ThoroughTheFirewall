@@ -2,7 +2,7 @@ Essa é uma explicação de como executar o Shell Reverso para concluir o proces
 
 1. Na sua máquina, clique em 'server.exe' para iniciar o servidor e aguardar conexões na porta 8081.
 
-2. Na máquina alvo, clique em 'shell.exe'  para infectá-la com o vírus.
+2. Na máquina alvo, clique em 'shell.exe' para infectá-la com o vírus.
 
 3. Após isso, na sua máquina, perceba que houve o estabelecimento da conexão com o computador da vítima.
 

@@ -644,7 +644,7 @@ int main(void)
             {
                 Unload_Shell3D_02();
                 shell3D_02_Initialized = false;
-                state = APP_FINAL_JOGO;
+                state = APP_UBUNTU_PROVISORIO;
             }
         }
         else if (state == APP_FINAL_JOGO)
