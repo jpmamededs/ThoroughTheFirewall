@@ -2,19 +2,15 @@
 #include "generalFunctions.h"
 #include "raylib.h"
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <direct.h>
-#include <string.h>
-#include <stdio.h>
-#include <dirent.h>
-
-// ESSE ARQUIVO DEVE SER MUDADO PARA ubuntuPenDrive.c
-
+#include <unistd.h>
 static Texture2D wallpaper;
 static Texture2D background;
 static Texture2D terminalIcon;
 static Texture2D geminiIcon;
-static Sound bootSound;
+static Texture2D folderIcon;
 static Font geminiFont;
 
 static float fadeTimer = 0.0f;
@@ -23,6 +19,7 @@ static float fadePause = 1.0f;
 
 static bool showBackground = false;
 static bool bootSoundPlayed = false;
+
 static bool terminalChamado = false;
 
 static Vector2 geminiFinalPos;
@@ -40,16 +37,9 @@ static int estadoCaixa = 0;
 static float tempoCaixaDialogo = 0.0f;
 static const float trocaMensagemDelay = 3.0f;
 
-static bool iniciandoTransicao = false;
-static float tempoFadeOut = 0.0f;
-static float tempoAposFade = 0.0f;
-static float tempoMensagemFinal = 0.0f;
-static bool aguardandoMensagemFinal = false;
+static bool fase_concluida = false; 
 
-static const float esperaPreta = 2.0f;
-static const float tempoMensagemFinalDelay = 2.0f;
-
-static bool fase_concluida = false;
+static Rectangle folderBounds;
 
 void Init_Ubuntu_Provisorio(void)
 {
@@ -57,20 +47,17 @@ void Init_Ubuntu_Provisorio(void)
     background = LoadTexture("src/sprites/os/background.jpg");
     terminalIcon = LoadTexture("src/sprites/os/terminal_icon.png");
     geminiIcon = LoadTexture("src/sprites/os/gemini.png");
-    bootSound = LoadSound("src/music/boot.mp3");
+    folderIcon = LoadTexture("src/sprites/os/folder.png");
     geminiFont = LoadFont("src/fonts/GoogleSansMono.ttf");
 
     fadeTimer = 0.0f;
     showBackground = false;
-    bootSoundPlayed = false;
-    terminalChamado = false;
-    fase_concluida = false;
+    bootSoundPlayed = true;
 
     float geminiAnimScale = 1.0f / 13.5f;
     geminiFinalPos = (Vector2){
         GetScreenWidth() - geminiIcon.width * geminiAnimScale - 20,
-        GetScreenHeight() - geminiIcon.height * geminiAnimScale - 60
-    };
+        GetScreenHeight() - geminiIcon.height * geminiAnimScale - 20};
 
     geminiAnimPos = (Vector2){GetScreenWidth(), geminiFinalPos.y};
 
@@ -82,11 +69,7 @@ void Init_Ubuntu_Provisorio(void)
     tempoCaixaDialogo = 0.0f;
     estadoCaixa = 0;
 
-    iniciandoTransicao = false;
-    tempoFadeOut = 0.0f;
-    tempoAposFade = 0.0f;
-    tempoMensagemFinal = 0.0f;
-    aguardandoMensagemFinal = false;
+    fase_concluida = false;
 }
 
 void Update_Ubuntu_Provisorio(void)
@@ -96,62 +79,6 @@ void Update_Ubuntu_Provisorio(void)
 
     if (!showBackground && fadeTimer >= (fadeDuration + fadePause))
         showBackground = true;
-
-    if (showBackground && !bootSoundPlayed)
-    {
-        PlaySound(bootSound);
-        bootSoundPlayed = true;
-    }
-
-    if (showBackground && !terminalChamado && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-    {
-        Vector2 mouse = GetMousePosition();
-        Rectangle terminalIconBounds = {10, 10, terminalIcon.width * 1.5f, terminalIcon.height * 2.0f};
-
-        if (CheckCollisionPointRec(mouse, terminalIconBounds))
-        {
-            char cwd[512];
-            if (_getcwd(cwd, sizeof(cwd)) != NULL)
-            {
-                char command[1024];
-                snprintf(command, sizeof(command),
-                         "start \"\" \"%s\\bruteForce_terminal.bat\"", cwd);
-                system(command);
-                terminalChamado = true;
-            }
-        }
-    }
-
-    DIR *d = opendir(".");
-    struct dirent *dir;
-    if (d)
-    {
-        while ((dir = readdir(d)) != NULL)
-        {
-            if (strcmp(dir->d_name, "dados.txt") == 0)
-            {
-                remove("dados.txt");
-
-                estadoCaixa = 2;
-                tempoMensagemFinal = 0.0f;
-                aguardandoMensagemFinal = true;
-                break;
-            }
-        }
-        closedir(d);
-    }
-
-    if (aguardandoMensagemFinal)
-    {
-        tempoMensagemFinal += dt;
-        if (tempoMensagemFinal >= tempoMensagemFinalDelay)
-        {
-            iniciandoTransicao = true;
-            aguardandoMensagemFinal = false;
-            tempoFadeOut = 0.0f;
-            tempoAposFade = 0.0f;
-        }
-    }
 
     if (bootSoundPlayed && !geminiAnimStarted)
     {
@@ -190,20 +117,49 @@ void Update_Ubuntu_Provisorio(void)
             estadoCaixa = 1;
     }
 
-    if (iniciandoTransicao)
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
-        tempoFadeOut += dt;
-        if (tempoFadeOut >= 1.0f)
+        Vector2 mouse = GetMousePosition();
+        if (CheckCollisionPointRec(mouse, folderBounds))
         {
-            tempoAposFade += dt;
-            if (tempoAposFade >= esperaPreta)
+            const char *exeDir = GetApplicationDirectory();
+
+            // Caminho final: [diretório do exe]/../hackingFiles
+            char fullPath[512];
+            snprintf(fullPath, sizeof(fullPath), "%s..\\reverseShellFiles", exeDir);
+
+            // Log para debug
+            TraceLog(LOG_INFO, "Abrindo pasta: %s", fullPath);
+
+            // Executar sem verificar, para garantir abertura mesmo com acentos
+            char command[600];
+            snprintf(command, sizeof(command), "explorer \"%s\"", fullPath);
+            system(command);
+        }
+    }
+
+    if (showBackground && !terminalChamado && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
+        Vector2 mouse = GetMousePosition();
+        Rectangle terminalIconBounds = {10, 10, terminalIcon.width * 1.5f, terminalIcon.height * 2.0f};
+
+        if (CheckCollisionPointRec(mouse, terminalIconBounds))
+        {
+            char cwd[512];
+            if (_getcwd(cwd, sizeof(cwd)) != NULL)
             {
-                // Isso define para Main que a fase se encerrou!
-                // Caso queira mandar para outra fase, basta apenas trocar o (state) na main
-                fase_concluida = true;
+                char command[1024];
+                snprintf(command, sizeof(command),
+                         "start \"\" \"%s\\bruteForce_terminal.bat\"", cwd);
+                system(command);
+                terminalChamado = true;
             }
         }
     }
+
+    // (fase_concluida = true;)
+    // isso define que a fase acabou, quando tiver essa lógica
+    // coloque isso, ao inves de trocar o state, Carlos o gay agradeçe!
 }
 
 void Draw_Ubuntu_Provisorio(void)
@@ -230,9 +186,23 @@ void Draw_Ubuntu_Provisorio(void)
     {
         int iconMargin = 10;
         float terminalScale = 1.3f;
-        float geminiAnimScale = 1.0f / 13.5f;
+        float geminiSideScale = 0.06f;
 
-        DrawTextureEx(terminalIcon, (Vector2){iconMargin, iconMargin}, 0.0f, terminalScale, WHITE);
+        float yTerminal = iconMargin;
+        float yGemini = yTerminal + terminalIcon.height * terminalScale + 8;
+        float yFolder = yGemini + geminiIcon.height * geminiSideScale + 8;
+
+        float folderScale = 0.12f;
+        float folderWidth = folderIcon.width * folderScale;
+        float folderHeight = folderIcon.height * folderScale;
+
+        folderBounds = (Rectangle){iconMargin + 1, yFolder, folderWidth, folderHeight};
+
+        DrawTextureEx(terminalIcon, (Vector2){iconMargin, yTerminal}, 0.0f, terminalScale, WHITE);
+        DrawTextureEx(geminiIcon, (Vector2){iconMargin + 1, yGemini}, 0.0f, geminiSideScale, WHITE);
+        DrawTextureEx(folderIcon, (Vector2){folderBounds.x, folderBounds.y}, 0.0f, folderScale, WHITE);
+
+        float geminiAnimScale = 1.0f / 13.5f;
 
         if (geminiAnimStarted)
             DrawTextureEx(geminiIcon, geminiAnimPos, 0.0f, geminiAnimScale, WHITE);
@@ -240,30 +210,20 @@ void Draw_Ubuntu_Provisorio(void)
         if (mostrarCaixaDialogo)
         {
             const char *texto = (estadoCaixa == 0)
-                                    ? "Nova tarefa detectada!"
-                                : (estadoCaixa == 1)
-                                    ? "Para continuar sua tarefa. Clique no icone do terminal."
-                                    : "Parabens, voce terminou suas pendencias.";
+                                    ? "Ola, sou a Gemini. Vou te instruir sempre que precisar."
+                                    : "Para continuar sua tarefa. Clique no icone do terminal.";
 
             int padding = 20;
             int fontSize = 18;
             Vector2 textSize = MeasureTextEx(geminiFont, texto, fontSize, 1);
             int largura = (int)textSize.x + padding * 2;
             int altura = (int)textSize.y + padding * 2;
-
             int x = geminiFinalPos.x - largura - 20;
-            int y = geminiFinalPos.y - ((altura - 110) / 8);
+            int y = geminiFinalPos.y + 5 - altura / 2;
 
             DrawRectangleRounded((Rectangle){x, y, largura, altura}, 0.3f, 16, WHITE);
             DrawTextEx(geminiFont, texto, (Vector2){x + padding, y + padding}, fontSize, 1, DARKGRAY);
         }
-    }
-
-    if (iniciandoTransicao)
-    {
-        float alpha = (tempoFadeOut < 1.0f) ? tempoFadeOut / 1.0f : 1.0f;
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
-                      (Color){0, 0, 0, (unsigned char)(alpha * 255)});
     }
 
     EndDrawing();
@@ -280,6 +240,6 @@ void Unload_Ubuntu_Provisorio(void)
     UnloadTexture(background);
     UnloadTexture(terminalIcon);
     UnloadTexture(geminiIcon);
-    UnloadSound(bootSound);
+    UnloadTexture(folderIcon);
     UnloadFont(geminiFont);
 }
