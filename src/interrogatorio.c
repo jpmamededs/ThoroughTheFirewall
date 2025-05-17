@@ -46,7 +46,7 @@ static struct
     bool falaSomTocado;
 
     // ---------- Fala Interrogatorio ----------
-    char  respostaBuf[128];
+    char  respostaBuf[384];
     int   respostaLen;
     int   perguntaAtual;
     bool  aguardandoInput;
@@ -360,28 +360,37 @@ static void DrawFalaInterrogatorio(void)
     Vector2 pos = { (GetScreenWidth()-w)/2.f, GetScreenHeight()-h };
     DrawTexturePro(ctx.spriteConfiante, src,
                    (Rectangle){pos.x,pos.y,w,h}, (Vector2){0,0},0, WHITE);
-
     // Caixa da pergunta
     const float boxH = 160.f;
     const float boxOffsetY = 60.f;
     float boxY = GetScreenHeight() - boxH - boxOffsetY;
     DrawRectangle(50, boxY, GetScreenWidth() - 100, boxH, (Color){0,0,0,220});
     DrawRectangleLines(50, boxY, GetScreenWidth() - 100, boxH, WHITE);
-
     // Pergunta atual
     DrawText(perguntas[ctx.perguntaID].pergunta, 70, boxY + 10, 24, WHITE);
-
     // Campo de input (sub‑caixa)
     const float inputH = 40.f;
     int yInput = boxY + boxH - inputH - 15;
     DrawRectangle(70, yInput, GetScreenWidth()-140, inputH, (Color){20,20,20,255});
     DrawRectangleLines(70, yInput, GetScreenWidth()-140, inputH, WHITE);
-    DrawText(ctx.respostaBuf, 80, yInput+8, 24, GREEN);
 
-    // Texto digitado
-    DrawText(ctx.respostaBuf, 80, yInput+8, 24, GREEN);
+    // --- AJUSTE DO BUFFER VISÍVEL ---
+    const int fs = 24;
+    const int inputMaxWidth = GetScreenWidth() - 160; // margem extra
+    const char *toDraw = ctx.respostaBuf;
+    int textLen = strlen(ctx.respostaBuf);
+
+    // Após digitar além do espaço, mostra só o fim!
+    while (textLen > 0 && MeasureText(toDraw, fs) > inputMaxWidth) {
+        toDraw++;
+        textLen--;
+    }
+
+    DrawText(toDraw, 80, yInput+8, fs, GREEN);
+
+    // Cursor piscante ao final do texto visível
     if (ctx.aguardandoInput && (GetTime()*2.0 - floor(GetTime()*2.0)) > 0.5) {
-        DrawText("|", 80 + MeasureText(ctx.respostaBuf, 24), yInput+8, 24, GREEN);
+        DrawText("|", 80 + MeasureText(toDraw, fs), yInput+8, fs, GREEN);
     }
 }
 
