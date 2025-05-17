@@ -1,4 +1,4 @@
-#include "ligacao_desconhecido.h"
+#include "transicao_proxy.h"
 #include "raylib.h"
 #include "generalFunctions.h"
 #include "playerStats.h"
@@ -7,6 +7,7 @@
 static Model modelo3D;
 static Texture2D pergunta_img;
 static Texture2D telefone_sprite;
+static Texture2D hankFalaSprite; // AJUSTADO NOVO SPRITE
 static Sound somFase1;
 static Sound somTelefone;
 static Sound somRadio;
@@ -34,43 +35,50 @@ static bool typeStarted = false;
 static float fadeAlphaFase1 = 2.0f;
 static const float FADEIN_DURATION = 2.0f;
 static bool fase1FadeInDone = false;
-static bool showComputerButton = false;
 static bool telefoneAtendido = false;
-static Sound somPersonagem;            // áudio do personagem
-static TypeWriter personagemWriter;    // typewriter do personagem
+static Sound somPersonagem;
+static TypeWriter personagemWriter;
 static bool personagemTypeStarted = false;
 static bool personagemAudioTocado   = false;
-static bool unknownDone        = false;   // texto do desconhecido concluído?
+static bool unknownDone        = false;
 static float timeAfterUnknown  = -1.0f; 
 static float postUnknownTimer = -1.0f;
 static Sound somChamadaAcabada;
 static bool somChamadaTocado = false; 
-static float gapTimer = -1.0f;        // cronômetro entre Fala-1 e Fala-2
+static float gapTimer = -1.0f;        
 static bool  gapSoundPlayed = false;
 #define RING_GAP 0.60f
-static bool fase_concluida = false;
+static bool done = false;
 static const char *characterName = "";
 static bool dicaVisivel = false;
 static float dicaTimer = 0.0f;
 static bool dicaAnimando = false;
-static float posicaoDicaX = -300.0f;  // Começa fora da tela
-static const float velocidadeDica = 300.0f;  // Pixels por segundo
+static float posicaoDicaX = -300.0f;
+static const float velocidadeDica = 300.0f;
 static const char *GetCurrentText(TypeWriter *writer)
 {
     return writer->text;
 }
-void Init_Ligacao_Desconhecido()
+// --- "3 dias depois" effect ---
+static bool introActive   = true;
+static float introTimer   = 0.0f;
+static float introAlpha   = 0.0f;
+static const float INTRO_FADE = 1.5f;
+static const float INTRO_HOLD = 2.5f;
+static bool fasePrincipalDoProxy = false;
+static float autoProceedTimer = -1.0f;
+void Init_Transicao_Proxy(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
-    telefone_sprite = LoadTexture("src/sprites/phone.png");
+    telefone_sprite = LoadTexture("src/sprites/tel_hank.png");
+    hankFalaSprite = LoadTexture("src/sprites/hankFala.png"); // AJUSTADO CARREGA SPRITE
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
     somRadio = LoadSound("src/music/voz-grosa.mp3");
-    somPersonagem = LoadSound(""); // se quiser voz no cara, é so colocar o caminho aqui
+    somPersonagem = LoadSound("");
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
     characterName = gSelectedCharacterName;
-    
     portaModel = LoadModel("src/models/DOOR.obj");
     portaTexture = LoadTexture("src/models/Garage_Metalness.png");
     portaModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = portaTexture;
@@ -80,7 +88,6 @@ void Init_Ligacao_Desconhecido()
     SetSoundVolume(somPersonagem, 1.0f);    
     SetMasterVolume(1.0f);
     SetSoundVolume(somChamadaAcabada, 2.0f);
-    // Reset de estado
     somFase1Tocado = false;
     somRadioTocado = false;
     interromperTelefone = false;
@@ -94,9 +101,8 @@ void Init_Ligacao_Desconhecido()
     delayTexto = 0.0f;
     typeStarted = false;
     hangUpCooldown = -1.0f;
-    fase_concluida = false;
+    done = false;
     telefoneAtendido = false;
-    // Câmera
     camera.position = (Vector3){0.0f, 1.6f, 0.0f};
     camera.target = (Vector3){0.0f, 1.6f, -1.0f};
     camera.up = (Vector3){0.0f, 1.0f, 0.0f};
@@ -104,17 +110,39 @@ void Init_Ligacao_Desconhecido()
     camera.projection = CAMERA_PERSPECTIVE;
     SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
     DisableCursor();
-    // Dica
     dicaVisivel = false;
     dicaTimer = 0.0f;
     dicaAnimando = false;
     posicaoDicaX = -300.0f;
+    // 3 dias depois
+    introActive = true;
+    introTimer = 0.0f;
+    introAlpha = 0.0f;
+    fasePrincipalDoProxy = false;
+    autoProceedTimer = -1.0f;
 }
-void Update_Ligacao_Desconhecido(void)
+void Update_Transicao_Proxy(void)
 {
     float delta = GetFrameTime();
+    // --- INTRO "3 dias depois" ---
+    if (introActive) {
+        introTimer += delta;
+        if (introTimer <= INTRO_FADE)
+            introAlpha = introTimer / INTRO_FADE;
+        else if (introTimer <= INTRO_FADE + INTRO_HOLD)
+            introAlpha = 1.0f;
+        else if (introTimer <= INTRO_FADE*2 + INTRO_HOLD)
+            introAlpha = 1.0f - (introTimer - INTRO_FADE - INTRO_HOLD) / INTRO_FADE;
+        else {
+            introActive = false;
+            introAlpha  = 0.0f;
+            fasePrincipalDoProxy = true;
+        }
+        return;
+    }
+    if (!fasePrincipalDoProxy)
+        return;
     tempoDesdeInicio += delta;
-    
     if (!fase1FadeInDone)
     {
         fadeAlphaFase1 = UpdateFade(delta, FADEIN_DURATION, true);
@@ -130,20 +158,16 @@ void Update_Ligacao_Desconhecido(void)
             cooldownTelefone = 0.0f;
         }
     }
-    // Inicia fala digitada após delay
     if (delayTexto > 0.0f)
     {
         delayTexto -= delta;
         if (delayTexto <= 0.0f && !somRadioTocado)
         {
-            // Inicia o áudio e a caixa juntos após o delay
             PlaySound(somRadio);
             somRadioTocado = true;
             const char *fala =
-                "Atenção! você foi selecionado para um processo ultrassecreto. "
-                "Antes de prosseguirmos, preciso confirmar que suas habilidades\n"
-                "estão à altura. Mostre que é capaz de passar pelo firewall que "
-                "acabei de enviar para o seu computador e faça isso sem ser detectado.";
+                "Aqui é o Hank, você deve imaginar que o processo seletivo não será fácil, precisamos de você disponível a qualquer momento. Acabamos \nde detectar um tráfego incomum nos nossos servidores proxy." 
+                " Acesse da sua residencia e reconfigure o proxy para reforçar nossa \nsegurança. Siga os passos que deixei no post-it na sua mesa.";
             InitTypeWriter(&fase1Writer, fala, 16.5f);
             typeStarted = true;
         }
@@ -152,9 +176,8 @@ void Update_Ligacao_Desconhecido(void)
     if (typeStarted && !unknownDone && fase1Writer.drawnChars >= strlen(GetCurrentText(&fase1Writer)))
     {
         unknownDone       = true;
-        timeAfterUnknown  = 0.0f;   // inicia a contagem de 2 s
+        timeAfterUnknown  = 0.0f;
     }
-    /* 3.2 – contar 2 s e disparar fala do personagem */
     if (unknownDone && !personagemAudioTocado)
     {
         if (!somChamadaTocado) {
@@ -166,45 +189,48 @@ void Update_Ligacao_Desconhecido(void)
         {
             PlaySound(somPersonagem);
             personagemAudioTocado = true;
-            const char *falaP = "O quê? Uma ligação assim do nada...? Isso parece suspeito... Melhor verificar isso direito.";    // texto do personagem
+            const char *falaP = "Acabei de encontrar o post-it, agora basta configurar tudo.";
             InitTypeWriter(&personagemWriter, falaP, 18.5f);
             personagemTypeStarted = true;
         }
     }
-    /********* Fim do texto do DESCONHECIDO *********/
     if (typeStarted && !unknownDone &&
         fase1Writer.drawnChars >= (int)strlen(GetCurrentText(&fase1Writer)))
     {
         unknownDone       = true;
-        postUnknownTimer  = 0.0f;  
-        gapTimer     = 0.0f;          // começa intervalo
-        gapSoundPlayed = false;        // começa contagem
+        postUnknownTimer  = 0.0f;
+        gapTimer     = 0.0f;
+        gapSoundPlayed = false;
     }
-    /********* Contagem após término *********/
     if (unknownDone && postUnknownTimer >= 0.0f)
     {
         postUnknownTimer += delta;
-        /* 1 s depois: apaga o texto anterior e a caixa */
         if (postUnknownTimer >= 1.0f && typeStarted)
         {
             typeStarted = false;
             unknownDone = false;
-            // Limpeza da string do TypeWriter
             char *mutableText = (char *)fase1Writer.text;
             mutableText[0] = '\0';
             fase1Writer.drawnChars = 0;
         }
     }
-    // Verifica se a fala 2 terminou para habilitar o botão
     if (personagemTypeStarted && 
         personagemWriter.drawnChars >= (int)strlen(GetCurrentText(&personagemWriter)))
     {
-        showComputerButton = true;
+        if (autoProceedTimer < 0.0f) // se ainda não iniciou o timer
+            autoProceedTimer = 0.0f; // começa a contar
     }
-    /* 3.3 – atualizar o TypeWriter do personagem (se ativo) */
+    if (autoProceedTimer >= 0.0f && !done) {
+        autoProceedTimer += delta;
+        if (autoProceedTimer >= 2.0f) {
+            StopSound(somFase1);
+            StopSound(somTelefone);
+            StopSound(somRadio);
+            done = true;
+        }
+    }
     if (personagemTypeStarted)
         UpdateTypeWriter(&personagemWriter, delta, IsKeyPressed(KEY_SPACE));
-    // Toca telefone automaticamente com cooldown
     if (!interromperTelefone && !telefoneAtendido)
     {
         if (IsSoundPlaying(somTelefone))
@@ -240,7 +266,7 @@ void Update_Ligacao_Desconhecido(void)
             animandoTelefone    = false;
             telefoneSubindo     = false;
             hangUpCooldown   = 0.0f; 
-            cooldownTelefone = -5.0f; 
+            cooldownTelefone = -5.0f;
             typeStarted      = false;
         }
     }
@@ -330,7 +356,6 @@ static void DrawDialogueBox(const char *speaker,
     int boxWidth = GetScreenWidth() - 120;
     int boxHeight = 130;
     int borderRadius = boxHeight / 2;
-    /* retrato + balão */
     int imgW = 1000;
     int imgH = pergunta_img.height - 130;
     int imgX = boxX;
@@ -350,9 +375,20 @@ static void DrawDialogueBox(const char *speaker,
         DrawText(tmp, boxX + 20, boxY + 30, fontBody, WHITE);
     }
 }
-void Draw_Ligacao_Desconhecido()
+void Draw_Transicao_Proxy()
 {
     BeginDrawing();
+    // --- INTRO "3 dias depois" ---
+    if (introActive || introAlpha > 0.0f) {
+        ClearBackground(BLACK);
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, introAlpha));
+        const char *msg = "Na madrugada do mesmo dia";
+        int fSize = 40;
+        int txtW = MeasureText(msg, fSize);
+        DrawText(msg, (GetScreenWidth() - txtW) / 2, GetScreenHeight() / 2 - fSize / 2, fSize, Fade(WHITE, introAlpha));
+        EndDrawing();
+        return;
+    }
     ClearBackground(BLACK);
     BeginMode3D(camera);
     DrawModel(modelo3D, (Vector3){0.0f, -0.5f, -2.0f}, 0.05f, WHITE);
@@ -362,18 +398,22 @@ void Draw_Ligacao_Desconhecido()
     Vector3 portaScale = {0.05f, 0.05f, 0.05f};
     DrawModelEx(portaModel, portaPos, portaRotAxis, portaRotAngle, portaScale, WHITE);
     EndMode3D();
-    // Caixa de fala - Condição corrigida
     bool drawUnknownNow = (interromperTelefone && typeStarted && !personagemTypeStarted);
     if (drawUnknownNow)
     {
-        DrawDialogueBox("???", &fase1Writer, 24, 26);
+        // --- AJUSTADO: Desenha a sprite do Hank logo acima da caixa do dialogue ---
+        int imgWidth = hankFalaSprite.width;
+        int imgHeight = hankFalaSprite.height;
+        int x = 40; // igual a boxX na DrawDialogueBox
+        int y = GetScreenHeight() - 220 - imgHeight + 200; // ajuste para ficar logo acima (marginBottom + pequeno espaço)
+        float hankScale = 0.6f; // ajuste esse valor como quiser (1.0 = original, 2.0 = dobro, 0.5 = metade)
+        DrawTextureEx(hankFalaSprite, (Vector2){x, y}, 0.0f, hankScale, WHITE);
+        DrawDialogueBox("Agente Hank", &fase1Writer, 24, 26);
     }
-    // Caixa de fala do personagem
     if (personagemTypeStarted)
     {
         DrawDialogueBox(characterName, &personagemWriter, 24, 26);
     }
-    // Telefone animado
     if (telefoneVisivel)
     {
         int screenWidth = GetScreenWidth();
@@ -398,29 +438,12 @@ void Draw_Ligacao_Desconhecido()
             0.0f,
             WHITE);
     }
-    // Botão "Usar Computador"
-    if (showComputerButton)
+    if (autoProceedTimer > 0.0f && autoProceedTimer < 2.0f)
     {
-        int fontSize = 20;
-        const char* text = "Usar Computador [SPACE]";
-        int textWidth = MeasureText(text, fontSize);
-        int padding = 20;
-        Rectangle btnBounds = {
-            GetScreenWidth() / 2 - (textWidth / 2) - padding,
-            GetScreenHeight() / 2 + 100,
-            textWidth + (2 * padding),
-            fontSize + 20
-        };
-        DrawRectangleRec(btnBounds, GREEN);
-        DrawText(text, btnBounds.x + (btnBounds.width - textWidth) / 2,
-                btnBounds.y + (btnBounds.height - fontSize) / 2, fontSize, BLACK);
-        if (IsKeyPressed(KEY_SPACE))
-        {
-            StopSound(somFase1);
-            StopSound(somTelefone);
-            StopSound(somRadio);
-            fase_concluida = true;
-        }
+        const char* msg = "Prosseguindo para o Proxy...";
+        int fontSize = 28;
+        int textW = MeasureText(msg, fontSize);
+        DrawText(msg, (GetScreenWidth() - textW) / 2, GetScreenHeight() - 120, fontSize, LIGHTGRAY);
     }
     if (fadeAlphaFase1 > 0.0f)
     {
@@ -429,19 +452,20 @@ void Draw_Ligacao_Desconhecido()
     }
     if (dicaVisivel) 
     {
-        DrawDica(posicaoDicaX, 20, "Dica: mova o mouse para olhar ao redor");
+        DrawDica(posicaoDicaX, 20, "Dica: atenda o telefone");
     }
     EndDrawing();
 }
-bool Fase_Ligacao_Desconhecido_Concluida(void)
+bool Transicao_Proxy_Done(void)
 {
-    return fase_concluida;
+    return done;
 }
-void Unload_Ligacao_Desconhecido(void)
+void Unload_Transicao_Proxy(void)
 {
     UnloadModel(modelo3D);
     UnloadTexture(pergunta_img);
     UnloadTexture(telefone_sprite);
+    UnloadTexture(hankFalaSprite); // AJUSTADO: descarrega sprite
     UnloadSound(somFase1);
     UnloadSound(somTelefone);
     UnloadSound(somRadio);
