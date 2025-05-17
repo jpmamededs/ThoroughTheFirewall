@@ -1,7 +1,3 @@
-<<<<<<< HEAD:src/template_3D_02.c
-=======
-#include "shell3D_01.h"
->>>>>>> 190e95519dad26732afe71103d226417edf3e2c5:src/shell3D_01.c
 #include "raylib.h"
 #include "generalFunctions.h"
 #include "playerStats.h"
@@ -20,29 +16,16 @@ static bool somTocado = false;
 static bool somParado = false;
 static float tempoDesdeInicio = 0.0f;
 
-<<<<<<< HEAD:src/template_3D_02.c
 static bool portaAtendida = false;
 static bool iniciandoTransicao = false;
-=======
-static bool fase_concluida = false;
-static float timeElapsed = 0.0f;
-static bool soundPlaying = false;
-static bool doorAnswered = false;
-
-// Variáveis do Flash e Fade
->>>>>>> 190e95519dad26732afe71103d226417edf3e2c5:src/shell3D_01.c
 static float fadeAlpha = 0.0f;
 
-<<<<<<< HEAD:src/template_3D_02.c
 static float tempoDesdeFadeCompleto = 0.0f;
 static bool fadeCompleto = false;
 static bool somAbrindoTocado = false;
 static bool fase_concluida = false;
 
-void Init_Template_3D_02()
-=======
-void Init_Shell3D_01(void)
->>>>>>> 190e95519dad26732afe71103d226417edf3e2c5:src/shell3D_01.c
+void Init_Shell3D_01()
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
 
@@ -64,8 +47,7 @@ void Init_Shell3D_01(void)
     DisableCursor();
 }
 
-<<<<<<< HEAD:src/template_3D_02.c
-void Update_Template_3D_02(void)
+void Update_Shell3D_01(void)
 {
     float delta = GetFrameTime();
     tempoDesdeInicio += delta;
@@ -115,87 +97,6 @@ void Update_Template_3D_02(void)
                 if (tempoDesdeFadeCompleto >= 2.0f)
                     fase_concluida = true;
             }
-=======
-void StartFadeOut()
-{
-    isFading = true;
-    fadeAlpha = 1.0f;
-    fadeComplete = false;
-    flashTimer = 0.0f;
-    flashActive = true;
-}
-
-void UpdateFadeOut(float deltaTime)
-{
-    if (flashActive)
-    {
-        flashTimer += deltaTime;
-
-        // Fase 1: Flash Branco Intenso
-        if (flashTimer < flashHoldTime)
-        {
-            fadeAlpha = 1.0f;
-        }
-        else
-        {
-            // Fase 2: Transição para a Tela Preta (Fade Out)
-            fadeAlpha -= fadeSpeed * deltaTime;
-            if (fadeAlpha <= 0.0f)
-            {
-                fadeAlpha = 0.0f;
-                isFading = false;
-                fadeComplete = true;
-                flashActive = false;
-
-                // Ativar a exibição da caixa fechada após o fade
-                showBox = true;
-
-                // Tocar o som após o fade estar completo
-                PlaySound(doorOpeningSound);
-            }
-        }
-    }
-}
-
-void Update_Shell3D_01(void)
-{
-    float deltaTime = GetFrameTime();
-    timeElapsed += deltaTime;
-    
-    float mouseDeltaX = GetMouseDelta().x;
-    cameraYaw += mouseDeltaX * 0.002f;
-    cameraYaw = fmaxf(fminf(cameraYaw, maxYaw), minYaw);
-
-    camera.target.x = camera.position.x + sinf(cameraYaw);
-    camera.target.z = camera.position.z - cosf(cameraYaw);
-    
-    if (fadeComplete)
-    {
-        fase_concluida = true;
-        return;
-    }
-    
-    UpdateFadeOut(deltaTime);
-
-    if (!isFading && timeElapsed >= 2.0f && !doorAnswered) 
-    {
-        if (!soundPlaying)
-        {
-            PlaySound(doorKnockSound);
-            soundPlaying = true;
-        }
-
-        if (IsKeyPressed(KEY_SPACE))
-        {
-            if (IsSoundPlaying(doorKnockSound))
-            {
-                StopSound(doorKnockSound);
-                soundPlaying = false;
-            }
-
-            doorAnswered = true;
-            StartFadeOut();
->>>>>>> 190e95519dad26732afe71103d226417edf3e2c5:src/shell3D_01.c
         }
     }
 }
@@ -206,12 +107,14 @@ void Draw_Shell3D_01(void)
     ClearBackground(BLACK);
 
     BeginMode3D(camera);
-    DrawModel(modelo3D, (Vector3){0.0f, -0.5f, -2.0f}, 0.05f, WHITE);
     Vector3 portaPos = {28.0f, -1.0f, -12.0f};
     Vector3 portaRotAxis = {0.0f, 1.0f, 0.0f};
     float portaRotAngle = 45.0f;
     Vector3 portaScale = {0.05f, 0.05f, 0.05f};
+
+    DrawModel(modelo3D, (Vector3){0.0f, -0.5f, -2.0f}, 0.05f, WHITE);
     DrawModelEx(portaModel, portaPos, portaRotAxis, portaRotAngle, portaScale, WHITE);
+
     EndMode3D();
 
     if (!portaAtendida && cameraYaw >= 41.0f * DEG2RAD && somTocado)
@@ -248,16 +151,13 @@ void Draw_Shell3D_01(void)
     EndDrawing();
 }
 
-<<<<<<< HEAD:src/template_3D_02.c
-bool Fase_Template_3D_02_Concluida(void)
+
+bool Fase_Shell3D_01_Concluida(void)
 {
     return fase_concluida;
 }
 
-void Unload_Template_3D_02(void)
-=======
 void Unload_Shell3D_01(void)
->>>>>>> 190e95519dad26732afe71103d226417edf3e2c5:src/shell3D_01.c
 {
     UnloadModel(modelo3D);
     UnloadModel(portaModel);
@@ -266,11 +166,3 @@ void Unload_Shell3D_01(void)
     UnloadSound(somAbrindoPorta);
     EnableCursor();
 }
-<<<<<<< HEAD:src/template_3D_02.c
-=======
-
-bool Fase_Shell3D_01_Concluida(void)
-{
-    return fase_concluida;
-}
->>>>>>> 190e95519dad26732afe71103d226417edf3e2c5:src/shell3D_01.c
