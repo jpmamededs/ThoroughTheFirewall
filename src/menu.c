@@ -8,7 +8,7 @@
 #define FRAME_COUNT 15
 #define SPRITE_SRC_WIDTH 480
 #define SPRITE_SRC_HEIGHT 960
-#define SPRITE_SCALE 0.6f
+#define SPRITE_SCALE 0.5f
 #define SPRITE_BTN_WIDTH (SPRITE_SRC_WIDTH * SPRITE_SCALE)
 #define SPRITE_BTN_HEIGHT (SPRITE_SRC_HEIGHT * SPRITE_SCALE)
 #define MAX_HOVER_BTNS 32
@@ -263,7 +263,7 @@ void UpdateMenu(void)
         int spacing = 30;
         int totalW = charCount * SPRITE_BTN_WIDTH + (charCount - 1) * spacing;
         int startX = (screenWidth - totalW) / 2;
-        int y = screenHeight / 2 - SPRITE_BTN_HEIGHT / 2;
+        int y = screenHeight / 2 - SPRITE_BTN_HEIGHT / 2 - 130;
         static CharacterNode *lastHovered = NULL;
         CharacterNode *node = head;
         for (int i = 0; i < charCount; i++, node = node->next)
@@ -420,7 +420,7 @@ void DrawMenu(void)
         int spacing = 30;
         int totalW = charCount * SPRITE_BTN_WIDTH + (charCount - 1) * spacing;
         int startX = (screenWidth - totalW) / 2;
-        int y = screenHeight / 2 - SPRITE_BTN_HEIGHT / 2;
+        int y = screenHeight / 2 - SPRITE_BTN_HEIGHT / 2 - 130;
         CharacterNode *node = head;
         for (int i = 0; i < charCount; i++, node = node->next)
         {
