@@ -58,15 +58,15 @@ static struct
 
 Question perguntas[TOTAL_PERGUNTAS] = 
 {
-    { "Você tem o poder de invadir qualquer sistema sem deixar rastros. O que faria com essa habilidade?" },
-    { "Você descobre um arquivo com segredos da empresa. Você aproveitaria para saber mais ou guardaria de volta?" },
-    { "Você sabe que um colega está usando seu acesso para fins pessoais. Você denunciaria ou se aproveitaria da situação?" },
-    { "Alguém te desafia a invadir um sistema seguro só para provar que consegue. Você faria isso para mostrar suas habilidades?" },
-    { "Você encontra uma falha crítica que ninguém percebeu. Usaria isso para negociar um aumento ou corrigiria discretamente?" },
+    { "Momentaneamente sua senha foi trocada para acesso temporário a uma área restrita do servidor, e acabou não sendo removida. Você verifica \nque um dos seus familiares esta sendo investigado, o'que você faria nessa situação?" },
+    { "Em um cenário onde durante a reunião, alguém compartilha por engano a tela do computador exibindo dados sensíveis, que podem influenciar \nseu desempenho na empresa. Você comenta com colegas, faz uma captura de tela, ou se mantém em silêncio e orienta o responsável?" },
+    { "Imagine a seguinte situação, ao revisar uma de suas antigas demandas, você nota um arquivo que vaza diversas informações sensiveis de pessoas.\n Você tenta solucionar o problema por si só, reporta ao seu superior e busca uma solução consjunta ou apaga sem contar para ninguém?" },
+    { "Você encontra, sem querer, registros detalhados de performance e feedbacks confidenciais sobre seus colegas em uma pasta aberta no servidor.\nVocê lê para saber o que dizem sobre você, reporta o acesso indevido ou fecha a pasta sem analisar nada?" },
+    { "Durante uma manutenção de rotina, você descobre mensagens internas trocadas entre diretores sobre uma possível demissão em massa.\nVocê compartilha com os colegas que podem ser impactados, relata ao setor responsável pelo vazamento ou ignora completamente a descoberta?" },
     { "Seu superior diz para ignorar uma falha pequena e focar em outro problema. Você aceita ou insiste em corrigir mesmo assim?" },
-    { "Você recebeu, por engano, as credenciais de um superior. Guardaria para uso futuro ou relataria imediatamente?" },
-    { "Durante um teste, você acidentalmente acessa um sistema fora do escopo. Reportaria ou exploraria o que encontrou?" },
-    { "Você descobre uma forma de mudar o sistema para exibir mensagens engraçadas para todos. Faria isso só para ver a reação dos colegas?" },
+    { "Em uma investigação de rotina, descobre que há vídeos gravados por câmeras de segurança em locais sensíveis da empresa sem o conhecimento dos funcionários.\nVocê assiste aos vídeos, alerta quem está gravando ou ignora para não se envolver?" },
+    { "Você recebe um e-mail direcionado a outro funcionário, contendo anexos com documentos jurídicos confidenciais.Você lê o conteúdo para entender \ndo que se trata, avisa o remetente sobre o erro ou simplesmente apaga o e-mail?" },
+    { "Durante uma entrevista de desligamento, um ex-funcionário pede para transferir arquivos pessoais de sua estação. Ao acessar a máquina, você \npercebe que há documentos da empresa nos mesmos diretórios. Você revisa o conteúdo, transfere tudo sem olhar, ou separa e reporta os documentos da empresa antes de transferir?" },
     { "Você sabe que outro candidato está tentando sabotar seu progresso. Usaria suas habilidades para retaliar ou manteria seu foco na vaga?" }
 };
 
