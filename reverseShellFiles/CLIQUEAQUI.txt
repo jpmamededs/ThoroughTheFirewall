@@ -1,0 +1,32 @@
+Essa é uma explicação de como executar o Shell Reverso para concluir o processo seletivo:
+
+1. Na sua máquina, clique em 'server.exe' para iniciar o servidor e aguardar conexões na porta 8081.
+
+2. Na máquina alvo, clique em 'shell.exe'  para infectá-la com o vírus.
+
+3. Após isso, na sua máquina, perceba que houve o estabelecimento da conexão com o computador da vítima.
+
+4. Agora, escreva 'dir' no terminal na sua máquina. Perceba que você vai estar no diretório /reverseShellFiles.
+
+5. Escreva 'cd ..' até que seu diretório esteja em /Desktop.
+
+6. Em /Desktop, digite o comando mkdir 'infectando'.
+
+7. Dê 'cd infectando' para entrar nessa nova pasta que você criou.
+
+8. Agora, crie o arquivo 'data.txt', com o comando echo. > data.txt
+
+
+/ CHEATSHEET /
+
+dir nome_do_diretorio (Listar os arquivos e diretórios do caminho atual do sistema)
+
+mkdir nome_do_diretorio (Criar um novo diretório)
+
+echo. test > texto.txt (Criar o arquivo texto.txt com o texto 'test' dentro dele)
+
+cd .. (Voltar o diretório)
+
+cd nome_do_diretorio (Ir para um diretório)
+
+

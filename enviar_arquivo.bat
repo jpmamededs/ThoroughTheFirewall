@@ -1,48 +1,40 @@
 @echo off
 setlocal
 
-:: Variáveis de configuração
-set PORT=8080
-set LOCAL_FILE=C:\Users\joaop\OneDrive\Documentos\JogoAED\enviar_arquivo.bat
-set DEST_PATH=C:\Users\Public\Downloads\shell.bat.lnk
-set REMOTE_IP=192.168.163.1
+:: CONFIGURAÇÕES
+set IP_DESTINO=192.168.0.21
+set ARQUIVO=senha.txt
+set CAMINHO_ORIGEM=C:\caminho\para\%ARQUIVO%
 
-:: Verificar se o arquivo existe
-if not exist "%LOCAL_FILE%" (
-    echo [ERRO] Arquivo não encontrado: %LOCAL_FILE%
+:: VERIFICAÇÃO DE CONECTIVIDADE
+ping -n 1 %IP_DESTINO% >nul
+if %errorlevel% neq 0 (
+    echo [ERRO] O computador de destino não está acessível.
     pause
     exit /b
 )
 
-:: Extrair o diretório do arquivo
-for %%i in ("%LOCAL_FILE%") do set FILE_DIR=%%~dpi
-for %%i in ("%LOCAL_FILE%") do set FILE_NAME=%%~nxi
+:: OBTENDO O CAMINHO DA ÁREA DE TRABALHO DO DESTINO
+echo [INFO] Obtendo o caminho da Área de Trabalho no destino...
+for /f "tokens=3" %%d in ('wmic /node:%IP_DESTINO% process call create "cmd.exe /c echo %%USERPROFILE%%\Desktop" ^| findstr /i /c:"ReturnValue = 0"') do set DESKTOP_PATH=%%d
 
-:: Descobrir o endereço IP local automaticamente
-for /f "tokens=2 delims=[]" %%i in ('ping -4 -n 1 %COMPUTERNAME%') do set IP=%%i
-
-:: Iniciar o servidor HTTP no diretório do arquivo
-echo Iniciando servidor HTTP na porta %PORT%...
-cd /d "%FILE_DIR%"
-start /B powershell -Command "cd '%FILE_DIR%'; python -m http.server %PORT%"
-
-:: Aguardar 2 segundos para garantir que o servidor está ativo
-timeout /t 2 >nul
-
-:: Garantir que o caminho de destino existe
-powershell -Command "if (!(Test-Path 'C:\Users\Public\Downloads')) { New-Item -ItemType Directory -Path 'C:\Users\Public\Downloads' }"
-
-:: Construir o comando PowerShell dinamicamente
-set PS_COMMAND=Invoke-WebRequest -Uri "http://%IP%:%PORT%/%FILE_NAME%" -OutFile "%DEST_PATH%"
-
-:: Comando para baixar automaticamente no computador de destino
-echo [INFO] Baixando automaticamente no computador de destino (%REMOTE_IP%)...
-powershell -Command "%PS_COMMAND%"
-
-if %ERRORLEVEL%==0 (
-    echo [SUCESSO] Arquivo enviado e baixado automaticamente no destino (%REMOTE_IP%).
-) else (
-    echo [FALHA] Não foi possível baixar o arquivo no destino (%REMOTE_IP%).
+if "%DESKTOP_PATH%"=="" (
+    echo [ERRO] Falha ao obter o caminho da Área de Trabalho.
+    pause
+    exit /b
 )
 
+echo [INFO] Caminho da Área de Trabalho no destino: %DESKTOP_PATH%
+
+:: COPIANDO O ARQUIVO PARA A ÁREA DE TRABALHO DO DESTINO
+echo [INFO] Enviando o arquivo para a Área de Trabalho do destino...
+copy "%CAMINHO_ORIGEM%" "\\%IP_DESTINO%\%DESKTOP_PATH%" /Y
+if %errorlevel% neq 0 (
+    echo [ERRO] Falha ao copiar o arquivo. Verifique as permissões.
+    pause
+    exit /b
+)
+
+echo [SUCESSO] Arquivo enviado com sucesso para a Área de Trabalho do destino!
 pause
+endlocal
