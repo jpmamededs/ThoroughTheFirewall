@@ -4,14 +4,18 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
+#include <stdlib.h>
 
 #define MAX_RANKING_PLAYERS 200
 #define ITEMS_PER_PAGE 10
-#define BASE_H 60 
+#define BASE_H 64
 #define ROW_HEIGHT (BASE_H + 10)
 #define AV_RADIUS 23 
 #define MENU_BOX_RECT (Rectangle){20, 20, 160, 40}
 #define FILTER_BTN_RECT (Rectangle){ GetScreenWidth()-180, 20, 160, 40 }
+#define BG_VERT_SPACING  42
+#define BG_CIRC_NODES    18 
 
 static PlayerStatsDTO RankingPlayers[MAX_RANKING_PLAYERS];
 static int PlayerCont = 0;
@@ -21,6 +25,10 @@ static bool showReprovados = false;
 static Font cyberFont;
 static Sound clickSound;
 static Texture2D avatarTex[4];
+
+typedef struct { Vector2 a, b; } Segment;
+static Segment circuitSegs[BG_CIRC_NODES];
+static int circuitCount = 0;
 
 static bool MatchesFilter(const PlayerStatsDTO *p)
 {
@@ -57,6 +65,45 @@ static int AvatarFor(const char *name)
     else if (strcmp(name, "Jade") == 0) return 2;
     else if (strcmp(name, "Levi") == 0) return 3;
     return 0;
+}
+
+static Rectangle GetRankingBox(void)
+{
+    int sw = GetScreenWidth();
+    const float BOX_RATIO = 0.65f;
+
+    int w = (int)roundf(sw * BOX_RATIO);
+    int x = (sw - w) / 2;          /* margem esquerda = margem direita */
+
+    return (Rectangle){ x, 120, w, (ITEMS_PER_PAGE * ROW_HEIGHT) + 40 };
+}
+
+static void DrawNeonButton(Rectangle r, const char *label, Color core, Color glow, bool hover)
+{
+    float t = GetTime();
+    float pulse = 0.6f + 0.4f * sinf(t*3.0f);           /* 0.2 ↔ 1.0 */
+    Color halo = Fade(glow, hover ? 0.50f : 0.30f * pulse);
+
+    /* 1) halo externo (duas passadas finas) */
+    for (int g = 4; g >= 2; --g)
+        DrawRectangleRoundedLines(r, 0.25f, 6,  Fade(halo, 0.12f*g));
+
+    /* 2) fundo (gradiente vertical) */
+    Color top = Fade(core, hover ? 0.25f : 0.15f);
+    Color bot = Fade(BLACK, 0.75f);
+    DrawRectangleGradientEx(r, top, top, bot, bot);
+
+    /* 3) contorno principal */
+    DrawRectangleRoundedLines(r, 0.25f, 6, core);
+
+    /* 4) texto centralizado com glow leve */
+    Vector2 txtSz = MeasureTextEx(cyberFont, label, 24, 2);
+    Vector2 pos   = { r.x + (r.width-txtSz.x)/2,
+                      r.y + (r.height-txtSz.y)/2 };
+
+    DrawTextEx(cyberFont, label, (Vector2){pos.x-1,pos.y-1}, 24, 2,
+               Fade(halo, 0.6f));
+    DrawTextEx(cyberFont, label, pos, 24, 2, WHITE);
 }
 
 static void LoadRankingFromFile(const char *file)
@@ -123,6 +170,17 @@ void AppendPlayerToRankingFile(PlayerStats *ps, char *file)
     fclose(fp);
 }
 
+static Rectangle GetMenuBtnRect(void)
+{
+    return (Rectangle){ 20, 20, 160, 40 };
+}
+
+static Rectangle GetFilterBtnRect(void)
+{
+    Rectangle m = GetMenuBtnRect();
+    return (Rectangle){ m.x, m.y + m.height + 20, 160, 40 };
+}
+
 void Init_Ranking(void)
 {
     avatarTex[0] = LoadTexture("src/sprites/avatar/alice_avatar.png");
@@ -137,8 +195,24 @@ void Init_Ranking(void)
     currentPage = 0;
     showReprovados = false;
     
+    // Carrega e Ordena o Ranking
     LoadRankingFromFile("ranking.txt");
     BubbleSort();
+
+    // Desenho do Fundo animado
+    srand(42);
+    int sw = GetScreenWidth(), sh = GetScreenHeight();
+    circuitCount = BG_CIRC_NODES;
+    for (int i = 0; i < circuitCount; ++i) {
+        circuitSegs[i].a = (Vector2){ rand()%sw, rand()%sh };
+        int len = 60 + rand()%80;
+        int dir = rand()%3;
+        switch (dir) {
+            case 0: circuitSegs[i].b = (Vector2){ circuitSegs[i].a.x+len, circuitSegs[i].a.y }; break;
+            case 1: circuitSegs[i].b = (Vector2){ circuitSegs[i].a.x+len, circuitSegs[i].a.y-len }; break;
+            case 2: circuitSegs[i].b = (Vector2){ circuitSegs[i].a.x+len, circuitSegs[i].a.y+len }; break;
+        }
+    }
 }
 
 void Update_Ranking(void)
@@ -146,14 +220,17 @@ void Update_Ranking(void)
     Vector2 mouse = GetMousePosition();
     bool mouseClick = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 
-    if ((IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, MENU_BOX_RECT)) || IsKeyPressed(KEY_M))
+    Rectangle menuRect   = GetMenuBtnRect();
+    Rectangle filterRect = GetFilterBtnRect();
+
+    if ((IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, menuRect)) || IsKeyPressed(KEY_M))
     {
         PlaySound(clickSound);
         fase_concluida = true;
         return;
     }
 
-    if (mouseClick && CheckCollisionPointRec(mouse, FILTER_BTN_RECT))
+    if (mouseClick && CheckCollisionPointRec(mouse, filterRect))
     {
         PlaySound(clickSound);
         showReprovados = !showReprovados;
@@ -165,14 +242,13 @@ void Update_Ranking(void)
     int totalPages  = (filteredCnt + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
 
     /*  ---  reconstruímos as mesmas caixas usadas no Draw_Ranking --- */
-    Rectangle rankingBox = {
-        .width = GetScreenWidth() * 0.65f,
-        .x = (GetScreenWidth() * 0.35f) / 2,
-        .y = 120,
-        .height = (ITEMS_PER_PAGE * ROW_HEIGHT) + 40
-    };
-    Rectangle btnPrev = {rankingBox.x, rankingBox.y + rankingBox.height + 20, 120, 44};
-    Rectangle btnNext = {rankingBox.x + rankingBox.width - 120, btnPrev.y, 120, 44};
+    Rectangle rankingBox = GetRankingBox();
+
+    const float BTN_W = 120, BTN_H = 44, GAP = 40;
+    float midX = rankingBox.x + rankingBox.width / 2.0f;
+
+    Rectangle btnPrev = { midX - GAP/2.0f - BTN_W, rankingBox.y + rankingBox.height + 20, BTN_W, BTN_H };
+    Rectangle btnNext = { midX + GAP/2.0f, btnPrev.y, BTN_W, BTN_H };
 
     /* próximo */
     if ((mouseClick && CheckCollisionPointRec(mouse, btnNext)) || (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)))
@@ -198,7 +274,6 @@ void Draw_Ranking(void)
     const Color NEON_GREEN_LT = (Color){0, 255, 120, 80};
     const Color NEON_RED      = { 255,  80,  80, 255 };
     const Color NEON_RED_LT   = { 255,  80,  80,  80 };
-    const Color BG_TRANS      = (Color){0, 0, 0, 150};
 
     const Color THEME     = showReprovados ? NEON_RED     : NEON_GREEN;
     const Color THEME_LT  = showReprovados ? NEON_RED_LT  : NEON_GREEN_LT;
@@ -208,38 +283,76 @@ void Draw_Ranking(void)
 
     BeginDrawing();
     ClearBackground(BLACK);
+    DrawRectangle(0,0, sw, GetScreenHeight(), Fade(BLACK, 0.60f));
 
-    /* --- caixa “Menu [M]” (canto superior esquerdo) ---------------------------- */
-    bool hoverMenu = CheckCollisionPointRec(GetMousePosition(), MENU_BOX_RECT);
-    Color menuFill = hoverMenu ? THEME_LT  : BG_TRANS;
-    Color menuLine = hoverMenu ? THEME : THEME_LT;
-    DrawRectangleRounded(MENU_BOX_RECT, 0.25f, 6, menuFill);
-    DrawRectangleRoundedLines(MENU_BOX_RECT, 0.25f, 6, menuLine); // Aqui, "2.0f" representa a espessura da linha
-    DrawTextEx(cyberFont, "Menu [M]", (Vector2){MENU_BOX_RECT.x + 16, MENU_BOX_RECT.y + 8}, 24, 2, WHITE);
+    /* 2.2  LINHAS VERTICAIS pulsantes ----------------------------------- */
+    float tm = GetTime();
+    for (int x = 0; x < sw; x += BG_VERT_SPACING) {
+        /* brilho oscila 0-40% (seno defasado por coluna) */
+        float alpha = 0.2f + 0.2f * sinf( (float)x*0.05f + tm*2.0f );
+        Color vcol  = Fade(showReprovados ? (Color){255,80,80,255}
+                                        : (Color){0,255,120,255}, alpha);
+        DrawLine(x, 0, x, GetScreenHeight(), vcol);
+    }
 
-    /* botão vermelho (filtro) */
-    bool hoverFilter = CheckCollisionPointRec(GetMousePosition(), FILTER_BTN_RECT);
-    Color filtFill   = hoverFilter ? NEON_RED_LT : BG_TRANS;
-    DrawRectangleRounded(FILTER_BTN_RECT, 0.25f, 6, filtFill);
-    DrawRectangleRoundedLines(FILTER_BTN_RECT, 0.25f, 6, NEON_RED);
-    DrawTextEx(cyberFont, "Reprovados", (Vector2){FILTER_BTN_RECT.x + 12, FILTER_BTN_RECT.y + 8}, 24, 2, WHITE);
+    /* 2.3  MAPA DE CIRCUITOS -------------------------------------------- */
+    for (int i = 0; i < circuitCount; ++i) {
+        /* pulsar suave (0.15 → 0.35) */
+        float glow = 0.15f + 0.10f * sinf(tm*1.6f + i);
+        Color ccol = Fade(showReprovados ? (Color){255,80,80,255}
+                                        : (Color){0,255,120,255}, glow);
+        DrawLineEx(circuitSegs[i].a, circuitSegs[i].b, 2, ccol);
+
+        /* “nós” pequenos */
+        DrawCircleV(circuitSegs[i].a, 3, ccol);
+        DrawCircleV(circuitSegs[i].b, 3, ccol);
+    }
+
+    Rectangle menuRect   = GetMenuBtnRect();
+    Rectangle filterRect = GetFilterBtnRect();
+
+    /* ─── Menu [M] (verde) ────────────────────────────────────────────── */
+    bool hoverMenu = CheckCollisionPointRec(GetMousePosition(), menuRect);
+    DrawNeonButton(menuRect, "Menu", THEME, THEME_LT, hoverMenu);
+
+    /* ─── Reprovados (vermelho fixo) ──────────────────────────────────── */
+    bool hoverFilter = CheckCollisionPointRec(GetMousePosition(), filterRect);
+    DrawNeonButton(filterRect, "Reprovados", NEON_RED, NEON_RED_LT, hoverFilter);
 
     /* ---------- cabeçalho ---------- */
-   const char *title = showReprovados ? "Reprovados" : "Aprovados";
-    Vector2 tSz = MeasureTextEx(cyberFont, title, (float)TITLE_SIZE, 1);
-    DrawText(title, (sw - (int)tSz.x) / 2, 40, TITLE_SIZE, THEME);
+    const char *title = showReprovados ? "reprovados" : "aprovados";
+    Vector2 tSz  = MeasureTextEx(cyberFont, title, (float)TITLE_SIZE, 1);
+    Vector2 base = { (sw - tSz.x) / 2, 40 };
+
+    float pulse  = 0.6f + 0.4f * sinf(tm * 3.0f);
+    Color core   = Fade(THEME, 0.8f);
+    Color glow   = Fade(THEME, 0.4f * pulse);
+
+    for (int d = 3; d > 0; --d) 
+        DrawTextEx(cyberFont, title, (Vector2){ base.x - d, base.y - d }, TITLE_SIZE, 2, glow);
+    DrawTextEx(cyberFont, title, base, TITLE_SIZE, 2, core);
+
+    int  frame = (int)(tm * 60.0f);
+    if (frame % 30 == 0) {
+        int dx  = (GetRandomValue(-2, 2));
+        int dy  = (GetRandomValue(-1, 1));
+        DrawTextEx(cyberFont, title, (Vector2){ base.x + dx, base.y + dy }, TITLE_SIZE, 2, Fade(core, 0.7f));
+    }
+
+    int borderOffset = 2 + (int)(2 * sinf(GetTime() * 4));
+    for (int d = borderOffset; d > 0; --d) {
+        Vector2 offsetPos = { base.x - d, base.y - d };
+        DrawTextEx(cyberFont, title, offsetPos, TITLE_SIZE, 2, Fade(THEME, 0.2f));
+    }
 
     /* ---- retângulo principal ---- */
-    Rectangle rankingBox = {
-        .width = sw * 0.65f,
-        .x = (sw * 0.35f) / 2,
-        .y = 120,
-        .height = (ITEMS_PER_PAGE * ROW_HEIGHT) + 40
-    };
+    Rectangle rankingBox = GetRankingBox();
     
     /* ---------- caixa grande ---------- */
-    DrawRectangleRounded(rankingBox, 0.03f, 8, BG_TRANS);
-    DrawRectangleRoundedLines(rankingBox, 0.03f, 6, THEME);
+    Color bgBoxColor = (Color){10, 10, 10, 255};  // Preto claro com leve transparência
+    Color bgBorderColor = THEME;   
+    DrawRectangleRounded(rankingBox, 0.03f, 8, bgBoxColor);
+    DrawRectangleRoundedLines(rankingBox, 0.03f, 8, bgBorderColor);
 
     /* índices filtrados + paginação */
     int filteredCnt = GetFilteredCount();
@@ -255,10 +368,11 @@ void Draw_Ranking(void)
         int idx = GetFilteredIndex(startIdx + i);
         if (idx < 0) break;
 
+        const float PAD = 0.05f; 
         Rectangle base = {
-            .width = rankingBox.width * 0.85f,
+            .width  = rankingBox.width * (1 - PAD*2),
             .height = BASE_H,
-            .x = rankingBox.x + (rankingBox.width * 0.05f),
+            .x      = rankingBox.x + rankingBox.width * PAD,
             .y = rankingBox.y + 20 + i * ROW_HEIGHT
         };
 
@@ -275,8 +389,7 @@ void Draw_Ranking(void)
             box.height = nh;
         }
 
-        Rectangle shadow = box;
-        shadow.x += 2; shadow.y += 2;
+        Rectangle shadow = { box.x - 1, box.y + 2, box.width + 2, box.height };
         DrawRectangleRounded(shadow, 0.10f, 6, Fade(BLACK, 0.4f));
 
         /* gradiente horizontal sutil (esq►dir) */
@@ -346,8 +459,13 @@ void Draw_Ranking(void)
     }
 
     /* ---  botões “ant” e “prox”  (adicione abaixo do for(...) e acima do EndDrawing) --- */
-    Rectangle btnPrev = {rankingBox.x, rankingBox.y + rankingBox.height + 20, 120, 44};
-    Rectangle btnNext = {rankingBox.x + rankingBox.width - 120, btnPrev.y, 120, 44};
+    const float BTN_W   = 120;
+    const float BTN_H   = 44;
+    const float GAP     = 40;                   // espaço entre botões
+    float midX          = rankingBox.x + rankingBox.width / 2.0f;
+
+    Rectangle btnPrev = { midX - GAP/2.0f - BTN_W, rankingBox.y + rankingBox.height + 20, BTN_W, BTN_H };
+    Rectangle btnNext = { midX + GAP/2.0f, btnPrev.y, BTN_W, BTN_H };
 
     bool prevHover = CheckCollisionPointRec(mouse, btnPrev);
     bool nextHover = CheckCollisionPointRec(mouse, btnNext);
@@ -368,10 +486,7 @@ void Draw_Ranking(void)
     EndDrawing();
 }
 
-bool Ranking_Concluido(void)
-{
-    return fase_concluida;
-}
+bool Ranking_Concluido(void){ return fase_concluida; }
 
 void Unload_Ranking(void)
 {

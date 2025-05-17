@@ -1,33 +1,32 @@
-João, Alice, 85.4, 1
-Mateus, Dante, 32.3, 1
-Carlos, Dante, 76.7, 0
-Pedro, Levi, 88.3, 1
-Ana, Levi, 95.0, 1
-Lucas, Alice, 67.1, 0
-Mariana, Alice, 90.9, 1
-Rafael, Levi, 100.4, 0
-Isabela, Jade, 73.1, 0
-Tiago, Jade, 83.0, 1
-João, Alice, 85.4, 1
-Mateus, Dante, 32.3, 1
-Rafael, Alice, 100.4, 1
-Isabela, Jade, 73.1, 0
-João, Alice, 85.4, 1
-Mateus, Dante, 32.3, 1
-Carlos, Dante, 76.7, 0
-Pedro, Levi, 88.3, 1
-Ana, Levi, 95.0, 1
-Lucas, Alice, 67.1, 0
-Mariana, Alice, 90.9, 1
-Rafael, Levi, 100.4, 0
-Isabela, Jade, 73.1, 0
-Tiago, Jade, 83.0, 1
-João, Alice, 85.4, 1
-Mateus, Dante, 32.3, 1
-Rafael, Alice, 100.4, 1
-Isabela, Jade, 73.1, 0
-João, Alice, 999.4, 1
-Mateus, Dante, 999.3, 1
-Carlos, Jade, 999.2, 1
-Mamede, Levi, 999.1, 1
-Sem Nome, Alice, 0.00, 0
+João Pedro, Alice, 85.4, 1
+Mateus Henrique, Dante, 32.3, 1
+Carlos Eduardo, Dante, 76.7, 0
+Pedro Lucas, Levi, 88.3, 1
+Ana Clara, Levi, 95.0, 1
+Lucas Gabriel, Alice, 67.1, 0
+Mariana Beatriz, Alice, 90.9, 1
+Rafael Augusto, Levi, 100.4, 0
+Isabela Cristina, Jade, 73.1, 0
+Tiago Vinícius, Jade, 83.0, 1
+João Paulo, Alice, 85.4, 1
+Mateus Silva, Dante, 32.3, 1
+Rafael Ribeiro, Alice, 100.4, 1
+Isabela Mendes, Jade, 73.1, 0
+João Victor, Alice, 85.4, 1
+Mateus Alves, Dante, 32.3, 1
+Carlos Alberto, Dante, 76.7, 0
+Pedro Henrique, Levi, 88.3, 1
+Ana Paula, Levi, 95.0, 1
+Lucas Matheus, Alice, 67.1, 0
+Mariana Souza, Alice, 90.9, 1
+Rafael Dias, Levi, 100.4, 0
+Isabela Gomes, Jade, 73.1, 0
+Tiago Martins, Jade, 83.0, 1
+João Guilherme, Alice, 85.4, 1
+Mateus Cunha, Dante, 32.3, 1
+Rafael Ferreira, Alice, 100.4, 1
+Isabela Pereira, Jade, 73.1, 0
+João Batista, Alice, 999.4, 1
+Mateus Andrade, Dante, 999.3, 1
+Carlos Santana, Jade, 999.2, 1
+Mamede Silva, Levi, 999.1, 1
