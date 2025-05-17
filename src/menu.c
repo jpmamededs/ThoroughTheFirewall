@@ -5,7 +5,6 @@
 #include "generalFunctions.h"
 #include "playerStats.h"
 #include <math.h>
-
 #define FRAME_COUNT 15
 #define SPRITE_SRC_WIDTH 480
 #define SPRITE_SRC_HEIGHT 960
@@ -40,10 +39,11 @@ static Texture2D hacker1, hacker2;
 static Texture2D menina1, menina2;
 static Texture2D meninoPdavida1, meninoPdavida2;
 static Texture2D deBone1, deBone2;
+static Texture2D btnInit, btnInitHover;
+static Texture2D btnRanking, btnRankingHover;
 static int currentFrame = 0;
 static float frameTime = 0.05f;
 static float lastUpdate = 0.0f;
-
 static CharacterNode *head = NULL, *selectedChar = NULL;
 static int charCount = 0;
 static Sound clickSound;
@@ -58,44 +58,35 @@ static void PlayCharacterSound(CharacterNode *node)
     if (!IsSoundPlaying(node->sfx))        // evita retrigger no mesmo frame
         PlaySound(node->sfx);
 }
-
 static void PlayHoverSound(Rectangle btn, bool hoveredNow)
 {
     // Mantém o estado de hover de cada botão individualmente
     typedef struct { Rectangle rect; bool wasHover; } HoverState;
-
     static HoverState states[MAX_HOVER_BTNS] = {0};
     static int count = 0;
-
     /* procura o botão ou o registra se ainda não existir */
     int id = -1;
     for (int i = 0; i < count; i++)
         if (memcmp(&states[i].rect, &btn, sizeof(Rectangle)) == 0)
         { id = i; break; }
-
     if (id < 0 && count < MAX_HOVER_BTNS)          // novo botão
     {
         id = count++;
         states[id].rect = btn;
         states[id].wasHover = false;
     }
-
     if (id >= 0)
     {
         if (hoveredNow && !states[id].wasHover)    // **ENTROU** no retângulo
             PlaySound(clickSound);
-
         states[id].wasHover = hoveredNow;          // guarda estado p/ próximo frame
     }
 }
-
 static void DrawCharacterButtonContent(CharacterNode *node, Rectangle btn, bool isHovered, bool isSelected)
 {
     Rectangle src = { 0, 0, SPRITE_SRC_WIDTH, SPRITE_SRC_HEIGHT };
     Texture2D texture = { 0 };
-
     bool hasTexture = true;
-
     if (strcmp(node->name, "Dante") == 0)
         texture = (isHovered || isSelected) ? hacker2 : hacker1;
     else if (strcmp(node->name, "Alice")   == 0)
@@ -106,24 +97,19 @@ static void DrawCharacterButtonContent(CharacterNode *node, Rectangle btn, bool 
         texture = (isHovered || isSelected) ? deBone2 : deBone1;
     else
         hasTexture = false;
-
     if (hasTexture) {
         Rectangle dest = { btn.x, btn.y, SPRITE_BTN_WIDTH, SPRITE_BTN_HEIGHT };
         DrawTexturePro(texture, src, dest, (Vector2){ 0, 0 }, 0.0f, WHITE);
     }
-
     const int fontSize = 36;
     int textW = MeasureText(node->name, fontSize);
     int textX = btn.x + (btn.width - textW) / 2;
     int textY = btn.y + btn.height - fontSize - 16;
-
     if (isHovered && !isSelected) {
         DrawRectangleRec(btn, (Color){150, 150, 150, 100}); // Cinza translúcido por cima
     }
-
     DrawText(node->name, textX, textY, fontSize, BLACK);
 }
-
 void CreateCharacterList(void)
 {
     if (head) return;
@@ -151,13 +137,10 @@ void CreateCharacterList(void)
     selectedChar = head;
     charCount = 4;
 }
-
 void InitMenu(void)
 {
     currentScreen = MENU_MAIN;
-
     if (!IsAudioDeviceReady()) InitAudioDevice();
-
     background = LoadTexture("src/sprites/intro/bgFinal.png");
     logo_jogo = LoadTexture("src/sprites/logo_jogo.png");
     hacker1 = LoadTexture("src/sprites/hacker1-unselected.png");
@@ -170,13 +153,15 @@ void InitMenu(void)
     deBone2 = LoadTexture("src/sprites/deBone-selected.png");
     clickSound = LoadSound("src/music/buttonPress.wav");
     alertSound = LoadSound("src/music/welcome-to-the-game-hacking-alert_sm4UxhuM.mp3");
-
+    btnInit       = LoadTexture("src/sprites/btnInit.png");
+    btnRanking    = LoadTexture("src/sprites/btnRanking.png");
+    btnInitHover    = LoadTexture("src/sprites/btnInitHover.png");
+    btnRankingHover = LoadTexture("src/sprites/btnRankingHover.png");
     CreateCharacterList();
     wasHoveredLastFrame = false;
     isFadingOut = false;
     fadeAlpha = 0.0f;
     rankingRequested = false;
-
     CharacterNode *node = head;
     do
     {
@@ -188,27 +173,21 @@ void InitMenu(void)
             node->sfx = LoadSound("src/music/deBone-menu.mp3");
         else if (strcmp(node->name, "Levi") == 0)
             node->sfx = LoadSound("src/music/meninoPdavida-menu.mp3");
-
         SetSoundVolume(node->sfx, 3.5f);
-
         node = node->next;
     } while (node != head);
 }
-
 void UpdateMenu(void)
 {
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
-
     Vector2 mouse = GetMousePosition();
-
     float now = GetTime();
     if (now - lastUpdate >= frameTime)
     {
         currentFrame = (currentFrame + 1) % FRAME_COUNT;
         lastUpdate = now;
     }
-
     if (isFadingOut)
     {
         fadeAlpha += GetFrameTime();
@@ -219,16 +198,19 @@ void UpdateMenu(void)
         }
         return;
     }
-
     /* ----------------------   TELA INICIAL   ---------------------------- */
     if (currentScreen == MENU_MAIN)
     {
-        const int btnW = 300, btnH = 80;
-        const int spacing = 20;
-
-        int startY = (screenHeight - 260) + MENU_Y_OFFSET;
-        Rectangle startBtn   = {screenWidth/2 - btnW/2, startY, btnW, btnH};
-        Rectangle rankingBtn = {screenWidth/2 - btnW/2, startY + btnH + spacing, btnW, btnH};
+        // ==== ALTERADO: ESCALA, POSIÇÃO, DISTÂNCIA ====
+        float btnScale = 0.6f;  // ou o valor que preferir
+        int btnW = btnInit.width  * btnScale;
+        int btnH = btnInit.height * btnScale;
+        int distancia = 200;
+        int totalW = btnW * 2 + distancia;
+        int baseX = screenWidth/2 - totalW/2;
+        int baseY = (screenHeight - btnH)/2 + 84;
+        Rectangle startBtn   = { baseX,                 baseY, btnW, btnH };
+        Rectangle rankingBtn = { baseX + btnW + distancia, baseY, btnW, btnH };
 
         bool hoverStart = CheckCollisionPointRec(mouse, startBtn);
         PlayHoverSound(startBtn, hoverStart);
@@ -239,7 +221,6 @@ void UpdateMenu(void)
             memset(gPlayerName, 0, sizeof(gPlayerName));
             currentScreen = MENU_INPUT_NAME;
         }
-
         bool hoverRank = CheckCollisionPointRec(mouse, rankingBtn);
         PlayHoverSound(rankingBtn, hoverRank);
         if (hoverRank && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
@@ -247,10 +228,8 @@ void UpdateMenu(void)
             PlaySound(clickSound);
             rankingRequested = true;
         }
-
         return;
     }
-
     /* ----------------------   TELA DIGITAR NOME   ----------------------- */
     else if (currentScreen == MENU_INPUT_NAME)
     {
@@ -267,20 +246,17 @@ void UpdateMenu(void)
                 }
             }
         }
-
         if (IsKeyPressed(KEY_BACKSPACE))
         {
             size_t len = strlen(gPlayerName);
             if (len) gPlayerName[len-1] = '\0';
         }
-
         if (strlen(gPlayerName) > 0 && IsKeyPressed(KEY_ENTER))
         {
             PlaySound(clickSound);
             currentScreen = MENU_SELECT_CHAR;
         }
     }
-
     /* ----------------   SELEÇÃO DE PERSONAGENS   ------------------------ */
     else if (currentScreen == MENU_SELECT_CHAR)
     {
@@ -288,7 +264,6 @@ void UpdateMenu(void)
         int totalW = charCount * SPRITE_BTN_WIDTH + (charCount - 1) * spacing;
         int startX = (screenWidth - totalW) / 2;
         int y = screenHeight / 2 - SPRITE_BTN_HEIGHT / 2;
-    
         static CharacterNode *lastHovered = NULL;
         CharacterNode *node = head;
         for (int i = 0; i < charCount; i++, node = node->next)
@@ -296,7 +271,6 @@ void UpdateMenu(void)
             Rectangle btn = {startX + i * (SPRITE_BTN_WIDTH + spacing), y,
                              SPRITE_BTN_WIDTH, SPRITE_BTN_HEIGHT};
             bool hovered = CheckCollisionPointRec(mouse, btn);
-    
             /* som ao entrar no hover */
             PlayHoverSound(btn, hovered);
             if (hovered && node != lastHovered)
@@ -308,7 +282,6 @@ void UpdateMenu(void)
             {
                 lastHovered = NULL;
             }
-    
             /* clique do mouse escolhe o personagem */
             if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON) &&
                 node != selectedChar)
@@ -317,21 +290,17 @@ void UpdateMenu(void)
                 selectedChar = node;
             }
         }
-    
         /* navegação por setas também continua funcionando */
         if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D))
         {
             selectedChar = selectedChar ? selectedChar->next : head;
             PlayCharacterSound(selectedChar);
             PlaySound(clickSound);
-
-            // Calcula posição central logo abaixo do botão Confirmar
             Rectangle confirmBtn = {
                 screenWidth/2 - 130,
                 y + SPRITE_BTN_HEIGHT + 40,
                 260, 56
             };
-
             int mx = confirmBtn.x + confirmBtn.width/2;
             int my = confirmBtn.y + confirmBtn.height + 8; // 8px abaixo do botão
             SetMousePosition(mx, my);
@@ -341,19 +310,15 @@ void UpdateMenu(void)
             selectedChar = selectedChar ? selectedChar->prev : head;
             PlayCharacterSound(selectedChar);      // aqui também!
             PlaySound(clickSound);
-
-            // Calcula posição central logo abaixo do botão Confirmar
             Rectangle confirmBtn = {
                 screenWidth/2 - 130,
                 y + SPRITE_BTN_HEIGHT + 40,
                 260, 56
             };
-            
             int mx = confirmBtn.x + confirmBtn.width/2;
             int my = confirmBtn.y + confirmBtn.height + 8; // 8px abaixo do botão
             SetMousePosition(mx, my);
         }
-    
         /* botão Confirmar – mouse ou ENTER */
         Rectangle confirmBtn = {screenWidth / 2 - 130,
                                 y + SPRITE_BTN_HEIGHT + 40, 260, 56};
@@ -369,7 +334,6 @@ void UpdateMenu(void)
             isFadingOut = true;
         }
     }
-
 }
 
 void DrawMenu(void)
@@ -378,8 +342,6 @@ void DrawMenu(void)
     int screenHeight = GetScreenHeight();
     BeginDrawing();
     ClearBackground(BLACK);
-
-    // IMAGEM DE FUNDO
     float imgW = (float)screenWidth;
     float imgH = (float)screenHeight;
     DrawTexturePro(background, 
@@ -389,7 +351,6 @@ void DrawMenu(void)
         0.0f, 
         WHITE
     );
-    
     if (currentScreen == MENU_MAIN)
     {
         float imgScale = LOGO_BASE_SCALE + LOGO_PULSE_AMPL * sinf(GetTime() * LOGO_PULSE_SPEED);
@@ -398,63 +359,62 @@ void DrawMenu(void)
         float logoY = (screenHeight - imgH)/2 + (MENU_Y_OFFSET - 130);
         DrawTextureEx(logo_jogo, (Vector2){ (screenWidth - imgW)/2, logoY }, 0.0f, imgScale, WHITE);
 
-        const int btnW = 300, btnH = 80, spacing = 20;
-        int startY = (screenHeight - 260) + MENU_Y_OFFSET;
-        Rectangle startBtn   = {screenWidth/2 - btnW/2, startY, btnW, btnH};
-        Rectangle rankingBtn = {screenWidth/2 - btnW/2, startY + btnH + spacing, btnW, btnH};
+        // ==== ALTERADO: ESCALA, POSIÇÃO, DISTÂNCIA ====
+        float btnScale = 0.4f;
+        int btnW = btnInit.width  * btnScale;
+        int btnH = btnInit.height * btnScale;
+        int distancia = 200;
+        int totalW = btnW * 2 + distancia;
+        int baseX = screenWidth/2 - totalW/2;
+        int baseY = (screenHeight - btnH)/2 + 84;
+        Rectangle startBtn   = { baseX,                 baseY, btnW, btnH };
+        Rectangle rankingBtn = { baseX + btnW + distancia, baseY, btnW, btnH };
 
-        Color startClr = CheckCollisionPointRec(GetMousePosition(), startBtn)
-                        ? DARKGREEN : GREEN;
-        Color rankClr  = CheckCollisionPointRec(GetMousePosition(), rankingBtn)
-                        ? DARKGREEN : GREEN;
-
-        DrawRectangleRec(startBtn,   startClr);
-        DrawRectangleRec(rankingBtn, rankClr);
-
-        DrawText("Iniciar Jogo", startBtn.x + 50,   startBtn.y   + 20, 36, WHITE);
-        DrawText("Ranking",      rankingBtn.x + 76, rankingBtn.y + 20, 36, WHITE);
+        bool hoveringInit    = CheckCollisionPointRec(GetMousePosition(), startBtn);
+        bool hoveringRanking = CheckCollisionPointRec(GetMousePosition(), rankingBtn);
+        Texture2D texInit    = (hoveringInit    && btnInitHover.id > 0)    ? btnInitHover    : btnInit;
+        Texture2D texRanking = (hoveringRanking && btnRankingHover.id > 0) ? btnRankingHover : btnRanking;
+        DrawTexturePro(texInit,
+            (Rectangle){0,0,texInit.width, texInit.height},
+            startBtn, (Vector2){0,0}, 0, WHITE
+        );
+        DrawTexturePro(texRanking,
+            (Rectangle){0,0,texRanking.width, texRanking.height},
+            rankingBtn, (Vector2){0,0}, 0, WHITE
+        );
     }
-
     else if (currentScreen == MENU_INPUT_NAME)
     {
         int screenWidth = GetScreenWidth();
         int screenHeight = GetScreenHeight();
-
         const char *title = "Digite seu nome:";
         int titleFontSize = 36;
         int titleWidth = MeasureText(title, titleFontSize);
         int titleX = (screenWidth - titleWidth) / 2;
         int titleY = screenHeight / 2 - 120;
-
         DrawText(title, titleX, titleY, titleFontSize, RAYWHITE);
-
         /* Caixa de texto */
         int boxW = 560, boxH = 70;
         Rectangle box = {screenWidth/2 - boxW/2, screenHeight/2 - boxH/2, boxW, boxH};
         DrawRectangleRec(box, DARKGRAY);
         DrawRectangleLinesEx(box, 4, GREEN);
-
         /* Texto digitado + cursor piscante */
         const int fontSize = 36;
         int textX = box.x + 20;
         int textY = box.y + (box.height - fontSize) / 2;
         DrawText(gPlayerName, textX, textY, fontSize, WHITE);
-
         /* cursor (“_”) piscando */
         if (((int)(GetTime()*2) & 1) == 0) {
             int cursorX = textX + MeasureText(gPlayerName, fontSize) + 4;
             DrawText("_", cursorX, textY, fontSize, WHITE);
         }
-
         /* Dica de confirmação */
         if (strlen(gPlayerName) > 0)
             DrawText("Pressione ENTER para confirmar", screenWidth/2 - 190, box.y + box.height + 20, 24, BLACK);
-
         // Exibe feedback se o nome estiver no limite
         if (strlen(gPlayerName) == MAX_PLAYER_NAME - 1)
             DrawText("Limite de caracteres atingido!", 50, 120, 20, RED);
     }
-
     else if (currentScreen == MENU_SELECT_CHAR)
     {
         int spacing = 30;
@@ -462,20 +422,14 @@ void DrawMenu(void)
         int startX = (screenWidth - totalW) / 2;
         int y = screenHeight / 2 - SPRITE_BTN_HEIGHT / 2;
         CharacterNode *node = head;
-
         for (int i = 0; i < charCount; i++, node = node->next)
         {
             Rectangle btn = {startX + i * (SPRITE_BTN_WIDTH + spacing), y, SPRITE_BTN_WIDTH, SPRITE_BTN_HEIGHT};
             bool hovered = CheckCollisionPointRec(GetMousePosition(), btn);
-
             Color normalColor = (Color){ 40, 40, 40, 200 };   // fundo escuro padrão
             Color hoverColor  = (Color){150, 150, 150, 100};
             DrawRectangleRec(btn, hovered ? hoverColor : normalColor);
-
-            // Conteúdo do card (sprite + nome)
             DrawCharacterButtonContent(node, btn, hovered, node == selectedChar);
-
-            // Destaque de borda se for o selecionado
             if (node == selectedChar) {
                 DrawRectangleLinesEx(btn, 6, DARKGREEN);
             }
@@ -486,17 +440,12 @@ void DrawMenu(void)
         DrawRectangleRec(confirmBtn, confirmColor);
         DrawText("Confirmar", confirmBtn.x + 50, confirmBtn.y + 12, 32, WHITE);
     }
-
     if (isFadingOut)
         DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, (unsigned char)(fadeAlpha * 255)});
-
     EndDrawing();
 }
-
 bool MenuStartGame(void) { return currentScreen == MENU_FINISHED; }
-
 bool MenuShowRanking(void) { return rankingRequested; }
-
 void UnloadMenu(void)
 {
     UnloadSound(clickSound);
@@ -511,6 +460,10 @@ void UnloadMenu(void)
     UnloadTexture(meninoPdavida2);
     UnloadTexture(deBone1);
     UnloadTexture(deBone2);
+    UnloadTexture(btnInit);
+    UnloadTexture(btnRanking);
+    UnloadTexture(btnInitHover);
+    UnloadTexture(btnRankingHover);
     CharacterNode *node = head;
     if (node)
     {
