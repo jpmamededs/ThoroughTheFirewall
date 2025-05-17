@@ -144,42 +144,41 @@ void Init_FinalJogo(void)
 void Update_FinalJogo(void)
 {
     UpdateTextAnimation();
-
-    if (IsKeyPressed(KEY_ENTER))
-    {
+    if (IsKeyPressed(KEY_ENTER)) {
         fase_concluida = true;
     }
+
     UpdateMusicStream(writtenInTheStars);
+    
     // Atualizar movimento parallax
     if (!movimentoFinalizado)
     {
         parallaxTimer += GetFrameTime();
         parallaxProgress = parallaxTimer / parallaxDuration;
+
         if (parallaxProgress >= 1.0f)
         {
             parallaxProgress = 1.0f;
             movimentoFinalizado = true;
-            // Ativar flash e troca de sprites quando o movimento terminar
-            flashAtivo = true;
+            flashAtivo = true;  
             flashTimer = 0.0f;
-            surprisePlayed = false; // Resetar para poder tocar o som novamente
-            if (strcmp(gSelectedCharacterName, "Dante") == 0)
-            {
-                spriteTrocaRealizada = true;
-            }
-            else if (strcmp(gSelectedCharacterName, "Jade") == 0)
-            {
-                deBoneTrocaRealizada = true;
-            }
-            else if (strcmp(gSelectedCharacterName, "Alice") == 0)
-            {
-                meninaTrocaRealizada = true;
-            }
-            else if (strcmp(gSelectedCharacterName, "Levi") == 0)
-            {
+            surprisePlayed = false;
+
+            spriteTrocaRealizada = false;
+            deBoneTrocaRealizada = false;
+            meninaTrocaRealizada = false;
+            calvoTrocaRealizada  = false;
+
+            if (!playerStats.isPassouSelecao)
                 calvoTrocaRealizada = true;
+            else
+            {
+                if      (strcmp(gSelectedCharacterName, "Dante") == 0) spriteTrocaRealizada = true;
+                else if (strcmp(gSelectedCharacterName, "Jade")  == 0) deBoneTrocaRealizada = true;
+                else if (strcmp(gSelectedCharacterName, "Alice") == 0) meninaTrocaRealizada = true;
+                else if (strcmp(gSelectedCharacterName, "Levi")  == 0) calvoTrocaRealizada  = true;
             }
-            // Inicia o timer de delay após revelação
+
             shieldStartTimer = true;
             shieldAppearTimer = 0.0f;
         }
@@ -238,6 +237,9 @@ void Draw_FinalJogo(void)
     {
         DrawTextWithAnimation(gSelectedCharacterName);
     }
+
+    const char *personagemVisivel =  playerStats.isPassouSelecao ? gSelectedCharacterName : "Levi";
+
     // Fatores de escala
     const float scaleCarinha = 0.4f;
     const float scaleMenina = 0.6f;
@@ -252,9 +254,9 @@ void Draw_FinalJogo(void)
     int yMenina = screenHeight - meninaRevelationSilhouette.height * scaleMenina;
     int yCalvo = screenHeight - calvoRevelationSilhouette.height * scaleCalvo;
     int yDeBone = screenHeight - deBoneRevelationSilhouette.height * scaleDeBone;
+
     // DESENHAR OS SPRITES NA ORDEM CORRETA:
-    // 1. Dante (silhueta ou revelado)
-    if (strcmp(gSelectedCharacterName, "Dante") == 0 && spriteTrocaRealizada)
+    if (strcmp(personagemVisivel, "Dante") == 0 && spriteTrocaRealizada)
     {
         DrawTexturePro(carinhaRevelation,
                        (Rectangle){0, 0, carinhaRevelation.width, carinhaRevelation.height},
@@ -273,7 +275,7 @@ void Draw_FinalJogo(void)
                        (Vector2){0, 0}, 0.0f, WHITE);
     }
     // 2. Alice (silhueta ou revelada)
-    if (strcmp(gSelectedCharacterName, "Alice") == 0 && meninaTrocaRealizada)
+    if (strcmp(personagemVisivel, "Alice") == 0 && meninaTrocaRealizada)
     {
         DrawTexturePro(meninaRevelation,
                        (Rectangle){0, 0, meninaRevelation.width, meninaRevelation.height},
@@ -291,14 +293,12 @@ void Draw_FinalJogo(void)
                                    meninaRevelationSilhouette.height * scaleMenina},
                        (Vector2){0, 0}, 0.0f, WHITE);
     }
-    // 3. Levi (silhueta ou revelado)
-    if (strcmp(gSelectedCharacterName, "Levi") == 0 && calvoTrocaRealizada)
+
+    if (strcmp(personagemVisivel, "Levi") == 0 && calvoTrocaRealizada)
     {
-        DrawTexturePro(calvoRevelation,
-                       (Rectangle){0, 0, calvoRevelation.width, calvoRevelation.height},
-                       (Rectangle){xCalvo, yCalvo,
-                                   calvoRevelation.width * scaleCalvo,
-                                   calvoRevelation.height * scaleCalvo},
+        DrawTexturePro(calvoRevelation, (Rectangle){0, 0, calvoRevelation.width, calvoRevelation.height}, (Rectangle){xCalvo, yCalvo,
+                        calvoRevelation.width * scaleCalvo,
+                        calvoRevelation.height * scaleCalvo},
                        (Vector2){0, 0}, 0.0f, WHITE);
     }
     else
@@ -310,8 +310,8 @@ void Draw_FinalJogo(void)
                                    calvoRevelationSilhouette.height * scaleCalvo},
                        (Vector2){0, 0}, 0.0f, WHITE);
     }
-    // 4. Jade (silhueta ou revelada)
-    if (strcmp(gSelectedCharacterName, "Jade") == 0 && deBoneTrocaRealizada)
+
+    if (strcmp(personagemVisivel, "Jade") == 0 && deBoneTrocaRealizada)
     {
         DrawTexturePro(deBoneRevelation,
                        (Rectangle){0, 0, deBoneRevelation.width, deBoneRevelation.height},
@@ -329,6 +329,8 @@ void Draw_FinalJogo(void)
                                    deBoneRevelationSilhouette.height * scaleDeBone},
                        (Vector2){0, 0}, 0.0f, WHITE);
     }
+
+
     // Efeito de flash
     if (flashAlpha > 0.0f)
     {
