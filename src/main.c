@@ -23,10 +23,10 @@
 #include "keyloggerUbuntu.h"
 #include "proxyUbuntu.h"
 #include "keylogger3D.h"
-#include "template_3D_02.h"
-#include "template_3D_03.h"
-#include "tela_provisoria_01.h"
-#include "tela_provisoria_02.h"
+#include "shell3D_01.h"
+#include "shell3D_02.h"
+#include "shellBox.h"
+#include "cena_final.h"
 #include "loading_screen.h"
 #include "transition_screen.h"
 #include "playerStats.h"
@@ -99,10 +99,10 @@ int main(void)
     static bool keyloggerUbuntu_Initialized = false;
     static bool proxyUbuntu_Initialized = false;
     static bool keylogger3D_Initialized = false;
-    static bool template_3D_02_Initialized = false;
-    static bool template_3D_03_Initialized = false;
-    static bool tela01_Initialized = false;
-    static bool tela02_Initialized = false;
+    static bool shell3D_01_Initialized = false;
+    static bool shell3D_02_Initialized = false;
+    static bool shellBox_Initialized = false;
+    static bool finalJogo_Initialized = false;
     static bool loading_Initialized = false;
     static bool transicao_Initialized = false;
     static bool ranking_Initialized = false;
@@ -230,15 +230,15 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                template_3D_02_Initialized = false;
-                state = APP_TEMPLATE_3D_02;
+                shell3D_01_Initialized = false;
+                state = APP_SHELL_3D_PART1;
             }
             if (IsKeyPressed(KEY_E))
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                template_3D_03_Initialized = false;
-                state = APP_TEMPLATE_3D_03;
+                shell3D_02_Initialized = false;
+                state = APP_SHELL_3D_PART2;
             }
             if (IsKeyPressed(KEY_J))
             {
@@ -268,15 +268,15 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                tela01_Initialized = false;
-                state = APP_TELA_01;
+                shellBox_Initialized = false;
+                state = APP_SHELL_BOX;
             }
             if (IsKeyPressed(KEY_G))
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                tela02_Initialized = false;
-                state = APP_TELA_02;
+                finalJogo_Initialized = false;
+                state = APP_FINAL_JOGO;
             }
             if (IsKeyPressed(KEY_F))
             {
@@ -600,6 +600,68 @@ int main(void)
                 PFP_Iterrogatorio = APP_DEBUG; // Futuramente SHELL REVERSO!
             }
         }
+        else if (state == APP_SHELL_3D_PART1)
+        {
+            if (!shell3D_01_Initialized)
+            {
+                Init_Shell3D_01();
+                shell3D_01_Initialized = true;
+            }
+            Update_Shell3D_01();
+            Draw_Shell3D_01();
+            if (Fase_Shell3D_01_Concluida()) 
+            {
+                Unload_Shell3D_01();
+                shell3D_01_Initialized = false;
+                state = APP_SHELL_BOX;
+            }
+        }
+        else if (state == APP_SHELL_BOX)
+        {
+            if (!shellBox_Initialized)
+            {
+                Init_ShellBox();
+                shellBox_Initialized = true;
+            }
+            Update_ShellBox();
+            Draw_ShellBox();
+            if (Fase_ShellBox_Concluida()) {
+                Unload_ShellBox();
+                shellBox_Initialized = false;
+                state = APP_SHELL_3D_PART2;
+            }
+        }
+        else if (state == APP_SHELL_3D_PART2)
+        {
+            if (!shell3D_02_Initialized)
+            {
+                Init_Shell3D_02();
+                shell3D_02_Initialized = true;
+            }
+            Update_Shell3D_02();
+            Draw_Shell3D_02();
+            if (Fase_Shell3D_02_Concluida())
+            {
+                Unload_Shell3D_02();
+                shell3D_02_Initialized = false;
+                state = APP_FINAL_JOGO;
+            }
+        }
+        else if (state == APP_FINAL_JOGO)
+        {
+            if (!finalJogo_Initialized)
+            {
+                Init_FinalJogo();
+                finalJogo_Initialized = true;
+            }
+            Update_FinalJogo();
+            Draw_FinalJogo();
+            if (Fase_FinalJogo_Concluida()) {
+                Unload_FinalJogo();
+                finalJogo_Initialized = false;
+                state = APP_RANKING;
+            }
+        }
         // ===== FIM DO JOGO! =====
         else if (state == APP_FASE4)
         {
@@ -629,68 +691,6 @@ int main(void)
             if (Fase_Ubuntu_Provisorio_Concluida()) {
                 Unload_Ubuntu_Provisorio();
                 ubuntoProvisorio_Initialized = false;
-                state = APP_DEBUG;
-            }
-        }
-        else if (state == APP_TEMPLATE_3D_02)
-        {
-            if (!template_3D_02_Initialized)
-            {
-                Init_Template_3D_02();
-                template_3D_02_Initialized = true;
-            }
-            Update_Template_3D_02();
-            Draw_Template_3D_02();
-            if (Fase_Template_3D_02_Concluida()) 
-            {
-                Unload_Template_3D_02();
-                template_3D_02_Initialized = false;
-                state = APP_DEBUG;
-            }
-        }
-        else if (state == APP_TEMPLATE_3D_03)
-        {
-            if (!template_3D_03_Initialized)
-            {
-                Init_Template_3D_03();
-                template_3D_03_Initialized = true;
-            }
-            Update_Template_3D_03();
-            Draw_Template_3D_03();
-            if (Fase_Template_3D_03_Concluida())
-            {
-                Unload_Template_3D_03();
-                template_3D_03_Initialized = false;
-                state = APP_DEBUG;
-            }
-        }
-        else if (state == APP_TELA_01)
-        {
-            if (!tela01_Initialized)
-            {
-                Init_Tela_01();
-                tela01_Initialized = true;
-            }
-            Update_Tela_01();
-            Draw_Tela_01();
-            if (Fase_Tela01_Concluida()) {
-                Unload_Tela_01();
-                tela01_Initialized = false;
-                state = APP_DEBUG;
-            }
-        }
-        else if (state == APP_TELA_02)
-        {
-            if (!tela02_Initialized)
-            {
-                Init_Tela_02();
-                tela02_Initialized = true;
-            }
-            Update_Tela_02();
-            Draw_Tela_02();
-            if (Fase_Tela02_Concluida()) {
-                Unload_Tela_02();
-                tela02_Initialized = false;
                 state = APP_DEBUG;
             }
         }

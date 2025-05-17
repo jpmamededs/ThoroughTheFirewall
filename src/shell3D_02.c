@@ -1,4 +1,4 @@
-#include "template_3D_03.h"
+#include "shell3D_02.h"
 #include "raylib.h"
 #include "generalFunctions.h"
 #include <math.h>
@@ -30,7 +30,7 @@ static bool soundPlayed = false;
 static float completeTimer = 0; // Novo timer para esperar após o som
 static bool waitingToComplete = false; // Flag para controlar a espera
 
-void Init_Template_3D_03(void)
+void Init_Shell3D_02(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
     portaModel = LoadModel("src/models/DOOR.obj");
@@ -52,7 +52,7 @@ void Init_Template_3D_03(void)
     cdPositionY = GetScreenHeight() + cdTexture.height;
 }
 
-void Update_Template_3D_03(void)
+void Update_Shell3D_02(void)
 {
     float mouseDeltaX = GetMouseDelta().x;
     cameraYaw += mouseDeltaX * 0.002f;
@@ -127,7 +127,7 @@ void Update_Template_3D_03(void)
     }
 }
 
-void Draw_Template_3D_03(void)
+void Draw_Shell3D_02(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -160,7 +160,7 @@ void Draw_Template_3D_03(void)
     EndDrawing();
 }
 
-void Unload_Template_3D_03(void)
+void Unload_Shell3D_02(void)
 {
     UnloadModel(modelo3D);
     UnloadModel(portaModel);
@@ -171,7 +171,7 @@ void Unload_Template_3D_03(void)
     EnableCursor();
 }
 
-bool Fase_Template_3D_03_Concluida(void)
+bool Fase_Shell3D_02_Concluida(void)
 {
     return fase_concluida;
 }

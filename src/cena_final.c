@@ -1,4 +1,4 @@
-#include "tela_provisoria_02.h"
+#include "cena_final.h"
 #include "raylib.h"
 #include "generalFunctions.h"
 #include "playerStats.h"
@@ -50,7 +50,7 @@ static float flashAlpha = 0.0f;
 static bool flashAtivo = false;
 static const float flashDuration = 0.6f;
 static float flashTimer = 0.0f;
-void Init_Tela_02(void)
+void Init_FinalJogo(void)
 {
     fase_concluida = false;
     // Carregar texturas
@@ -86,7 +86,7 @@ void Init_Tela_02(void)
     shieldAnimActive = false;
     shieldAnimProgress = 0.0f;
 }
-void Update_Tela_02(void)
+void Update_FinalJogo(void)
 {
     if (IsKeyPressed(KEY_ENTER))
     {
@@ -167,7 +167,7 @@ void Update_Tela_02(void)
         // Agora nunca para, shieldAnimProgress só cresce!
     }
 }
-void Draw_Tela_02(void)
+void Draw_FinalJogo(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -295,11 +295,11 @@ void Draw_Tela_02(void)
     }
     EndDrawing();
 }
-bool Fase_Tela02_Concluida(void)
+bool Fase_FinalJogo_Concluida(void)
 {
     return fase_concluida;
 }
-void Unload_Tela_02(void)
+void Unload_FinalJogo(void)
 {
     UnloadTexture(carinhaRevelationSilhouette);
     UnloadTexture(carinhaRevelation);
