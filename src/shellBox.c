@@ -1,4 +1,4 @@
-#include "tela_provisoria_01.h"
+#include "shellBox.h"
 #include "raylib.h"
 #include "generalFunctions.h"
 #include <math.h>
@@ -60,7 +60,7 @@ static float fadeOutBoxAlpha = 1.0f;
 
 static bool surprisePlayed = false;
 
-void Init_Tela_01(void)
+void Init_ShellBox(void)
 {
     // Carregar as texturas
     cardboardBox = LoadTexture("src/sprites/cardboard_box.png");
@@ -120,7 +120,7 @@ void Init_Tela_01(void)
     fase_concluida = false;
 }
 
-void Update_Tela_01(void)
+void Update_ShellBox(void)
 {
     // Atualizar o timer para o fade out
     fadeTimer += GetFrameTime();
@@ -268,7 +268,7 @@ void Update_Tela_01(void)
     }
 }
 
-void Draw_Tela_01(void)
+void Draw_ShellBox(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -306,12 +306,12 @@ void Draw_Tela_01(void)
     EndDrawing();
 }
 
-bool Fase_Tela01_Concluida(void)
+bool Fase_ShellBox_Concluida(void)
 {
     return fase_concluida;
 }
 
-void Unload_Tela_01(void)
+void Unload_ShellBox(void)
 {
     StopSound(suspenseSound);
     UnloadSound(suspenseSound);

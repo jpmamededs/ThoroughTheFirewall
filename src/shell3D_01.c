@@ -1,4 +1,4 @@
-#include "template_3D_02.h"
+#include "shell3D_01.h"
 #include "raylib.h"
 #include "generalFunctions.h"
 #include <math.h>
@@ -16,7 +16,7 @@ static float cameraYaw = 0.0f;
 static const float maxYaw = PI / 4.0f;
 static const float minYaw = -PI / 4.0f;
 
-static bool template3D_02_concluida = false;
+static bool fase_concluida = false;
 static float timeElapsed = 0.0f;
 static bool soundPlaying = false;
 static bool doorAnswered = false;
@@ -32,7 +32,7 @@ static float flashTimer = 0.0f;
 static bool flashActive = false;
 static bool showBox = false;  // Novo: Indica quando mostrar a caixa fechada
 
-void Init_Template_3D_02(void)
+void Init_Shell3D_01(void)
 {
     fadeSpeed = 1.0f / fadeDuration;
 
@@ -99,18 +99,25 @@ void UpdateFadeOut(float deltaTime)
     }
 }
 
-void Update_Template_3D_02(void)
+void Update_Shell3D_01(void)
 {
     float deltaTime = GetFrameTime();
     timeElapsed += deltaTime;
+    
+    float mouseDeltaX = GetMouseDelta().x;
+    cameraYaw += mouseDeltaX * 0.002f;
+    cameraYaw = fmaxf(fminf(cameraYaw, maxYaw), minYaw);
 
-    UpdateFadeOut(deltaTime);
-
+    camera.target.x = camera.position.x + sinf(cameraYaw);
+    camera.target.z = camera.position.z - cosf(cameraYaw);
+    
     if (fadeComplete)
     {
-        template3D_02_concluida = true;
+        fase_concluida = true;
         return;
     }
+    
+    UpdateFadeOut(deltaTime);
 
     if (!isFading && timeElapsed >= 2.0f && !doorAnswered) 
     {
@@ -132,16 +139,9 @@ void Update_Template_3D_02(void)
             StartFadeOut();
         }
     }
-
-    float mouseDeltaX = GetMouseDelta().x;
-    cameraYaw += mouseDeltaX * 0.002f;
-    cameraYaw = fmaxf(fminf(cameraYaw, maxYaw), minYaw);
-
-    camera.target.x = camera.position.x + sinf(cameraYaw);
-    camera.target.z = camera.position.z - cosf(cameraYaw);
 }
 
-void Draw_Template_3D_02(void)
+void Draw_Shell3D_01(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -180,7 +180,7 @@ void Draw_Template_3D_02(void)
     EndDrawing();
 }
 
-void Unload_Template_3D_02(void)
+void Unload_Shell3D_01(void)
 {
     UnloadModel(modelo3D);
     UnloadModel(portaModel);
@@ -192,7 +192,7 @@ void Unload_Template_3D_02(void)
     EnableCursor();
 }
 
-bool Fase_Template_3D_02_Concluida(void)
+bool Fase_Shell3D_01_Concluida(void)
 {
-    return template3D_02_concluida;
+    return fase_concluida;
 }
