@@ -4,7 +4,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <direct.h>
+#include <unistd.h>
 static Texture2D wallpaper;
 static Texture2D background;
 static Texture2D terminalIcon;
