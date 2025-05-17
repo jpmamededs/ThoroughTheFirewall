@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <direct.h>
 #include <unistd.h>
+#include <dirent.h>
 static Texture2D wallpaper;
 static Texture2D background;
 static Texture2D terminalIcon;
@@ -37,9 +38,15 @@ static int estadoCaixa = 0;
 static float tempoCaixaDialogo = 0.0f;
 static const float trocaMensagemDelay = 3.0f;
 
-static bool fase_concluida = false; 
+static bool fase_concluida = false;
 
 static Rectangle folderBounds;
+
+iniciandoTransicao = false;
+tempoFadeOut = 0.0f;
+tempoAposFade = 0.0f;
+tempoMensagemFinal = 0.0f;
+aguardandoMensagemFinal = false;
 
 void Init_BruteForce(void)
 {
@@ -155,6 +162,25 @@ void Update_BruteForce(void)
                 terminalChamado = true;
             }
         }
+    }
+
+    DIR *d = opendir(".");
+    struct dirent *dir;
+    if (d)
+    {
+        while ((dir = readdir(d)) != NULL)
+        {
+            if (strcmp(dir->d_name, "dadosBruteForce.txt") == 0)
+            {
+                remove("dadosBruteForce.txt");
+
+                estadoCaixa = 2;
+                tempoMensagemFinal = 0.0f;
+                aguardandoMensagemFinal = true;
+                break;
+            }
+        }
+        closedir(d);
     }
 
     // (fase_concluida = true;)

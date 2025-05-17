@@ -33,7 +33,8 @@
         "time.h": "c",
         "terminal_proxy.h": "c",
         "template_ubuntu_01.h": "c",
-        "direct.h": "c"
+        "direct.h": "c",
+        "firewall.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

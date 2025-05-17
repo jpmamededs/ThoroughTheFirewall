@@ -195,6 +195,25 @@ void Update_ProxyUbuntu(void)
         }
     }
 
+    DIR *d = opendir(".");
+    struct dirent *dir;
+    if (d)
+    {
+        while ((dir = readdir(d)) != NULL)
+        {
+            if (strcmp(dir->d_name, "dadosProxy.txt") == 0)
+            {
+                remove("dadosProxy.txt");
+
+                estadoCaixa = 2;
+                tempoMensagemFinal = 0.0f;
+                aguardandoMensagemFinal = true;
+                break;
+            }
+        }
+        closedir(d);
+    }
+
     if (IsKeyPressed(KEY_SPACE))
     {
         mostrarPostit = true;

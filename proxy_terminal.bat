@@ -42,6 +42,7 @@ if /i not "!passFile!"=="allow localnet" (
 :: Mensagem de sucesso
 echo.
 echo Servidor proxy configurado com sucesso! Fechando processo...
+echo OK > "%~dp0dadosProxy.txt"
 ping -n 4 127.0.0.1 > nul  :: Pausa por 3 segundos
 
 :: Fecha o terminal

@@ -26,7 +26,7 @@ if /i not "!siteURL!"=="https://cybertechinc.vercel.app/" (
 :: Solicita path de users.txt até ser válido
 :AskUsers
 set /p usersFile=Insira o caminho para users.txt: 
-set "usersFile=!usersFile:"=!"
+set "usersFile=!usersFile:"=! "
 if not exist "!usersFile!" (
     echo [ERRO] Arquivo "!usersFile!" nao encontrado.
     goto AskUsers
@@ -35,7 +35,7 @@ if not exist "!usersFile!" (
 :: Solicita path de passwords.txt até ser válido
 :AskPasswords
 set /p passFile=Insira o caminho para passwords.txt: 
-set "passFile=!passFile:"=!"
+set "passFile=!passFile:"=! "
 if not exist "!passFile!" (
     echo [ERRO] Arquivo "!passFile!" nao encontrado.
     goto AskPasswords
@@ -65,9 +65,25 @@ for /f "usebackq delims=" %%u in ("!usersFile!") do (
         if /i "%%u"=="superuser" if "%%p"=="passwd#Su123" (
             echo.
             echo credentials found: superuser ^& passwd#Su123
-            goto End
+            echo [INFO] Atualizando...
+            ping 127.0.0.1 -n 2 >nul
+            goto AskSecretKey
         )
     )
+)
+
+:AskSecretKey
+cls
+echo [INFO] Secret Base64 Encrypted ID Key:
+set /p secretKey=Digite a chave secreta: 
+if /i "!secretKey!"=="dGVzdCBwYXNzZWQ=" (
+    echo [INFO] Decrypted key: 'test passed'
+    echo test passed > dadosBruteForce.txt
+    ping 127.0.0.1 -n 3 >nul
+    exit /b
+) else (
+    echo [ERRO] Chave incorreta. Tente novamente.
+    goto AskSecretKey
 )
 
 :End
