@@ -41,6 +41,8 @@ static int estadoCaixa = 0;
 static float tempoCaixaDialogo = 0.0f;
 static const float trocaMensagemDelay = 3.0f;
 
+static bool terminalAberto = false;
+
 static bool iniciandoTransicao = false;
 static float tempoFadeOut = 0.0f;
 static float tempoAposFade = 0.0f;
@@ -63,6 +65,8 @@ void Init_Firewall(void)
 
     suspiroSound = LoadSound("src/music/suspiro.mp3");
     suspiroTocado = false;
+
+    terminalAberto = false;
 
     fadeTimer = 0.0f;
     showBackground = false;
@@ -106,7 +110,7 @@ void Update_Firewall(void)
         bootSoundPlayed = true;
     }
 
-    if (showBackground && !terminalChamado && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    if (showBackground && !terminalChamado && !terminalAberto && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         Vector2 mouse = GetMousePosition();
         Rectangle terminalIconBounds = {10, 10, terminalIcon.width * 1.5f, terminalIcon.height * 2.0f};
@@ -120,7 +124,6 @@ void Update_Firewall(void)
                 snprintf(command, sizeof(command),
                          "start \"\" \"%s\\first_terminal.bat\"", cwd);
                 system(command);
-                terminalChamado = true;
             }
         }
     }
@@ -290,4 +293,3 @@ void Unload_Firewall(void)
     UnloadSound(suspiroSound);
     UnloadFont(geminiFont);
 }
-

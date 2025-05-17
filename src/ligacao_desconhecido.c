@@ -42,18 +42,18 @@ static bool fase1FadeInDone = false;
 static bool showComputerButton = false;
 static bool telefoneAtendido = false;
 
-static Sound somPersonagem;            // áudio do personagem
-static TypeWriter personagemWriter;    // typewriter do personagem
+static Sound somPersonagem;         // áudio do personagem
+static TypeWriter personagemWriter; // typewriter do personagem
 static bool personagemTypeStarted = false;
-static bool personagemAudioTocado   = false;
-static bool unknownDone        = false;   // texto do desconhecido concluído?
-static float timeAfterUnknown  = -1.0f; 
+static bool personagemAudioTocado = false;
+static bool unknownDone = false; // texto do desconhecido concluído?
+static float timeAfterUnknown = -1.0f;
 static float postUnknownTimer = -1.0f;
 
 static Sound somChamadaAcabada;
-static bool somChamadaTocado = false; 
-static float gapTimer = -1.0f;        // cronômetro entre Fala-1 e Fala-2
-static bool  gapSoundPlayed = false;
+static bool somChamadaTocado = false;
+static float gapTimer = -1.0f; // cronômetro entre Fala-1 e Fala-2
+static bool gapSoundPlayed = false;
 #define RING_GAP 0.60f
 
 static bool fase_concluida = false;
@@ -62,8 +62,8 @@ static const char *characterName = "";
 static bool dicaVisivel = false;
 static float dicaTimer = 0.0f;
 static bool dicaAnimando = false;
-static float posicaoDicaX = -300.0f;  // Começa fora da tela
-static const float velocidadeDica = 300.0f;  // Pixels por segundo
+static float posicaoDicaX = -300.0f;        // Começa fora da tela
+static const float velocidadeDica = 300.0f; // Pixels por segundo
 
 const char *GetCurrentText(TypeWriter *writer)
 {
@@ -82,7 +82,7 @@ void Init_Ligacao_Desconhecido()
     somPersonagem = LoadSound(""); // se quiser voz no cara, é so colocar o caminho aqui
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
     characterName = gSelectedCharacterName;
-    
+
     portaModel = LoadModel("src/models/DOOR.obj");
     portaTexture = LoadTexture("src/models/Garage_Metalness.png");
     portaModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = portaTexture;
@@ -90,7 +90,7 @@ void Init_Ligacao_Desconhecido()
     SetSoundVolume(somFase1, 1.0f);
     SetSoundVolume(somTelefone, 1.0f);
     SetSoundVolume(somRadio, 3.5f);
-    SetSoundVolume(somPersonagem, 1.0f);    
+    SetSoundVolume(somPersonagem, 1.0f);
     SetMasterVolume(1.0f);
     SetSoundVolume(somChamadaAcabada, 2.0f);
 
@@ -132,19 +132,22 @@ void Update_Ligacao_Desconhecido(void)
 {
     float delta = GetFrameTime();
     tempoDesdeInicio += delta;
-    
+
     if (!fase1FadeInDone)
     {
         fadeAlphaFase1 = UpdateFade(delta, FADEIN_DURATION, true);
-        if (fadeAlphaFase1 <= 0.0f) {
+        if (fadeAlphaFase1 <= 0.0f)
+        {
             fadeAlphaFase1 = 0.0f;
             fase1FadeInDone = true;
         }
     }
 
-    if (hangUpCooldown >= 0.0f) {
+    if (hangUpCooldown >= 0.0f)
+    {
         hangUpCooldown += delta;
-        if (hangUpCooldown >= 5.0f) {
+        if (hangUpCooldown >= 5.0f)
+        {
             hangUpCooldown = -1.0f;
             cooldownTelefone = 0.0f;
         }
@@ -171,18 +174,20 @@ void Update_Ligacao_Desconhecido(void)
         }
     }
 
-    if (typeStarted) UpdateTypeWriter(&fase1Writer, delta, IsKeyPressed(KEY_SPACE));
+    if (typeStarted)
+        UpdateTypeWriter(&fase1Writer, delta, IsKeyPressed(KEY_SPACE));
 
     if (typeStarted && !unknownDone && fase1Writer.drawnChars >= strlen(GetCurrentText(&fase1Writer)))
     {
-        unknownDone       = true;
-        timeAfterUnknown  = 0.0f;   // inicia a contagem de 2 s
+        unknownDone = true;
+        timeAfterUnknown = 0.0f; // inicia a contagem de 2 s
     }
 
     /* 3.2 – contar 2 s e disparar fala do personagem */
     if (unknownDone && !personagemAudioTocado)
     {
-        if (!somChamadaTocado) {
+        if (!somChamadaTocado)
+        {
             PlaySound(somChamadaAcabada);
             somChamadaTocado = true;
         }
@@ -193,7 +198,7 @@ void Update_Ligacao_Desconhecido(void)
             PlaySound(somPersonagem);
             personagemAudioTocado = true;
 
-            const char *falaP = "O quê? Uma ligação assim do nada...? Isso parece suspeito... Melhor verificar isso direito.";    // texto do personagem
+            const char *falaP = "O quê? Uma ligação assim do nada...? Isso parece suspeito... Melhor verificar isso direito."; // texto do personagem
             InitTypeWriter(&personagemWriter, falaP, 18.5f);
             personagemTypeStarted = true;
         }
@@ -203,10 +208,10 @@ void Update_Ligacao_Desconhecido(void)
     if (typeStarted && !unknownDone &&
         fase1Writer.drawnChars >= (int)strlen(GetCurrentText(&fase1Writer)))
     {
-        unknownDone       = true;
-        postUnknownTimer  = 0.0f;  
-        gapTimer     = 0.0f;          // começa intervalo
-        gapSoundPlayed = false;        // começa contagem
+        unknownDone = true;
+        postUnknownTimer = 0.0f;
+        gapTimer = 0.0f;        // começa intervalo
+        gapSoundPlayed = false; // começa contagem
     }
 
     /********* Contagem após término *********/
@@ -228,7 +233,7 @@ void Update_Ligacao_Desconhecido(void)
     }
 
     // Verifica se a fala 2 terminou para habilitar o botão
-    if (personagemTypeStarted && 
+    if (personagemTypeStarted &&
         personagemWriter.drawnChars >= (int)strlen(GetCurrentText(&personagemWriter)))
     {
         showComputerButton = true;
@@ -245,7 +250,7 @@ void Update_Ligacao_Desconhecido(void)
         {
             cooldownTelefone = 0.0f;
         }
-        else 
+        else
         {
             cooldownTelefone += delta;
             if (cooldownTelefone >= RING_GAP)
@@ -253,12 +258,10 @@ void Update_Ligacao_Desconhecido(void)
                 PlaySound(somTelefone);
                 telefoneVisivel = true;
 
-                if (!animacaoFeita)
-                {
-                    animandoTelefone   = true;
-                    telefoneSubindo    = true;
-                    animacaoTelefoneY  = 1.0f;
-                }
+                // Sempre que o telefone reaparecer, faz a animação de subida
+                animandoTelefone = true;
+                telefoneSubindo = true;   // Sobe
+                animacaoTelefoneY = 1.0f; // Começa de baixo
 
                 cooldownTelefone = 0.0f;
             }
@@ -272,39 +275,43 @@ void Update_Ligacao_Desconhecido(void)
             StopSound(somTelefone);
 
             interromperTelefone = false;
-            telefoneVisivel     = false;
-            animacaoFeita       = false;
-            animandoTelefone    = false;
-            telefoneSubindo     = false;
+            telefoneVisivel = false;
+            animacaoFeita = false;
+            animandoTelefone = false;
+            telefoneSubindo = false;
 
-            hangUpCooldown   = 0.0f; 
-            cooldownTelefone = -5.0f; 
-            typeStarted      = false;
+            hangUpCooldown = 0.0f;
+            cooldownTelefone = -5.0f;
+            typeStarted = false;
         }
     }
 
     if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_A))
     {
-        telefoneVisivel  = false;
+        telefoneVisivel = true;
         interromperTelefone = true;
         telefoneAtendido = true;
 
-        if (!typeStarted) delayTexto = 2.3f;
+        if (!typeStarted)
+            delayTexto = 2.3f;
 
         StopSound(somTelefone);
 
         animandoTelefone = true;
-        telefoneSubindo  = false;
-        animacaoTelefoneY = 0.0f;
+        telefoneSubindo = false;  // Animação reversa (descendo)
+        animacaoTelefoneY = 0.0f; // Começa a descer
     }
     else if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_D))
     {
         StopSound(somTelefone);
-        telefoneVisivel  = false;
-        animacaoFeita    = false;
-        animandoTelefone = false;
 
-        hangUpCooldown   = 0.0f;
+        // Iniciar a animação de descida ao desligar
+        telefoneVisivel = true;   // O telefone permanece visível durante a animação
+        animandoTelefone = true;  // Inicia a animação de descida
+        telefoneSubindo = false;  // Desce
+        animacaoTelefoneY = 0.0f; // Começa a descida
+
+        hangUpCooldown = 0.0f;
         cooldownTelefone = -1.0f;
     }
 
@@ -314,31 +321,31 @@ void Update_Ligacao_Desconhecido(void)
         somFase1Tocado = true;
     }
 
-    if (tempoDesdeInicio >= 2.0f && !dicaVisivel) 
+    if (tempoDesdeInicio >= 2.0f && !dicaVisivel)
     {
         dicaVisivel = true;
         dicaAnimando = true;
     }
 
-    if (dicaVisivel) 
+    if (dicaVisivel)
     {
         dicaTimer += delta;
 
-        if (dicaAnimando && dicaTimer < 1.0f) 
+        if (dicaAnimando && dicaTimer < 1.0f)
         {
             posicaoDicaX += velocidadeDica * delta;
-            if (posicaoDicaX >= 20.0f) 
+            if (posicaoDicaX >= 20.0f)
             {
                 posicaoDicaX = 20.0f;
                 dicaAnimando = false;
             }
         }
 
-        if (dicaTimer >= 5.0f && dicaTimer < 7.0f) 
+        if (dicaTimer >= 5.0f && dicaTimer < 7.0f)
         {
             dicaAnimando = true;
             posicaoDicaX -= velocidadeDica * delta;
-            if (posicaoDicaX <= -420.0f) 
+            if (posicaoDicaX <= -420.0f)
             {
                 posicaoDicaX = -422.0f;
                 dicaVisivel = false;
@@ -349,8 +356,10 @@ void Update_Ligacao_Desconhecido(void)
     float mouseDeltaX = GetMouseDelta().x;
     cameraYaw += mouseDeltaX * 0.002f;
 
-    if (cameraYaw > maxYaw) cameraYaw = maxYaw;
-    if (cameraYaw < minYaw) cameraYaw = minYaw;
+    if (cameraYaw > maxYaw)
+        cameraYaw = maxYaw;
+    if (cameraYaw < minYaw)
+        cameraYaw = minYaw;
 
     float distance = 1.0f;
     camera.target.x = camera.position.x + sinf(cameraYaw) * distance;
@@ -367,6 +376,8 @@ void Update_Ligacao_Desconhecido(void)
             animacaoTelefoneY = telefoneSubindo ? 0.0f : 1.0f;
             animandoTelefone = false;
             animacaoFeita = true;
+
+            // Só torna invisível após a animação completa
             if (!telefoneSubindo)
                 telefoneVisivel = false;
         }
@@ -469,7 +480,7 @@ void Draw_Ligacao_Desconhecido()
     if (showComputerButton)
     {
         int fontSize = 20;
-        const char* text = "Usar Computador [SPACE]";
+        const char *text = "Usar Computador [SPACE]";
         int textWidth = MeasureText(text, fontSize);
         int padding = 20;
 
@@ -477,12 +488,11 @@ void Draw_Ligacao_Desconhecido()
             GetScreenWidth() / 2 - (textWidth / 2) - padding,
             GetScreenHeight() / 2 + 100,
             textWidth + (2 * padding),
-            fontSize + 20
-        };
+            fontSize + 20};
 
         DrawRectangleRec(btnBounds, GREEN);
         DrawText(text, btnBounds.x + (btnBounds.width - textWidth) / 2,
-                btnBounds.y + (btnBounds.height - fontSize) / 2, fontSize, BLACK);
+                 btnBounds.y + (btnBounds.height - fontSize) / 2, fontSize, BLACK);
 
         if (IsKeyPressed(KEY_SPACE))
         {
@@ -497,10 +507,10 @@ void Draw_Ligacao_Desconhecido()
     if (fadeAlphaFase1 > 0.0f)
     {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
-                    (Color){0, 0, 0, (unsigned char)(fadeAlphaFase1 * 255)});
+                      (Color){0, 0, 0, (unsigned char)(fadeAlphaFase1 * 255)});
     }
 
-    if (dicaVisivel) 
+    if (dicaVisivel)
     {
         DrawDica(posicaoDicaX, 20, "Dica: mova o mouse para olhar ao redor");
     }
