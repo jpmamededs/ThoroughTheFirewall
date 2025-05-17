@@ -26,6 +26,15 @@ static bool mensagemInicialFinalizada = false;
 
 static bool fase_concluida = false; 
 
+static float tempoDesdeInicio = 0.0f;
+static bool dicaVisivel = false;
+static float dicaTimer = 0.0f;
+static bool dicaAnimando = false;
+static float posicaoDicaX = -300.0f;
+static const float velocidadeDica = 300.0f;
+static Sound steam_som;
+static bool steam_tocando = false;
+
 static Vector3 Vector3SubtractManual(Vector3 a, Vector3 b) {
     return (Vector3){a.x - b.x, a.y - b.y, a.z - b.z};
 }
@@ -42,6 +51,7 @@ void Init_Pendrive(void)
     usbTextures[1] = LoadTexture("src/models/UsbDrive_FBX_UsbDrive_SH_Metalness.png");
     usbTextures[2] = LoadTexture("src/models/UsbDrive_FBX_UsbDrive_SH_Normal.png");
     usbTextures[3] = LoadTexture("src/models/UsbDrive_FBX_UsbDrive_SH_Roughness.png");
+    steam_som  = LoadSound("src/music/steam-achievement.mp3");
 
     for (int i = 0; i < 4 && i < usbDriveModel.materialCount; i++) {
         usbDriveModel.materials[i].maps[MATERIAL_MAP_DIFFUSE].texture = usbTextures[i];
@@ -60,11 +70,20 @@ void Init_Pendrive(void)
     fase_concluida = false;
 
     InitTypeWriter(&tw, "Ué, onde eu deixei meu pendrive?", 35.0f);
+
+    // DICA
+    tempoDesdeInicio = 0.0f;
+    dicaVisivel = false;
+    dicaTimer = 0.0f;
+    dicaAnimando = false;
+    posicaoDicaX = -300.0f;
+    steam_tocando = false;
 }
 
 void Update_Pendrive(void)
 {
     float delta = GetFrameTime();
+    tempoDesdeInicio += delta;
 
     if (!mensagemInicialFinalizada) {
         UpdateTypeWriter(&tw, delta, IsKeyPressed(KEY_SPACE));
@@ -94,6 +113,38 @@ void Update_Pendrive(void)
 
     if (pendriveSelecionado && fabsf(cameraYaw) < 0.1f) {
         pendriveUsavel = true;
+    }
+
+    if (tempoDesdeInicio >= 2.0f && !dicaVisivel) 
+    {
+        dicaVisivel = true;
+        dicaAnimando = true;
+    }
+
+    if (dicaVisivel) 
+    {
+        dicaTimer += delta;
+
+        if (dicaAnimando && dicaTimer < 1.0f) 
+        {
+            posicaoDicaX += velocidadeDica * delta;
+            if (posicaoDicaX >= 20.0f) 
+            {
+                posicaoDicaX = 20.0f;
+                dicaAnimando = false;
+            }
+        }
+
+        if (dicaTimer >= 5.0f && dicaTimer < 7.0f) 
+        {
+            dicaAnimando = true;
+            posicaoDicaX -= velocidadeDica * delta;
+            if (posicaoDicaX <= -420.0f) 
+            {
+                posicaoDicaX = -422.0f;
+                dicaVisivel = false;
+            }
+        }
     }
 }
 
@@ -156,6 +207,16 @@ void Draw_Pendrive(void)
         }
     }
 
+    if (dicaVisivel) 
+    {
+        DrawDica(posicaoDicaX, 20, "Dica: Procure o Pendrive ao redor");
+        if (!steam_tocando)
+        {
+            PlaySound(steam_som);
+            steam_tocando = true;
+        }
+    }
+
     EndDrawing();
 }
 
@@ -173,4 +234,5 @@ void Unload_Pendrive(void)
     for (int i = 0; i < 4; i++) {
         UnloadTexture(usbTextures[i]);
     }
+    UnloadSound(steam_som);
 } 

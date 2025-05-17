@@ -1,6 +1,7 @@
 #include "proxy3D.h"
 #include "raylib.h"
 #include <math.h>
+#include "generalFunctions.h"
 
 static Model     modelo3D;
 static Model     portaModel;
@@ -23,6 +24,15 @@ static const float NOTEBOOK_SCALE = 0.05f;
 static const Vector3 NOTEBOOK_POS = { 0.0f, -0.5f, -2.0f };
 static Vector3   serverInitialPos;
 static bool      fase_concluida   = false;
+
+static float tempoDesdeInicio = 0.0f;
+static bool dicaVisivel = false;
+static float dicaTimer = 0.0f;
+static bool dicaAnimando = false;
+static float posicaoDicaX = -300.0f;
+static const float velocidadeDica = 300.0f;
+static Sound steam_som;
+static bool steam_tocando = false;
 
 // ———————————————————
 // Post-it animation vars
@@ -122,7 +132,8 @@ void UpdateMovement(float dt) {
     UpdateFootstepsSound(moving);
 }
 
-void Init_Proxy3D(void) {
+void Init_Proxy3D(void) 
+{
     // Carrega modelos e texturas
     modelo3D       = LoadModel("src/models/old-computer.obj");
     portaModel     = LoadModel("src/models/DOOR.obj");
@@ -148,6 +159,7 @@ void Init_Proxy3D(void) {
 
     // Carrega sons
     grabbingSound  = LoadSound("src/music/grabbing.mp3");
+    steam_som  = LoadSound("src/music/steam-achievement.mp3");
     footstepsMusic = LoadMusicStream("src/music/footsteps.mp3");
     SetMusicVolume(footstepsMusic, 15.0f);
     footstepsMusic.looping = true;
@@ -172,15 +184,57 @@ void Init_Proxy3D(void) {
     };
 
     fase_concluida = false;
+    
+    // DICA
+    tempoDesdeInicio = 0.0f;
+    dicaVisivel = false;
+    dicaTimer = 0.0f;
+    dicaAnimando = false;
+    posicaoDicaX = -300.0f;
+    steam_tocando = false;
 }
 
-void Update_Proxy3D(void) {
+void Update_Proxy3D(void) 
+{
     float dt = GetFrameTime();
+    tempoDesdeInicio += dt;
 
     UpdateCameraWithMouse();
     UpdateMovement(dt);
     UpdateCameraPosition();
     UpdateMusicStream(footstepsMusic);
+
+    if (tempoDesdeInicio >= 2.0f && !dicaVisivel) 
+    {
+        dicaVisivel = true;
+        dicaAnimando = true;
+    }
+
+    if (dicaVisivel) 
+    {
+        dicaTimer += dt;
+
+        if (dicaAnimando && dicaTimer < 1.0f) 
+        {
+            posicaoDicaX += velocidadeDica * dt;
+            if (posicaoDicaX >= 20.0f) 
+            {
+                posicaoDicaX = 20.0f;
+                dicaAnimando = false;
+            }
+        }
+
+        if (dicaTimer >= 5.0f && dicaTimer < 7.0f) 
+        {
+            dicaAnimando = true;
+            posicaoDicaX -= velocidadeDica * dt;
+            if (posicaoDicaX <= -420.0f) 
+            {
+                posicaoDicaX = -422.0f;
+                dicaVisivel = false;
+            }
+        }
+    }
 
     if (!notebookFollow && (IsKeyDown(KEY_W)||IsKeyDown(KEY_S)||IsKeyDown(KEY_A)||IsKeyDown(KEY_D))) {
         notebookFollow = true;
@@ -252,6 +306,16 @@ void Draw_Proxy3D(void) {
         DrawTexture(postitTexture, px, (int)postitPosY, WHITE);
     }
 
+    if (dicaVisivel) 
+    {
+        DrawDica(posicaoDicaX, 20, "Dica: Procure o Servidor Proxy na sala");
+        if (!steam_tocando)
+        {
+            PlaySound(steam_som);
+            steam_tocando = true;
+        }
+    }
+
     EndDrawing();
 }
 
@@ -268,5 +332,6 @@ void Unload_Proxy3D(void) {
     UnloadTexture(pc2dSprite);
     UnloadTexture(postitTexture);
     UnloadSound(grabbingSound);
+    UnloadSound(steam_som);
     UnloadMusicStream(footstepsMusic);
 }
