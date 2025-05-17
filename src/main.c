@@ -43,29 +43,32 @@ typedef struct { const char *audio; const char *texto; } RoteiroHank;
 static const RoteiroHank roteiros[] = {
     { 
         "src/music/fala_hank_desafio01.mp3",
-        "Impressionante! Você conseguiu identificar as prioridades do sistema sob pressão e realocar os recursos de forma "
-        "eficiente, mantendo a calma e controlando a situação da melhor forma possivel. Isso demonstra uma capacidade de "
-        "tomada de decisão rápida e precisa e essa habilidade é fundamental para garantir a integridade dos sistemas em "
-        "situações de crise. [ENTER]"
+        "Impressionante! Você conseguiu identificar rapidamente as prioridades do sistema "
+        "e realocar os recursos com precisão, mantendo a calma mesmo sob pressão. "
+        "Certamente uma habilidade essencial para lidar com situações críticas. [ENTER]"
     },
     { 
-        "src/music/surprise.mp3",
-        "Sua varredura de portas foi rápida, mas percebeu os falsos-positivos? Então me diga:"
+        "src/music/fala_hank_desafio02.mp3",
+        "Muito bem! Você demonstrou inteligência ao reconhecer rapidamente que o texto estava "
+        "cifrado e perspicácia ao identificar a técnica correta para decifrá-lo. Essa habilidade "
+        "em lidar com criptografia é essencial para proteger a integridade dos dados. [ENTER]"
     },
     {
-        "src/music/surprise.mp3",
-        "Interessante… Explorou bem aquele exploit zero-day. Agora responda:" 
+        "src/music/fala_hank_desafio03.mp3",
+        "Parabéns! Você foi rápido ao perceber que o e-mail era suspeito e demonstrou cautela "
+        "ao não agir impulsivamente. Essa capacidade de identificar possíveis golpes e manter "
+        "a postura defensiva é fundamental nos dias atuias. [ENTER]"
     },
     { 
-        "src/music/surprise.mp3",
-        "Análise de logs impecável. Mas preciso saber:" 
+        "src/music/fala_hank_desafio04.mp3",
+        "Muito bom! Você soube coletar os antivírus enquanto evitava os vírus, mostrando que entende "
+        "a importância de manter o sistema protegido. Essa postura preventiva é essencial [ENTER]"
     }
 };
 
 int main(void)
 {
     srand(time(NULL));
-    SelecionarPerguntasAleatorias();
     int screenWidth = GetMonitorWidth(0);
     int screenHeight = GetMonitorHeight(0);
 
@@ -78,15 +81,16 @@ int main(void)
     SetMusicVolume(music, 0.9f);
     PlayMusicStream(music);
 
+    SelecionarPerguntasAleatorias();
     InitPlayerStats(&playerStats);
 
     InitCutscenes();
 
     static int perguntaAtual = -1;
-    bool firewall_Initialized = false;
-    bool bruteforce_Initialized = false;
-    bool desafio_03_Initialized = false;
-    bool ligacao_desconhecido_Initialized = false;
+    static bool firewall_Initialized = false;
+    static bool bruteforce_Initialized = false;
+    static bool desafio_03_Initialized = false;
+    static bool ligacao_desconhecido_Initialized = false;
     static bool porta_batendo_Initialized = false;
     static bool desafio_01_Initialized = false;
     static bool fase4Initialized = false;
@@ -108,11 +112,11 @@ int main(void)
     static bool ranking_Initialized = false;
     static bool menu_Initialized = false;
     static bool debug_Initialized = false;
-
-    extern bool interrogatorioFinalizado;
+    static bool teste_Initialized = false;
 
     // DEBUG DE SELEÇÃO DO NOME
-    strncpy(gSelectedCharacterName, "Alice", MAX_PLAYER_NAME);
+    strncpy(gSelectedCharacterName, "Jade", MAX_PLAYER_NAME);
+    playerStats.isPassouSelecao = false;
     gSelectedCharacterName[MAX_PLAYER_NAME-1] = '\0';
 
     while (!WindowShouldClose())
@@ -392,7 +396,7 @@ int main(void)
             }
             Update_Interrogatorio();
             Draw_Interrogatorio();
-            if (interrogatorioFinalizado)
+            if (Fase_Interrogatorio_Concluida())
             {
                 Unload_Interrogatorio();
                 interrogatorio_Initialized = false;

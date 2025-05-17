@@ -64,7 +64,7 @@ Question perguntas[TOTAL_PERGUNTAS] =
     { "Você encontra, sem querer, registros detalhados de performance e feedbacks confidenciais sobre seus colegas em uma pasta aberta no servidor.\nVocê lê para saber o que dizem sobre você, reporta o acesso indevido ou fecha a pasta sem analisar nada?" },
     { "Durante uma manutenção de rotina, você descobre mensagens internas trocadas entre diretores sobre uma possível demissão em massa.\nVocê compartilha com os colegas que podem ser impactados, relata ao setor responsável pelo vazamento ou ignora completamente a descoberta?" },
     { "Seu superior diz para ignorar uma falha pequena e focar em outro problema. Você aceita ou insiste em corrigir mesmo assim?" },
-    { "Em uma investigação de rotina, descobre que há vídeos gravados por câmeras de segurança em locais sensíveis da empresa sem o conhecimento dos funcionários.\nVocê assiste aos vídeos, alerta quem está gravando ou ignora para não se envolver?" },
+    { "Em uma investigação de rotina, descobre que há vídeos gravados por câmeras de segurança em locais sensíveis da empresa sem o conhecimento dos\nfuncionários. Você assiste aos vídeos, alerta quem está gravando ou ignora para não se envolver?" },
     { "Você recebe um e-mail direcionado a outro funcionário, contendo anexos com documentos jurídicos confidenciais.Você lê o conteúdo para entender \ndo que se trata, avisa o remetente sobre o erro ou simplesmente apaga o e-mail?" },
     { "Durante uma entrevista de desligamento, um ex-funcionário pede para transferir arquivos pessoais de sua estação. Ao acessar a máquina, você \npercebe que há documentos da empresa nos mesmos diretórios. Você revisa o conteúdo, transfere tudo sem olhar, ou separa e reporta os documentos da empresa antes de transferir?" },
     { "Você sabe que outro candidato está tentando sabotar seu progresso. Usaria suas habilidades para retaliar ou manteria seu foco na vaga?" }
@@ -82,8 +82,9 @@ static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateApresentacao, UpdateFa
 static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawApresentacao,  DrawFalaHank,  DrawFalaInterrogatorio  };
 
 int perguntasSelecionadas[MAX_PERGUNTAS];
-bool interrogatorioFinalizado = false;
 static bool semPergunta = false; 
+static bool fase_concluida = false;
+
 
 void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto)
 {
@@ -102,10 +103,10 @@ void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto
 
     // Estado geral -------------------------------------------------------
     ctx.stage = APRESENTACAO;
-    interrogatorioFinalizado = false;
     ctx.fadeWhiteAlpha = 0.0f;
     ctx.fadeWhiteIn = ctx.fadeWhiteOut = false;
     semPergunta = (perguntaIndex < 0);
+    fase_concluida = false;
     
     if (semPergunta) {
         ctx.falaTexto      = INTRO_FALA1;
@@ -172,7 +173,6 @@ void Unload_Interrogatorio(void)
     UnloadSound(ctx.somSurpresa);
     UnloadSound(ctx.falaAudio);
     UnloadSound(ctx.somFalaDetetive2);
-    interrogatorioFinalizado = true;
 }
 
 static void UpdateApresentacao(float dt)
@@ -241,9 +241,10 @@ static void UpdateFalaHank(float dt)
 
     if (ctx.dialogoFinalizado) {
         if (semPergunta) {
-            interrogatorioFinalizado = true;
+            fase_concluida = true;
             return;
         } else {
+            PlaySound(ctx.somFalaDetetive2);
             ctx.stage = PERGUNTA_INTERROGATORIO;
             ctx.respostaLen = 0;
             ctx.respostaBuf[0] = '\0';
@@ -280,7 +281,7 @@ static void UpdateFalaInterrogatorio(float dt)
             ctx.respostaBuf
         );
 
-        interrogatorioFinalizado = true;
+        fase_concluida = true;
     }
 }
 
@@ -400,6 +401,8 @@ static void DrawFade(void)
         DrawRectangle(0,0,GetScreenWidth(),GetScreenHeight(),
                       (Color){255,255,255,(unsigned char)(ctx.fadeWhiteAlpha*255)});
 }
+
+bool Fase_Interrogatorio_Concluida(void) { return fase_concluida; }
 
 static void AvaliarRespostaComIA(int indicePergunta, const char *pergunta, const char *respostaJogador)
 {

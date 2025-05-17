@@ -3,6 +3,7 @@
 
 #include "generalFunctions.h"
 #include "playerStats.h"
+#include <stdbool.h>
 
 typedef struct { 
     const char *pergunta;
@@ -20,10 +21,9 @@ void Update_Interrogatorio(void);
 void Draw_Interrogatorio(void);
 void Unload_Interrogatorio(void);
 void SelecionarPerguntasAleatorias(void);
+bool Fase_Interrogatorio_Concluida(void);
 
 #define TOTAL_PERGUNTAS 10
-
 extern int perguntasSelecionadas[MAX_PERGUNTAS];
-extern bool interrogatorioFinalizado;
 
 #endif
