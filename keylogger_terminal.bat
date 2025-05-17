@@ -45,58 +45,45 @@ set palavras[11]=[KEY_ENTER]
 set palavras[12]=nano
 set palavras[13]=api_config.txt
 set palavras[14]=[KEY_ENTER]
-
-:: Palavras relacionadas à API_KEY na posição 15
 set palavras[15]=API_KEY:
 set palavras[16]=[KEY_SPACE]
 set palavras[17]=XI5hp7VKyWhPGvzINNKoqNQkre1qZLeOVkQfR2T8lJBvhSnsYuRCD1DrbR750w8Fy3ksZZQufiJ6M7fKP5kwTYg9ltFyDzOfWHBzpGy4YlfVmdTMBtHRbEAaZoUtlLBF
 set palavras[18]=[KEY_ENTER]
-
-:: Continuação das palavras com sentido lógico
 set palavras[19]=chmod
 set palavras[20]=600
 set palavras[21]=api_config.txt
 set palavras[22]=[KEY_ENTER]
-set palavras[23]=cat
-set palavras[24]=api_config.txt
-set palavras[25]=[KEY_ENTER]
-set palavras[26]=export
-set palavras[27]=API_KEY
-set palavras[28]=[KEY_SPACE]
-set palavras[29]=XI5hp7VKyWhPGvzINNKoqNQkre1qZLeOVkQfR2T8lJBvhSnsYuRCD1DrbR750w8Fy3ksZZQufiJ6M7fKP5kwTYg9ltFyDzOfWHBzpGy4YlfVmdTMBtHRbEAaZoUtlLBF
-set palavras[30]=[KEY_ENTER]
-set palavras[31]=curl
-set palavras[32]=-X
-set palavras[33]=POST
-set palavras[34]=https://api.example.com/validate
-set palavras[35]=-d
-set palavras[36]="key=XI5hp7VKyWhPGvzINNKoqNQkre1qZLeOVkQfR2T8lJBvhSnsYuRCD1DrbR750w8Fy3ksZZQufiJ6M7fKP5kwTYg9ltFyDzOfWHBzpGy4YlfVmdTMBtHRbEAaZoUtlLBF"
-set palavras[37]=[KEY_ENTER]
-set palavras[38]=echo
-set palavras[39]=[KEY_SPACE]
-set palavras[40]="Token successfully validated."
-set palavras[41]=[KEY_ENTER]
-set palavras[42]=exit
-set palavras[43]=[KEY_ENTER]
-
-:: Loop infinito para simulação contínua
-:Simulacao
-cls
-echo [INFO] Keylogger running. Use Ctrl + C to stop.
 
 :: Variável para controle da posição da lista
 set pos=0
 
+:: Loop para exibir todas as palavras da lista
+:Simulacao
+cls
+echo [INFO] Keylogger running...
+echo.
+
 :loop
-:: Verifica se a posição excedeu o tamanho da lista e reseta
-if %pos% GEQ 44 set pos=0
-
-:: Exibe a palavra acumulada na tela
+if %pos% GEQ 23 goto SolicitarAPI
 echo !palavras[%pos%]!
-
-:: Atraso de 4 segundos usando ping para garantir compatibilidade
-ping 127.0.0.1 -n 3 >nul
-
-:: Incrementa a posição para a próxima palavra
 set /a pos+=1
+ping 127.0.0.1 -n 2 >nul
 goto loop
+
+:: Solicita a API Key após exibir todas as palavras
+:SolicitarAPI
+cls
+echo [INFO] Unexpected error: Connection Lost.
+echo.
+
+:AskAPI
+set /p inputKey=Insira qual a API KEY descoberta: 
+if "%inputKey%"=="XI5hp7VKyWhPGvzINNKoqNQkre1qZLeOVkQfR2T8lJBvhSnsYuRCD1DrbR750w8Fy3ksZZQufiJ6M7fKP5kwTYg9ltFyDzOfWHBzpGy4YlfVmdTMBtHRbEAaZoUtlLBF" (
+    echo [SUCESSO] API Key correta. Fechando terminal.
+    echo OK > "%~dp0dadosKeylogger.txt"
+    ping 127.0.0.1 -n 2 >nul
+    exit
+) else (
+    echo [ERRO] API Key incorreta. Tente novamente.
+    goto AskAPI
+)

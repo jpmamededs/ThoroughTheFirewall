@@ -112,6 +112,17 @@ void Update_KeyloggerUbuntu(void)
 
         // Verifica clique no ícone do terminal
         Rectangle terminalIconBounds = {10, 10, terminalIcon.width * 1.5f, terminalIcon.height * 2.0f};
+        Rectangle folderIconBounds = {
+            10,
+            10 + terminalIcon.height * 1.3f + 10, // Posição Y abaixo do terminal
+            folderIcon.width * 0.12f,
+            folderIcon.height * 0.12f};
+        Rectangle firefoxIconBounds = {
+            10,
+            10 + terminalIcon.height * 1.3f + 10 + folderIcon.height * 0.12f + 10,
+            firefoxIcon.width * 0.11f,
+            firefoxIcon.height * 0.11f};
+
         if (CheckCollisionPointRec(mouse, terminalIconBounds))
         {
             char cwd[512];
@@ -124,15 +135,11 @@ void Update_KeyloggerUbuntu(void)
                 terminalChamado = true;
             }
         }
-        Rectangle firefoxIconBounds = {
-            10,
-            10 + terminalIcon.height * 1.3f + 10 + folderIcon.height * 0.12f + 10,
-            firefoxIcon.width * 0.11f,
-            firefoxIcon.height * 0.11f};
-        if (CheckCollisionPointRec(mouse, firefoxIconBounds))
+        else if (CheckCollisionPointRec(mouse, firefoxIconBounds))
         {
             system("start https://leakedips.vercel.app/");
         }
+        // Não faz nada para o folderIcon
     }
 
     DIR *d = opendir(".");
@@ -141,9 +148,9 @@ void Update_KeyloggerUbuntu(void)
     {
         while ((dir = readdir(d)) != NULL)
         {
-            if (strcmp(dir->d_name, "dados2.txt") == 0)
+            if (strcmp(dir->d_name, "dadosKeylogger.txt") == 0)
             {
-                remove("dados2.txt");
+                remove("dadosKeylogger.txt");
 
                 estadoCaixa = 2;
                 tempoMensagemFinal = 0.0f;

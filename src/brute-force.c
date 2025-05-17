@@ -19,6 +19,8 @@ static float fadePause = 1.0f;
 static bool showBackground = false;
 static bool bootSoundPlayed = false;
 
+static bool terminalChamado = false;
+
 static Vector2 geminiFinalPos;
 static Vector2 geminiAnimPos;
 static bool geminiAnimDone = false;
@@ -132,6 +134,25 @@ void Update_BruteForce(void)
             char command[600];
             snprintf(command, sizeof(command), "explorer \"%s\"", fullPath);
             system(command);
+        }
+    }
+
+    if (showBackground && !terminalChamado && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
+        Vector2 mouse = GetMousePosition();
+        Rectangle terminalIconBounds = {10, 10, terminalIcon.width * 1.5f, terminalIcon.height * 2.0f};
+
+        if (CheckCollisionPointRec(mouse, terminalIconBounds))
+        {
+            char cwd[512];
+            if (_getcwd(cwd, sizeof(cwd)) != NULL)
+            {
+                char command[1024];
+                snprintf(command, sizeof(command),
+                         "start \"\" \"%s\\bruteForce_terminal.bat\"", cwd);
+                system(command);
+                terminalChamado = true;
+            }
         }
     }
 
