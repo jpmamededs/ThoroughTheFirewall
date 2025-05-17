@@ -416,7 +416,10 @@ void Draw_Ranking(void)
         /* ---- 2) avatar placeholder ---- */
         Vector2 avPos = {box.x + 120, box.y + box.height / 2};
         int id = AvatarFor(RankingPlayers[idx].characterName);
-        Texture2D avatar = avatarTex[id];
+        
+        Texture2D avatar = (strcmp(RankingPlayers[idx].playerName, "Miccuci Do Borel") == 0) 
+            ? LoadTexture("src/sprites/avatar/miccuci_avatar.png")
+            : avatarTex[id];
 
         float scale  = hover ? HOVER_SCALE : 1.0f;
         float radius = AV_RADIUS * scale;
