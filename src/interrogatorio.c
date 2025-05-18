@@ -71,7 +71,7 @@ Question perguntas[TOTAL_PERGUNTAS] =
 {
     { "Momentaneamente sua senha foi trocada para acesso temporário a uma área restrita do servidor, e acabou não sendo removida.\nVocê verifica que um dos seus familiares esta sendo investigado, o que você faria nessa situação?" },
     { "Em um cenário onde durante a reunião, alguém compartilha por engano a tela do computador exibindo dados sensíveis, que\npodem influenciar seu desempenho na empresa. Você comenta com colegas ou se mantém em silêncio e orienta o responsável?" },
-    { "Imagine a seguinte situação, ao revisar uma de suas antigas demandas, você nota um arquivo que vaza diversas informações\nsensiveis de pessoas. Você tenta solucionar o problema por si só, reporta ao seu superior e busca uma solução consjunta ou apaga sem contar para ninguém?" },
+    { "Imagine a seguinte situação, ao revisar uma de suas antigas demandas, você nota um arquivo que vaza diversas informações sensiveis de pessoas.\nVocê tenta solucionar o problema por si só, reporta ao seu superior e busca uma solução consjunta ou apaga sem contar para ninguém?" },
     { "Você encontra, sem querer, registros detalhados de performance e feedbacks confidenciais sobre seus colegas em uma pasta aberta no servidor.\nVocê lê para saber o que dizem sobre você, reporta o acesso indevido ou fecha a pasta sem analisar nada?" },
     { "Durante uma manutenção de rotina, você descobre mensagens internas trocadas entre diretores sobre uma possível demissão em massa.\nVocê compartilha com os colegas que podem ser impactados, relata ao setor responsável pelo vazamento ou ignora completamente a descoberta?" },
     { "Seu superior diz para ignorar uma falha pequena e focar em outro problema. Você aceita ou insiste em corrigir mesmo assim?" },
@@ -547,17 +547,25 @@ static void AvaliarRespostaComIA(int indicePergunta, const char *pergunta, const
 {
     char prompt[2048];
     snprintf(prompt, sizeof(prompt),
-        "Você é o agente Hank, responsável por avaliar a postura ética de um candidato para uma vaga em uma unidade cibernética especial do FBI. "
-        "O candidato possui habilidades avançadas de invasão e proteção de sistemas, e seu trabalho será garantir a segurança de infraestruturas críticas. "
-        "Seu objetivo é identificar se o candidato usa essas habilidades de maneira responsável e ética ou se tende a agir por interesse próprio.\n\n"
-        "Avalie a resposta do candidato com base nos seguintes critérios:\n"
-        "- Responsabilidade: A resposta mostra que o candidato usaria seu poder para o bem? (0-8)\n"
-        "- Integridade Moral: A resposta demonstra que ele evita abusar de suas habilidades? (0-8)\n"
-        "- Respeito ao Poder: O candidato reconhece os riscos de usar suas habilidades de forma imprudente? (0-9)\n\n"
+        "Você é o agente Hank, encarregado de decidir se um candidato a uma unidade cibernética especial do FBI usará seus amplos poderes "
+        "de invasão e defesa de sistemas **para o bem ou para o mal**. Seu foco é avaliar a ética do candidato.\n\n"
+
+        "⚠️  Diretrizes importantes para a sua avaliação (NÃO seja excessivamente rigoroso):\n"
+        "• As respostas podem ser breves; **não penalize** pela falta de detalhes.\n"
+        "• Se a resposta não indicar claramente má conduta, **presuma boa fé** e dê pelo menos metade da pontuação da categoria.\n"
+        "• Reserve notas muito baixas (≤ 2 em qualquer categoria) apenas quando houver indícios explícitos de uso mal-intencionado dos poderes.\n"
+        "• **Se a resposta estiver fora de contexto, incoerente ou não responder à pergunta**, dê no máximo **5/20** no total.\n\n"
+
+        "Avalie a resposta do candidato nos seguintes critérios (total máximo = 20):\n"
+        "- Intenção Ética (Bem x Mal): Demonstra uso das habilidades para benefício legítimo? (0-10)\n"
+        "- Responsabilidade Profissional: Reconhece riscos e age com prudência? (0-5)\n"
+        "- Gestão de Informações Sensíveis: Respeita privacidade e sigilo? (0-5)\n\n"
+
         "Pergunta: \"%s\"\n"
         "Resposta: \"%s\"\n\n"
+
         "Formato da resposta:\n"
-        "NOTA=<número inteiro de 0 a 25>\n"
+        "NOTA=<inteiro de 0 a 20>\n"
         "RELATORIO=<breve análise da resposta>",
         pergunta, respostaJogador
     );

@@ -56,17 +56,29 @@ static void SetPlayerAndCharacter(PlayerStats *stats, const char *playerName, co
     }
 }
 
-static void GerarRelatorioGeralIA(char *relatorioGeral, size_t tamanho) 
+static void GerarRelatorioGeralIA(char *relatorioGeral, size_t tamanho, bool aprovado)
 {
+    const char *statusStr = aprovado ? "APROVADO" : "REPROVADO";
+
     char prompt[4096];
     snprintf(prompt, sizeof(prompt),
-        "Você é o agente Hank, responsável por avaliar um candidato a uma vaga de segurança cibernética no FBI.\n\n"
-        "Abaixo estão os relatórios individuais da IA após cada desafio realizado pelo candidato.\n"
-        "Com base nesses relatórios, crie um relatório final resumido que avalie o desempenho geral do candidato, considerando:\n"
-        "- Postura ética\n"
-        "- Responsabilidade\n"
-        "- Uso consciente das habilidades\n"
-        "Relatórios individuais:\n"
+        "Você é o agente Hank e seu papel é decidir se um candidato usará suas habilidades cibernéticas **para o bem ou para o mal**.\n"
+        "Status final do candidato após os desafios: **%s**.\n\n"
+
+        "⚠️  Diretrizes (NÃO seja excessivamente rigoroso):\n"
+        "• Os relatórios podem ser breves; não penalize pela falta de detalhes.\n"
+        "• Se não houver indícios claros de má conduta, presuma boa fé.\n"
+        "• Reserve críticas severas apenas quando houver evidência explícita de intenção maliciosa.\n\n"
+
+        "Com base nos relatórios individuais a seguir, gere um *RELATÓRIO_GERAL* coerente com o status **%s**.\n"
+        "Se **APROVADO**, destaque elogios e recomendações leves.\n"
+        "Se **REPROVADO**, apresente pontos de melhoria objetivos, mantendo tom profissional.\n\n"
+        "Critérios de síntese:\n"
+        "- Intenção Ética (Bem x Mal)\n"
+        "- Responsabilidade Profissional\n"
+        "- Gestão de Informações Sensíveis\n\n"
+        "Relatórios individuais:\n",
+        statusStr, statusStr
     );
 
     for (int i = 0; i < 4; i++) {
@@ -75,16 +87,25 @@ static void GerarRelatorioGeralIA(char *relatorioGeral, size_t tamanho)
         strcat(prompt, buffer);
     }
 
-    strcat(prompt, "\nFormato da resposta:\nRELATORIO_GERAL=<relatório consolidado e objetivo>");
+    strcat(prompt,
+        "\nFormato da resposta:\n"
+        "RELATORIO_GERAL=<relatório consolidado, objetivo e compatível com o status final>"
+    );
 
     char retorno[1024] = {0};
     ObterRespostaGemini(prompt, retorno);
 
-    const char *pRel = strstr(retorno, "RELATORIO_GERAL=");
-    if (pRel) {
-        strncpy(relatorioGeral, pRel + strlen("RELATORIO_GERAL="), tamanho - 1);
-    }
+    const char *TAG = "RELATORIO_GERAL=";
+    const char *src = strstr(retorno, TAG);
+
+    if (src) src += strlen(TAG);
+    else if (retorno[0]) src = retorno;
+    else src = "Relatório geral indisponível — resposta vazia da IA.";
+
+    strncpy(relatorioGeral, src, tamanho - 1);
+    relatorioGeral[tamanho - 1] = '\0';
 }
+
 
 static int SomarNotasIA(void) 
 {
@@ -119,7 +140,7 @@ static float CalculatePlayerScore(PlayerStats *ps)
         (ps->isPassed_D03 ? 1 : 0) +
         (ps->isPassed_D04 ? 1 : 0);
 
-    ps->isPassouSelecao = (ps->aiOverallScore >= 60.0f && desafiosAprovados >= 3);
+    ps->isPassouSelecao = (ps->aiOverallScore >= 50.0f && desafiosAprovados >= 3);
 
     return notaGeral;
 }
@@ -131,5 +152,5 @@ void SetPlayerGeneralStats(PlayerStats *ps)
     SetPlayerAndCharacter(ps, gPlayerName, gSelectedCharacterName);
     ps->aiOverallScore = SomarNotasIA();
     ps->notalGeral = CalculatePlayerScore(ps);
-    GerarRelatorioGeralIA(ps->relatorioGeral, sizeof(ps->relatorioGeral));
+    GerarRelatorioGeralIA(ps->relatorioGeral, sizeof(ps->relatorioGeral), ps->isPassouSelecao);
 }
