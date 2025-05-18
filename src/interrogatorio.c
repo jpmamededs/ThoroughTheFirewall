@@ -69,9 +69,9 @@ static struct
 
 Question perguntas[TOTAL_PERGUNTAS] = 
 {
-    { "Momentaneamente sua senha foi trocada para acesso temporário a uma área restrita do servidor, e acabou não sendo removida. Você verifica \nque um dos seus familiares esta sendo investigado, o'que você faria nessa situação?" },
-    { "Em um cenário onde durante a reunião, alguém compartilha por engano a tela do computador exibindo dados sensíveis, que podem influenciar \nseu desempenho na empresa. Você comenta com colegas, faz uma captura de tela, ou se mantém em silêncio e orienta o responsável?" },
-    { "Imagine a seguinte situação, ao revisar uma de suas antigas demandas, você nota um arquivo que vaza diversas informações sensiveis de pessoas.\n Você tenta solucionar o problema por si só, reporta ao seu superior e busca uma solução consjunta ou apaga sem contar para ninguém?" },
+    { "Momentaneamente sua senha foi trocada para acesso temporário a uma área restrita do servidor, e acabou não sendo removida.\nVocê verifica que um dos seus familiares esta sendo investigado, o que você faria nessa situação?" },
+    { "Em um cenário onde durante a reunião, alguém compartilha por engano a tela do computador exibindo dados sensíveis, que\npodem influenciar seu desempenho na empresa. Você comenta com colegas ou se mantém em silêncio e orienta o responsável?" },
+    { "Imagine a seguinte situação, ao revisar uma de suas antigas demandas, você nota um arquivo que vaza diversas informações\nsensiveis de pessoas. Você tenta solucionar o problema por si só, reporta ao seu superior e busca uma solução consjunta ou apaga sem contar para ninguém?" },
     { "Você encontra, sem querer, registros detalhados de performance e feedbacks confidenciais sobre seus colegas em uma pasta aberta no servidor.\nVocê lê para saber o que dizem sobre você, reporta o acesso indevido ou fecha a pasta sem analisar nada?" },
     { "Durante uma manutenção de rotina, você descobre mensagens internas trocadas entre diretores sobre uma possível demissão em massa.\nVocê compartilha com os colegas que podem ser impactados, relata ao setor responsável pelo vazamento ou ignora completamente a descoberta?" },
     { "Seu superior diz para ignorar uma falha pequena e focar em outro problema. Você aceita ou insiste em corrigir mesmo assim?" },

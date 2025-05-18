@@ -96,7 +96,7 @@ int main(void)
     static bool porta_batendo_Initialized = false;
     static bool desafio_01_Initialized = false;
     static bool fase4Initialized = false;
-    static bool ubuntoProvisorio_Initialized = false;
+    static bool shellUbuntu_Initialized = false;
     static bool desafio_04_Initialized = false;
     static bool desafio_02_Initialized = false;
     static bool interrogatorio_Initialized = false;
@@ -209,8 +209,8 @@ int main(void)
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                ubuntoProvisorio_Initialized = false;
-                state = APP_UBUNTU_PROVISORIO;
+                shellUbuntu_Initialized = false;
+                state = APP_SHELL_UBUNTU;
             }
             if (IsKeyPressed(KEY_Z))
             {
@@ -638,7 +638,7 @@ int main(void)
 
                 state = APP_LOADING_SCREEN;
                 PFP_Loading = INTERROGATORIO;
-                PFP_Iterrogatorio = APP_DEBUG; // Futuramente SHELL REVERSO!
+                PFP_Iterrogatorio = APP_SHELL_3D_PART1;
             }
         }
         else if (state == APP_SHELL_3D_PART1)
@@ -666,7 +666,8 @@ int main(void)
             }
             Update_ShellBox();
             Draw_ShellBox();
-            if (Fase_ShellBox_Concluida()) {
+            if (Fase_ShellBox_Concluida()) 
+            {
                 Unload_ShellBox();
                 shellBox_Initialized = false;
                 state = APP_SHELL_3D_PART2;
@@ -685,7 +686,23 @@ int main(void)
             {
                 Unload_Shell3D_02();
                 shell3D_02_Initialized = false;
-                state = APP_UBUNTU_PROVISORIO;
+                state = APP_SHELL_UBUNTU;
+            }
+        }
+        else if (state == APP_SHELL_UBUNTU)
+        {
+            if (!shellUbuntu_Initialized)
+            {
+                Init_ShellUbuntu();
+                shellUbuntu_Initialized = true;
+            }
+            Update_ShellUbuntu();
+            Draw_ShellUbuntu();
+            if (Fase_ShellUbuntu_Concluida()) 
+            {
+                Unload_ShellUbuntu();
+                shellUbuntu_Initialized = false;
+                state = APP_FINAL_JOGO;
             }
         }
         else if (state == APP_FINAL_JOGO)
@@ -697,7 +714,8 @@ int main(void)
             }
             Update_FinalJogo();
             Draw_FinalJogo();
-            if (Fase_FinalJogo_Concluida()) {
+            if (Fase_FinalJogo_Concluida()) 
+            {
                 Unload_FinalJogo();
                 finalJogo_Initialized = false;
                 state = APP_RANKING;
@@ -716,23 +734,8 @@ int main(void)
             if (Fase4Concluida()) {
                 UnloadFase4();
                 fase4Initialized = false;
-                PFP_Iterrogatorio = APP_UBUNTU_PROVISORIO;
+                PFP_Iterrogatorio = APP_SHELL_UBUNTU;
                 state = INTERROGATORIO;
-            }
-        }
-        else if (state == APP_UBUNTU_PROVISORIO)
-        {
-            if (!ubuntoProvisorio_Initialized)
-            {
-                Init_Ubuntu_Provisorio();
-                ubuntoProvisorio_Initialized = true;
-            }
-            Update_Ubuntu_Provisorio();
-            Draw_Ubuntu_Provisorio();
-            if (Fase_Ubuntu_Provisorio_Concluida()) {
-                Unload_Ubuntu_Provisorio();
-                ubuntoProvisorio_Initialized = false;
-                state = APP_DEBUG;
             }
         }
         else if (state == APP_DEBUG)
@@ -765,8 +768,8 @@ int main(void)
         Unload_Desafio_01();
     else if (state == APP_FASE4)
         UnloadFase4();
-    else if (state == APP_UBUNTU_PROVISORIO)
-        Unload_Ubuntu_Provisorio();
+    else if (state == APP_SHELL_UBUNTU)
+        Unload_ShellUbuntu();
     else if (state == APP_DESAFIO_04)
         Unload_Desafio_04();
     else if (state == APP_DESAFIO_02)
