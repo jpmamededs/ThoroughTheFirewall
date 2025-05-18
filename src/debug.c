@@ -36,7 +36,7 @@ void DrawDebug(void)
     snprintf(info, sizeof(info), "Personagem: %s", playerStats.characterName);
     DrawText(info, 50, y, 20, GREEN);               y += lh;
 
-    snprintf(info, sizeof(info), "Nota IA (0-100): %d", playerStats.aiOverallScore);
+    snprintf(info, sizeof(info), "Nota IA (0-80): %d", playerStats.aiOverallScore);
     DrawText(info, 50, y, 20, YELLOW);              y += lh;
 
     snprintf(info, sizeof(info), "Nota Geral: %.1f", playerStats.notalGeral);
@@ -95,17 +95,7 @@ void DrawDebug(void)
     DrawText("Relatório Geral:", 50, y, 20, LIGHTGRAY);
     y += lh;
 
-    /* percorre cada linha do relatório, quebrando por '\n' */
-    char relatorioTmp[sizeof(playerStats.relatorioGeral)];
-    strncpy(relatorioTmp, playerStats.relatorioGeral, sizeof(relatorioTmp) - 1);
-    relatorioTmp[sizeof(relatorioTmp) - 1] = '\0';
-
-    char *linha = strtok(relatorioTmp, "\n");
-    while (linha) {
-        DrawText(linha, 50, y, 20, WHITE);
-        y += lh;
-        linha = strtok(NULL, "\n");
-    }
+    DrawText(playerStats.relatorioGeral, 50, y, 20, WHITE);
 
     EndDrawing();
 }
