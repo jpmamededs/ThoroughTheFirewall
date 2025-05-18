@@ -41,7 +41,7 @@ static bool fase_concluida = false;
 
 static Rectangle folderBounds;
 
-void Init_Ubuntu_Provisorio(void)
+void Init_ShellUbuntu(void)
 {
     wallpaper = LoadTexture("src/sprites/os/wallpaper.png");
     background = LoadTexture("src/sprites/os/background.jpg");
@@ -72,7 +72,7 @@ void Init_Ubuntu_Provisorio(void)
     fase_concluida = false;
 }
 
-void Update_Ubuntu_Provisorio(void)
+void Update_ShellUbuntu(void)
 {
     float dt = GetFrameTime();
     fadeTimer += dt;
@@ -162,7 +162,7 @@ void Update_Ubuntu_Provisorio(void)
     // coloque isso, ao inves de trocar o state, Carlos o gay agradeçe!
 }
 
-void Draw_Ubuntu_Provisorio(void)
+void Draw_ShellUbuntu(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -229,12 +229,12 @@ void Draw_Ubuntu_Provisorio(void)
     EndDrawing();
 }
 
-bool Fase_Ubuntu_Provisorio_Concluida(void)
+bool Fase_ShellUbuntu_Concluida(void)
 {
     return fase_concluida;
 }
 
-void Unload_Ubuntu_Provisorio(void)
+void Unload_ShellUbuntu(void)
 {
     UnloadTexture(wallpaper);
     UnloadTexture(background);

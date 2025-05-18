@@ -11,9 +11,11 @@
 
 static void UpdateApresentacao(float dt);
 static void UpdateFalaHank(float dt);
+static void UpdateTransicaoPrePergunta(float dt);
 static void UpdateFalaInterrogatorio(float dt);
 static void DrawApresentacao(void);
 static void DrawFalaHank(void);
+static void DrawTransicaoPrePergunta(void);
 static void DrawFalaInterrogatorio(void);
 static void DrawFade(void);
 static void AvaliarRespostaComIA(int indicePergunta, const char *pergunta, const char *respostaJogador);
@@ -45,6 +47,15 @@ static struct
     bool mostrarConfiante, dialogoFinalizado;
     bool falaSomTocado;
 
+    /* --- transição PRE-PERGUNTA --- */
+    int   transPhase;        // 0=escurecer,1=balao,2=revelar
+    float transTimer;        // cronômetro da fase
+    float transDur;          // duração de cada efeito (1.0 s)
+    float overlayProg;       // 0-1 esquerda→direita preto
+    float revealProg;        // 0-1 esquerda→direita novo fundo
+    Texture2D bgInterrog;    // novo fundo (sala de interrogatório)
+    Sound     sfxHolofote;
+
     // ---------- Fala Interrogatorio ----------
     char  respostaBuf[384];
     int   respostaLen;
@@ -58,9 +69,9 @@ static struct
 
 Question perguntas[TOTAL_PERGUNTAS] = 
 {
-    { "Momentaneamente sua senha foi trocada para acesso temporário a uma área restrita do servidor, e acabou não sendo removida. Você verifica \nque um dos seus familiares esta sendo investigado, o'que você faria nessa situação?" },
-    { "Em um cenário onde durante a reunião, alguém compartilha por engano a tela do computador exibindo dados sensíveis, que podem influenciar \nseu desempenho na empresa. Você comenta com colegas, faz uma captura de tela, ou se mantém em silêncio e orienta o responsável?" },
-    { "Imagine a seguinte situação, ao revisar uma de suas antigas demandas, você nota um arquivo que vaza diversas informações sensiveis de pessoas.\n Você tenta solucionar o problema por si só, reporta ao seu superior e busca uma solução consjunta ou apaga sem contar para ninguém?" },
+    { "Momentaneamente sua senha foi trocada para acesso temporário a uma área restrita do servidor, e acabou não sendo removida.\nVocê verifica que um dos seus familiares esta sendo investigado, o que você faria nessa situação?" },
+    { "Em um cenário onde durante a reunião, alguém compartilha por engano a tela do computador exibindo dados sensíveis, que\npodem influenciar seu desempenho na empresa. Você comenta com colegas ou se mantém em silêncio e orienta o responsável?" },
+    { "Imagine a seguinte situação, ao revisar uma de suas antigas demandas, você nota um arquivo que vaza diversas informações\nsensiveis de pessoas. Você tenta solucionar o problema por si só, reporta ao seu superior e busca uma solução consjunta ou apaga sem contar para ninguém?" },
     { "Você encontra, sem querer, registros detalhados de performance e feedbacks confidenciais sobre seus colegas em uma pasta aberta no servidor.\nVocê lê para saber o que dizem sobre você, reporta o acesso indevido ou fecha a pasta sem analisar nada?" },
     { "Durante uma manutenção de rotina, você descobre mensagens internas trocadas entre diretores sobre uma possível demissão em massa.\nVocê compartilha com os colegas que podem ser impactados, relata ao setor responsável pelo vazamento ou ignora completamente a descoberta?" },
     { "Seu superior diz para ignorar uma falha pequena e focar em outro problema. Você aceita ou insiste em corrigir mesmo assim?" },
@@ -78,13 +89,12 @@ static const char *INTRO_FALA1 =
 static const char *INTRO_FALA2 =
         "Mas fique ligado, pois, além de avaliar sua técnica, vou observar principalmente como você se comporta, "
         "para ver se realmente merece fazer parte do FBI. Então, vamos deixar de conversa e partir para o primeiro desafio! [ENTER]";
-static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateApresentacao, UpdateFalaHank, UpdateFalaInterrogatorio };
-static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawApresentacao,  DrawFalaHank,  DrawFalaInterrogatorio  };
 
+static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateApresentacao, UpdateFalaHank, UpdateTransicaoPrePergunta, UpdateFalaInterrogatorio };
+static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawApresentacao,  DrawFalaHank, DrawTransicaoPrePergunta, DrawFalaInterrogatorio  };
 int perguntasSelecionadas[MAX_PERGUNTAS];
 static bool semPergunta = false; 
 static bool fase_concluida = false;
-
 
 void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto)
 {
@@ -134,6 +144,16 @@ void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto
     ctx.mostrarConfiante = ctx.dialogoFinalizado = false;
 
     // ETAPA 3 ------------------------------------------------------------
+    ctx.bgInterrog = LoadTexture("src/sprites/russia.png");
+    ctx.transPhase   = 0;
+    ctx.transTimer   = 0.0f;
+    ctx.transDur     = 1.0f;      // 1 segundo para escurecer ou revelar
+    ctx.overlayProg  = 0.0f;
+    ctx.revealProg   = 0.0f;
+    ctx.sfxHolofote = LoadSound("src/music/among2.mp3");  // coloque o arquivo na pasta
+    SetSoundVolume(ctx.sfxHolofote, 2.5f);
+
+    // ETAPA 4 ------------------------------------------------------------
     ctx.respostaLen   = 0;
     ctx.respostaBuf[0]= '\0';
     ctx.aguardandoInput = false;
@@ -161,18 +181,6 @@ void Draw_Interrogatorio(void)
     DrawFade();
 
     EndDrawing();
-}
-
-void Unload_Interrogatorio(void)
-{
-    UnloadTexture(ctx.background);
-    UnloadTexture(ctx.spriteNome);
-    UnloadTexture(ctx.spriteBustup);
-    UnloadTexture(ctx.spriteConfiante);
-    UnloadMusicStream(ctx.interrogationMusic);
-    UnloadSound(ctx.somSurpresa);
-    UnloadSound(ctx.falaAudio);
-    UnloadSound(ctx.somFalaDetetive2);
 }
 
 static void UpdateApresentacao(float dt)
@@ -219,24 +227,35 @@ static void UpdateFalaHank(float dt)
         ctx.falaSomTocado = true;
     }
 
-    //if(ctx.writer.done && !ctx.dialogoFinalizado){
-    //    PlaySound(ctx.somFalaDetetive2);
-    //    /* agora espera ENTER/P para prosseguir */
-    //}
-
     if(ctx.writer.done && IsKeyPressed(KEY_ENTER)) {
 
-        if (semPergunta && !ctx.usandoExtra && ctx.falaTextoExtra) {
-            ctx.usandoExtra = true;
-            ctx.falaTexto   = ctx.falaTextoExtra;
-            InitTypeWriter(&ctx.writer, ctx.falaTexto, 17.0f);
-            ctx.falaAudio = LoadSound("src/music/fala_apresentacao_2.mp3");
-            SetSoundVolume(ctx.falaAudio, 4.0f);
-            ctx.falaSomTocado = false;
-            return;
+        if (semPergunta)
+        {
+            /* 1ª vez: ainda vamos mostrar o texto extra */
+            if (!ctx.usandoExtra && ctx.falaTextoExtra)
+            {
+                ctx.usandoExtra = true;
+                ctx.falaTexto   = ctx.falaTextoExtra;
+                InitTypeWriter(&ctx.writer, ctx.falaTexto, 17.0f);
+                ctx.falaAudio = LoadSound("src/music/fala_apresentacao_2.mp3");
+                SetSoundVolume(ctx.falaAudio, 4.0f);
+                ctx.falaSomTocado = false;
+                return;                 /* ← exibe texto extra e sai */
+            }
+
+            /* 2ª vez: já mostrou o extra → termina a fase */
+            fase_concluida = true;
+            return;                     /* ← sai imediatamente */
         }
 
-        ctx.dialogoFinalizado = true;
+        ctx.stage       = TRANSICAO_PRE_PERGUNTA;
+        PauseMusicStream(ctx.interrogationMusic);
+        PlaySound(ctx.sfxHolofote);
+        ctx.transPhase  = 0;
+        ctx.transTimer  = 0.0f;
+        ctx.overlayProg = 0.0f;
+        ctx.revealProg  = 0.0f;
+        return;
     }
 
     if (ctx.dialogoFinalizado) {
@@ -253,7 +272,6 @@ static void UpdateFalaHank(float dt)
         }
     }
 }
-
 
 static void UpdateFalaInterrogatorio(float dt)
 {
@@ -284,7 +302,6 @@ static void UpdateFalaInterrogatorio(float dt)
         fase_concluida = true;
     }
 }
-
 
 static void DrawApresentacao(void)
 {
@@ -350,6 +367,128 @@ static void DrawFalaHank(void)
             y += lineH;
             if (y + lineH > boxY + boxH - 10) break;
         }
+    }
+}
+
+static void DrawTransicaoPrePergunta(void)
+{
+    if (ctx.transPhase == 0) {
+        int coverW = (int)(GetScreenWidth() * ctx.overlayProg);
+        DrawRectangle(0, 0, coverW, GetScreenHeight(), BLACK);
+    } else {
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
+    }
+
+    float baseScale  = 1.3f;
+    float closeScale = 1.7f;
+
+    float scale;
+    if      (ctx.transPhase == 0) scale = baseScale  + (closeScale - baseScale) * ctx.overlayProg;
+    else if (ctx.transPhase == 1) scale = closeScale;
+    else                          scale = closeScale + (baseScale - closeScale) * ctx.revealProg;
+
+    Rectangle srcH = { 2087, 0, 631, 722 };
+    float w = srcH.width  * scale;
+    float h = srcH.height * scale;
+
+    /* --- calcula deslocamento vertical para dar close no ROSTO --- */
+    float shiftPct = (scale - baseScale) / (closeScale - baseScale);
+    float yOffset  = shiftPct * h * 0.35f;
+    Vector2 pos = { (GetScreenWidth() - w) / 2.0f, GetScreenHeight() - h + yOffset };
+
+    Color spot = (Color){255, 255, 255, 50};
+    Vector2 apex  = { pos.x + w*0.5f, pos.y + h*0.10f };
+    Vector2 mid   = { pos.x + w*0.5f, pos.y + h*0.50f }; 
+    DrawTriangle((Vector2){ 0, 0}, mid, apex, spot);
+    DrawTriangle((Vector2){ GetScreenWidth(), 0}, apex, mid, spot);
+
+    if (ctx.transPhase == 1) {
+        const char *txt = "Agora... Conte-me mais sobre você";
+        int fs    = 28;
+        int tw    = MeasureText(txt, fs);
+        int boxW  = tw + 40;
+        int boxH  = fs + 24;
+        int x     = (GetScreenWidth() - boxW)/2;
+        int y     = pos.y - boxH - 20;
+
+        Rectangle outer = { x - 6, y - 6, boxW + 12, boxH + 12 };
+        Rectangle inner = { x - 3, y - 3, boxW +  6, boxH +  6 };
+
+        Color cLt = (Color){195,195,195,255}; 
+        Color cDk = (Color){ 90, 90, 90,255};
+        DrawRectangleGradientEx(outer, cLt, cLt, cDk, cDk);
+        DrawRectangleGradientEx(inner, cDk, cDk, cLt, cLt);
+
+        const int rr = 3;
+        DrawCircle(outer.x + rr + 2,                 outer.y + rr + 2,                 rr, cDk);
+        DrawCircle(outer.x + outer.width  - rr - 2,  outer.y + rr + 2,                 rr, cDk);
+        DrawCircle(outer.x + rr + 2,                 outer.y + outer.height - rr - 2,  rr, cDk);
+        DrawCircle(outer.x + outer.width  - rr - 2,  outer.y + outer.height - rr - 2,  rr, cDk);
+
+        DrawRectangle(x, y, boxW, boxH, (Color){20,20,20,220});
+        DrawRectangleLinesEx((Rectangle){x,y,boxW,boxH}, 1, (Color){220,220,220,255});
+
+        DrawTriangle(
+            (Vector2){pos.x + w/2 - 10, y + boxH},
+            (Vector2){pos.x + w/2 + 10, y + boxH},
+            (Vector2){pos.x + w/2,      y + boxH + 15},
+            (Color){220,220,220,255}
+        );
+        DrawText(txt, x + 20, y + 12, fs, WHITE);
+    }
+
+    if (ctx.transPhase == 2) {
+        int revealW = (int)(GetScreenWidth() * ctx.revealProg);
+        Rectangle srcBg = {
+            0, 0,
+            (float)(ctx.background.width  * ctx.revealProg),
+            (float) ctx.background.height
+        };
+        Rectangle dstBg = { 0, 0, (float)revealW, (float)GetScreenHeight() };
+
+        DrawTexturePro(ctx.background, srcBg, dstBg, (Vector2){0,0}, 0, WHITE);
+    }
+
+    DrawTexturePro(ctx.spriteConfiante, srcH, (Rectangle){pos.x,pos.y, w ,h}, (Vector2){0,0}, 0, WHITE);
+}
+
+static void UpdateTransicaoPrePergunta(float dt)
+{
+    ctx.transTimer += dt;
+
+    switch (ctx.transPhase)
+    {
+        /* ── 0. escurecendo da esquerda p/ direita ─────────────────── */
+        case 0:
+            ctx.overlayProg = fminf(ctx.transTimer / ctx.transDur, 1.0f);
+            if (ctx.overlayProg >= 1.0f) {
+                ctx.transPhase = 1;
+                ctx.transTimer = 0.0f;          // zera para contagem de 3 s
+            }
+            break;
+
+        /* ── 1. balão “Agora…” fica 3 s na tela ────────────────────── */
+        case 1:
+            if (ctx.transTimer >= 3.0f) {       // ← 3 segundos
+                ctx.transPhase  = 2;
+                ctx.transTimer  = 0.0f;
+                ctx.revealProg  = 0.0f;
+            }
+            break;
+
+        /* ── 2. revela novo fundo da esquerda p/ direita ───────────── */
+        case 2:
+            ctx.revealProg = fminf(ctx.transTimer / ctx.transDur, 1.0f);
+            if (ctx.revealProg >= 1.0f) {
+                ctx.stage = PERGUNTA_INTERROGATORIO;
+                ctx.aguardandoInput = true;      // permite digitar
+                ctx.respostaLen     = 0;         // zera buffer
+                ctx.respostaBuf[0]  = '\0';
+                ctx.interrogationMusic = LoadMusicStream("src/music/suspense.mp3");
+                PlayMusicStream(ctx.interrogationMusic);
+                return;
+            }
+            break;
     }
 }
 
@@ -459,4 +598,18 @@ void SelecionarPerguntasAleatorias(void)
     for (int i = 0; i < MAX_PERGUNTAS; i++) {
         perguntasSelecionadas[i] = indices[i];
     }
+}
+
+void Unload_Interrogatorio(void)
+{
+    UnloadTexture(ctx.background);
+    UnloadTexture(ctx.spriteNome);
+    UnloadTexture(ctx.spriteBustup);
+    UnloadTexture(ctx.spriteConfiante);
+    UnloadTexture(ctx.bgInterrog);
+    UnloadMusicStream(ctx.interrogationMusic);
+    UnloadSound(ctx.somSurpresa);
+    UnloadSound(ctx.falaAudio);
+    UnloadSound(ctx.somFalaDetetive2);
+    UnloadSound(ctx.sfxHolofote);
 }

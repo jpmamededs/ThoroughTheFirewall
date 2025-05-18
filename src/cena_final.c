@@ -81,7 +81,6 @@ void UpdateTextAnimation(void)
 // Função para desenhar o texto com animação
 void DrawTextWithAnimation(const char *text)
 {
-    int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
     // O texto já começa na escala máxima
     if (textScale > maxTextScale)
@@ -96,7 +95,6 @@ void DrawTextWithAnimation(const char *text)
     if (textPersistent)
         ease += GetFrameTime() * 0.02f;
 
-    int textWidth = screenWidth;
     static float slowMoveOffset = 0.0f;
     slowMoveOffset += GetFrameTime() * 10.0f;
     int posY = -50 * scale + (int)((screenHeight * 0.8) * ease) + (int)slowMoveOffset; // Movimento de cima para baixo

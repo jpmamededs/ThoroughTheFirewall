@@ -47,7 +47,7 @@ set palavras[13]=api_config.txt
 set palavras[14]=[KEY_ENTER]
 set palavras[15]=API_KEY:
 set palavras[16]=[KEY_SPACE]
-set palavras[17]=XI5hp7VKyWhPGvzINNKoqNQkre1qZLeOVkQfR2T8lJBvhSnsYuRCD1DrbR750w8Fy3ksZZQufiJ6M7fKP5kwTYg9ltFyDzOfWHBzpGy4YlfVmdTMBtHRbEAaZoUtlLBF
+set palavras[17]=AccessRune321
 set palavras[18]=[KEY_ENTER]
 set palavras[19]=chmod
 set palavras[20]=600
@@ -78,7 +78,7 @@ echo.
 
 :AskAPI
 set /p inputKey=Insira qual a API KEY descoberta: 
-if "%inputKey%"=="XI5hp7VKyWhPGvzINNKoqNQkre1qZLeOVkQfR2T8lJBvhSnsYuRCD1DrbR750w8Fy3ksZZQufiJ6M7fKP5kwTYg9ltFyDzOfWHBzpGy4YlfVmdTMBtHRbEAaZoUtlLBF" (
+if "%inputKey%"=="AccessRune321" (
     echo [SUCESSO] API Key correta. Fechando terminal.
     echo OK > "%~dp0dadosKeylogger.txt"
     ping 127.0.0.1 -n 2 >nul
