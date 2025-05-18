@@ -402,7 +402,6 @@ void Draw_Transicao_Proxy()
     if (drawUnknownNow)
     {
         // --- AJUSTADO: Desenha a sprite do Hank logo acima da caixa do dialogue ---
-        int imgWidth = hankFalaSprite.width;
         int imgHeight = hankFalaSprite.height;
         int x = 40; // igual a boxX na DrawDialogueBox
         int y = GetScreenHeight() - 220 - imgHeight + 200; // ajuste para ficar logo acima (marginBottom + pequeno espaço)

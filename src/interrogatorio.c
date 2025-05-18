@@ -11,9 +11,11 @@
 
 static void UpdateApresentacao(float dt);
 static void UpdateFalaHank(float dt);
+static void UpdateTransicaoPrePergunta(float dt);
 static void UpdateFalaInterrogatorio(float dt);
 static void DrawApresentacao(void);
 static void DrawFalaHank(void);
+static void DrawTransicaoPrePergunta(void);
 static void DrawFalaInterrogatorio(void);
 static void DrawFade(void);
 static void AvaliarRespostaComIA(int indicePergunta, const char *pergunta, const char *respostaJogador);
@@ -44,6 +46,15 @@ static struct
     TypeWriter writer;
     bool mostrarConfiante, dialogoFinalizado;
     bool falaSomTocado;
+
+    /* --- transição PRE-PERGUNTA --- */
+    int   transPhase;        // 0=escurecer,1=balao,2=revelar
+    float transTimer;        // cronômetro da fase
+    float transDur;          // duração de cada efeito (1.0 s)
+    float overlayProg;       // 0-1 esquerda→direita preto
+    float revealProg;        // 0-1 esquerda→direita novo fundo
+    Texture2D bgInterrog;    // novo fundo (sala de interrogatório)
+    Sound     sfxHolofote;
 
     // ---------- Fala Interrogatorio ----------
     char  respostaBuf[384];
@@ -78,13 +89,12 @@ static const char *INTRO_FALA1 =
 static const char *INTRO_FALA2 =
         "Mas fique ligado, pois, além de avaliar sua técnica, vou observar principalmente como você se comporta, "
         "para ver se realmente merece fazer parte do FBI. Então, vamos deixar de conversa e partir para o primeiro desafio! [ENTER]";
-static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateApresentacao, UpdateFalaHank, UpdateFalaInterrogatorio };
-static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawApresentacao,  DrawFalaHank,  DrawFalaInterrogatorio  };
 
+static void (*stageUpdates[ETAPA_TOTAL])(float) = { UpdateApresentacao, UpdateFalaHank, UpdateTransicaoPrePergunta, UpdateFalaInterrogatorio };
+static void (*stageDraws  [ETAPA_TOTAL])(void ) = { DrawApresentacao,  DrawFalaHank, DrawTransicaoPrePergunta, DrawFalaInterrogatorio  };
 int perguntasSelecionadas[MAX_PERGUNTAS];
 static bool semPergunta = false; 
 static bool fase_concluida = false;
-
 
 void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto)
 {
@@ -134,6 +144,16 @@ void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto
     ctx.mostrarConfiante = ctx.dialogoFinalizado = false;
 
     // ETAPA 3 ------------------------------------------------------------
+    ctx.bgInterrog = LoadTexture("src/sprites/russia.png");
+    ctx.transPhase   = 0;
+    ctx.transTimer   = 0.0f;
+    ctx.transDur     = 1.0f;      // 1 segundo para escurecer ou revelar
+    ctx.overlayProg  = 0.0f;
+    ctx.revealProg   = 0.0f;
+    ctx.sfxHolofote = LoadSound("src/music/among.mp3");  // coloque o arquivo na pasta
+    SetSoundVolume(ctx.sfxHolofote, 2.5f);
+
+    // ETAPA 4 ------------------------------------------------------------
     ctx.respostaLen   = 0;
     ctx.respostaBuf[0]= '\0';
     ctx.aguardandoInput = false;
@@ -161,18 +181,6 @@ void Draw_Interrogatorio(void)
     DrawFade();
 
     EndDrawing();
-}
-
-void Unload_Interrogatorio(void)
-{
-    UnloadTexture(ctx.background);
-    UnloadTexture(ctx.spriteNome);
-    UnloadTexture(ctx.spriteBustup);
-    UnloadTexture(ctx.spriteConfiante);
-    UnloadMusicStream(ctx.interrogationMusic);
-    UnloadSound(ctx.somSurpresa);
-    UnloadSound(ctx.falaAudio);
-    UnloadSound(ctx.somFalaDetetive2);
 }
 
 static void UpdateApresentacao(float dt)
@@ -236,7 +244,14 @@ static void UpdateFalaHank(float dt)
             return;
         }
 
-        ctx.dialogoFinalizado = true;
+        ctx.stage       = TRANSICAO_PRE_PERGUNTA;
+        PauseMusicStream(ctx.interrogationMusic);
+        PlaySound(ctx.sfxHolofote);
+        ctx.transPhase  = 0;
+        ctx.transTimer  = 0.0f;
+        ctx.overlayProg = 0.0f;
+        ctx.revealProg  = 0.0f;
+        return;
     }
 
     if (ctx.dialogoFinalizado) {
@@ -253,7 +268,6 @@ static void UpdateFalaHank(float dt)
         }
     }
 }
-
 
 static void UpdateFalaInterrogatorio(float dt)
 {
@@ -284,7 +298,6 @@ static void UpdateFalaInterrogatorio(float dt)
         fase_concluida = true;
     }
 }
-
 
 static void DrawApresentacao(void)
 {
@@ -350,6 +363,103 @@ static void DrawFalaHank(void)
             y += lineH;
             if (y + lineH > boxY + boxH - 10) break;
         }
+    }
+}
+
+static void DrawTransicaoPrePergunta(void)
+{
+    if (ctx.transPhase == 0) {
+        int coverW = (int)(GetScreenWidth() * ctx.overlayProg);
+        DrawRectangle(0, 0, coverW, GetScreenHeight(), BLACK);
+    } else {
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
+    }
+
+    float baseScale  = 1.3f;
+    float closeScale = 1.7f;
+
+    float scale;
+    if      (ctx.transPhase == 0) scale = baseScale  + (closeScale - baseScale) * ctx.overlayProg;
+    else if (ctx.transPhase == 1) scale = closeScale;
+    else                          scale = closeScale + (baseScale - closeScale) * ctx.revealProg;
+
+    Rectangle srcH = { 2087, 0, 631, 722 };
+    float w = srcH.width  * scale;
+    float h = srcH.height * scale;
+
+    /* --- calcula deslocamento vertical para dar close no ROSTO --- */
+    float shiftPct = (scale - baseScale) / (closeScale - baseScale);
+    float yOffset  = shiftPct * h * 0.35f;
+    Vector2 pos = { (GetScreenWidth() - w) / 2.0f, GetScreenHeight() - h + yOffset };
+
+    Color spot = (Color){255, 255, 255, 50};
+    Vector2 apex  = { pos.x + w*0.5f, pos.y + h*0.10f };
+    Vector2 mid   = { pos.x + w*0.5f, pos.y + h*0.50f }; 
+    DrawTriangle((Vector2){ 0, 0}, mid, apex, spot);
+    DrawTriangle((Vector2){ GetScreenWidth(), 0}, apex, mid, spot);
+
+    if (ctx.transPhase == 1) {
+        const char *txt = "Agora... Conte-me mais sobre você";
+        int fs = 28;
+        int tw = MeasureText(txt, fs);
+        int boxW = tw + 40, boxH = fs + 24;
+        int x = (GetScreenWidth() - boxW)/2;
+        int y = pos.y - boxH - 20;  
+
+        DrawRectangle(x, y, boxW, boxH, (Color){0,0,0,220});
+        DrawRectangleLines(x, y, boxW, boxH, WHITE);
+        DrawTriangle( (Vector2){pos.x + w/2 - 10, y + boxH}, (Vector2){pos.x + w/2 + 10, y + boxH}, (Vector2){pos.x + w/2, y + boxH + 15}, WHITE);
+        DrawText(txt, x + 20, y + 12, fs, WHITE);
+    }
+
+    if (ctx.transPhase == 2) {
+        int revealW = (int)(GetScreenWidth() * ctx.revealProg);
+        Rectangle srcBg = {
+            0, 0,
+            (float)(ctx.background.width  * ctx.revealProg),
+            (float) ctx.background.height
+        };
+        Rectangle dstBg = { 0, 0, (float)revealW, (float)GetScreenHeight() };
+
+        DrawTexturePro(ctx.background, srcBg, dstBg, (Vector2){0,0}, 0, WHITE);
+    }
+
+    DrawTexturePro(ctx.spriteConfiante, srcH, (Rectangle){pos.x,pos.y, w ,h}, (Vector2){0,0}, 0, WHITE);
+}
+
+static void UpdateTransicaoPrePergunta(float dt)
+{
+    ctx.transTimer += dt;
+
+    switch (ctx.transPhase)
+    {
+        /* ── 0. escurecendo da esquerda p/ direita ─────────────────── */
+        case 0:
+            ctx.overlayProg = fminf(ctx.transTimer / ctx.transDur, 1.0f);
+            if (ctx.overlayProg >= 1.0f) {
+                ctx.transPhase = 1;
+                ctx.transTimer = 0.0f;          // zera para contagem de 3 s
+            }
+            break;
+
+        /* ── 1. balão “Agora…” fica 3 s na tela ────────────────────── */
+        case 1:
+            if (ctx.transTimer >= 3.0f) {       // ← 3 segundos
+                ctx.transPhase  = 2;
+                ctx.transTimer  = 0.0f;
+                ctx.revealProg  = 0.0f;
+            }
+            break;
+
+        /* ── 2. revela novo fundo da esquerda p/ direita ───────────── */
+        case 2:
+            ctx.revealProg = fminf(ctx.transTimer / ctx.transDur, 1.0f);
+            if (ctx.revealProg >= 1.0f) {
+                ctx.stage = PERGUNTA_INTERROGATORIO;
+                ResumeMusicStream(ctx.interrogationMusic);
+                return;
+            }
+            break;
     }
 }
 
@@ -459,4 +569,18 @@ void SelecionarPerguntasAleatorias(void)
     for (int i = 0; i < MAX_PERGUNTAS; i++) {
         perguntasSelecionadas[i] = indices[i];
     }
+}
+
+void Unload_Interrogatorio(void)
+{
+    UnloadTexture(ctx.background);
+    UnloadTexture(ctx.spriteNome);
+    UnloadTexture(ctx.spriteBustup);
+    UnloadTexture(ctx.spriteConfiante);
+    UnloadTexture(ctx.bgInterrog);
+    UnloadMusicStream(ctx.interrogationMusic);
+    UnloadSound(ctx.somSurpresa);
+    UnloadSound(ctx.falaAudio);
+    UnloadSound(ctx.somFalaDetetive2);
+    UnloadSound(ctx.sfxHolofote);
 }

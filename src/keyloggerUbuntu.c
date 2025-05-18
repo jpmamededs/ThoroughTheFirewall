@@ -112,11 +112,6 @@ void Update_KeyloggerUbuntu(void)
 
         // Verifica clique no ícone do terminal
         Rectangle terminalIconBounds = {10, 10, terminalIcon.width * 1.5f, terminalIcon.height * 2.0f};
-        Rectangle folderIconBounds = {
-            10,
-            10 + terminalIcon.height * 1.3f + 10, // Posição Y abaixo do terminal
-            folderIcon.width * 0.12f,
-            folderIcon.height * 0.12f};
         Rectangle firefoxIconBounds = {
             10,
             10 + terminalIcon.height * 1.3f + 10 + folderIcon.height * 0.12f + 10,

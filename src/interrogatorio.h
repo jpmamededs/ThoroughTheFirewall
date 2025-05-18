@@ -12,6 +12,7 @@ typedef struct {
 typedef enum { 
     APRESENTACAO, 
     FALA_HANK, 
+    TRANSICAO_PRE_PERGUNTA,
     PERGUNTA_INTERROGATORIO, 
     ETAPA_TOTAL 
 } InterrogatorioStage;

@@ -61,9 +61,8 @@ static const RoteiroHank roteiros[] = {
         "a postura defensiva é fundamental nos dias atuias. [ENTER]"
     },
     { 
-        "src/music/fala_hank_desafio04.mp3",
-        "Muito bom! Você soube coletar os antivírus enquanto evitava os vírus, mostrando que entende "
-        "a importância de manter o sistema protegido. Essa postura preventiva é essencial [ENTER]"
+        "",
+        "foda [ ENTER ]"
     }
 };
 
@@ -264,7 +263,7 @@ int main(void)
                 PauseMusicStream(music);
                 UnloadMenu();
                 perguntaAtual++;
-                Init_Interrogatorio(perguntaAtual, roteiros[perguntaAtual].audio, roteiros[perguntaAtual].texto);
+                Init_Interrogatorio(3, roteiros[3].audio, roteiros[3].texto);
                 interrogatorio_Initialized = true;
                 PFP_Iterrogatorio = APP_DESAFIO_01;
                 state = INTERROGATORIO;
