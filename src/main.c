@@ -62,8 +62,9 @@ static const RoteiroHank roteiros[] = {
         "a postura defensiva é fundamental nos dias atuias. [ENTER]"
     },
     { 
-        "",
-        "foda [ ENTER ]"
+        "src/music/fala_hank_desafio04.mp3",
+        "Muito bom! Você soube coletar os antivírus enquanto evitava os vírus, mostrando que entende "
+        "a importância de manter o sistema protegido. Essa postura preventiva é essencial [ENTER]"
     }
 };
 
@@ -265,7 +266,7 @@ int main(void)
                 PauseMusicStream(music);
                 UnloadMenu();
                 perguntaAtual++;
-                Init_Interrogatorio(3, roteiros[3].audio, roteiros[3].texto);
+                Init_Interrogatorio(1, roteiros[1].audio, roteiros[1].texto);
                 interrogatorio_Initialized = true;
                 PFP_Iterrogatorio = APP_DESAFIO_01;
                 state = INTERROGATORIO;
@@ -447,6 +448,20 @@ int main(void)
                 PFP_Iterrogatorio = APP_TRANSICAO_PROXY; // <- aqui está certo!
             }
         }
+        else if (state == APP_TRANSICAO_PROXY)
+        {
+            if (!transicao_proxy_Initialized) {
+                Init_Transicao_Proxy();
+                transicao_proxy_Initialized = true;
+            }
+            Update_Transicao_Proxy();
+            Draw_Transicao_Proxy();
+            if (Transicao_Proxy_Done()) {
+                Unload_Transicao_Proxy();
+                transicao_proxy_Initialized = false;
+                state = APP_PROXY_3D;           // Aqui vai para o proxy!
+            }
+        }
         else if (state == APP_PROXY_3D)
         {
             if (!proxy3D_Initialized)
@@ -476,9 +491,25 @@ int main(void)
             {
                 Unload_ProxyUbuntu();
                 proxyUbuntu_Initialized = false;
+                state = APP_TRANSICAO_PROXY2;
+            }
+        }
+        else if (state == APP_TRANSICAO_PROXY2)
+        {
+            if (!transicao_proxy2_Initialized) {
                 Init_Transicao_Proxy2();
                 transicao_proxy2_Initialized = true;
-                state = APP_TRANSICAO_PROXY2;
+            }
+            Update_Transicao_Proxy2();
+            Draw_Transicao_Proxy2();
+            if (Transicao_Proxy2_Done()) {
+                Unload_Transicao_Proxy2();
+                transicao_proxy2_Initialized = false;
+
+                Init_TransitionScreen(2, "Cifra de Cesar");
+                transicao_Initialized = true;
+                state = APP_TRANSICAO;
+                PFP_Trasicao = APP_DESAFIO_02;
             }
         }
         else if (state == APP_DESAFIO_02)
@@ -589,34 +620,6 @@ int main(void)
                 transicao_Initialized = true;
                 state = APP_TRANSICAO;
                 PFP_Trasicao = APP_DESAFIO_04;
-            }
-        }
-        else if (state == APP_TRANSICAO_PROXY)
-        {
-            if (!transicao_proxy_Initialized) {
-                Init_Transicao_Proxy();
-                transicao_proxy_Initialized = true;
-            }
-            Update_Transicao_Proxy();
-            Draw_Transicao_Proxy();
-            if (Transicao_Proxy_Done()) {
-                Unload_Transicao_Proxy();
-                transicao_proxy_Initialized = false;
-                state = APP_PROXY_3D;           // Aqui vai para o proxy!
-            }
-        }
-        else if (state == APP_TRANSICAO_PROXY2)
-        {
-            if (!transicao_proxy2_Initialized) {
-                Init_Transicao_Proxy2();
-                transicao_proxy2_Initialized = true;
-            }
-            Update_Transicao_Proxy2();
-            Draw_Transicao_Proxy2();
-            if (Transicao_Proxy2_Done()) {
-                Unload_Transicao_Proxy2();
-                transicao_proxy2_Initialized = false;
-                state = APP_DESAFIO_02;           // Aqui vai para o proxy!
             }
         }
         else if (state == APP_DESAFIO_04)

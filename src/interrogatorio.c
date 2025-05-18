@@ -150,7 +150,7 @@ void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto
     ctx.transDur     = 1.0f;      // 1 segundo para escurecer ou revelar
     ctx.overlayProg  = 0.0f;
     ctx.revealProg   = 0.0f;
-    ctx.sfxHolofote = LoadSound("src/music/among.mp3");  // coloque o arquivo na pasta
+    ctx.sfxHolofote = LoadSound("src/music/among2.mp3");  // coloque o arquivo na pasta
     SetSoundVolume(ctx.sfxHolofote, 2.5f);
 
     // ETAPA 4 ------------------------------------------------------------
@@ -227,21 +227,25 @@ static void UpdateFalaHank(float dt)
         ctx.falaSomTocado = true;
     }
 
-    //if(ctx.writer.done && !ctx.dialogoFinalizado){
-    //    PlaySound(ctx.somFalaDetetive2);
-    //    /* agora espera ENTER/P para prosseguir */
-    //}
-
     if(ctx.writer.done && IsKeyPressed(KEY_ENTER)) {
 
-        if (semPergunta && !ctx.usandoExtra && ctx.falaTextoExtra) {
-            ctx.usandoExtra = true;
-            ctx.falaTexto   = ctx.falaTextoExtra;
-            InitTypeWriter(&ctx.writer, ctx.falaTexto, 17.0f);
-            ctx.falaAudio = LoadSound("src/music/fala_apresentacao_2.mp3");
-            SetSoundVolume(ctx.falaAudio, 4.0f);
-            ctx.falaSomTocado = false;
-            return;
+        if (semPergunta)
+        {
+            /* 1ª vez: ainda vamos mostrar o texto extra */
+            if (!ctx.usandoExtra && ctx.falaTextoExtra)
+            {
+                ctx.usandoExtra = true;
+                ctx.falaTexto   = ctx.falaTextoExtra;
+                InitTypeWriter(&ctx.writer, ctx.falaTexto, 17.0f);
+                ctx.falaAudio = LoadSound("src/music/fala_apresentacao_2.mp3");
+                SetSoundVolume(ctx.falaAudio, 4.0f);
+                ctx.falaSomTocado = false;
+                return;                 /* ← exibe texto extra e sai */
+            }
+
+            /* 2ª vez: já mostrou o extra → termina a fase */
+            fase_concluida = true;
+            return;                     /* ← sai imediatamente */
         }
 
         ctx.stage       = TRANSICAO_PRE_PERGUNTA;
@@ -400,15 +404,36 @@ static void DrawTransicaoPrePergunta(void)
 
     if (ctx.transPhase == 1) {
         const char *txt = "Agora... Conte-me mais sobre você";
-        int fs = 28;
-        int tw = MeasureText(txt, fs);
-        int boxW = tw + 40, boxH = fs + 24;
-        int x = (GetScreenWidth() - boxW)/2;
-        int y = pos.y - boxH - 20;  
+        int fs    = 28;
+        int tw    = MeasureText(txt, fs);
+        int boxW  = tw + 40;
+        int boxH  = fs + 24;
+        int x     = (GetScreenWidth() - boxW)/2;
+        int y     = pos.y - boxH - 20;
 
-        DrawRectangle(x, y, boxW, boxH, (Color){0,0,0,220});
-        DrawRectangleLines(x, y, boxW, boxH, WHITE);
-        DrawTriangle( (Vector2){pos.x + w/2 - 10, y + boxH}, (Vector2){pos.x + w/2 + 10, y + boxH}, (Vector2){pos.x + w/2, y + boxH + 15}, WHITE);
+        Rectangle outer = { x - 6, y - 6, boxW + 12, boxH + 12 };
+        Rectangle inner = { x - 3, y - 3, boxW +  6, boxH +  6 };
+
+        Color cLt = (Color){195,195,195,255}; 
+        Color cDk = (Color){ 90, 90, 90,255};
+        DrawRectangleGradientEx(outer, cLt, cLt, cDk, cDk);
+        DrawRectangleGradientEx(inner, cDk, cDk, cLt, cLt);
+
+        const int rr = 3;
+        DrawCircle(outer.x + rr + 2,                 outer.y + rr + 2,                 rr, cDk);
+        DrawCircle(outer.x + outer.width  - rr - 2,  outer.y + rr + 2,                 rr, cDk);
+        DrawCircle(outer.x + rr + 2,                 outer.y + outer.height - rr - 2,  rr, cDk);
+        DrawCircle(outer.x + outer.width  - rr - 2,  outer.y + outer.height - rr - 2,  rr, cDk);
+
+        DrawRectangle(x, y, boxW, boxH, (Color){20,20,20,220});
+        DrawRectangleLinesEx((Rectangle){x,y,boxW,boxH}, 1, (Color){220,220,220,255});
+
+        DrawTriangle(
+            (Vector2){pos.x + w/2 - 10, y + boxH},
+            (Vector2){pos.x + w/2 + 10, y + boxH},
+            (Vector2){pos.x + w/2,      y + boxH + 15},
+            (Color){220,220,220,255}
+        );
         DrawText(txt, x + 20, y + 12, fs, WHITE);
     }
 
@@ -456,7 +481,11 @@ static void UpdateTransicaoPrePergunta(float dt)
             ctx.revealProg = fminf(ctx.transTimer / ctx.transDur, 1.0f);
             if (ctx.revealProg >= 1.0f) {
                 ctx.stage = PERGUNTA_INTERROGATORIO;
-                ResumeMusicStream(ctx.interrogationMusic);
+                ctx.aguardandoInput = true;      // permite digitar
+                ctx.respostaLen     = 0;         // zera buffer
+                ctx.respostaBuf[0]  = '\0';
+                ctx.interrogationMusic = LoadMusicStream("src/music/suspense.mp3");
+                PlayMusicStream(ctx.interrogationMusic);
                 return;
             }
             break;
