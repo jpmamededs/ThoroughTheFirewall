@@ -272,7 +272,7 @@ void Draw_KeyloggerUbuntu(void)
             const char *texto = (estadoCaixa == 0)
                                     ? "Nova tarefa detectada!"
                                 : (estadoCaixa == 1)
-                                    ? "Para continuar sua tarefa. Clique no icone do terminal."
+                                    ? "Clique no firefox e procure o ip_address da Cybertech Inc."
                                     : "Parabens, voce terminou suas pendencias.";
 
             int padding = 20;

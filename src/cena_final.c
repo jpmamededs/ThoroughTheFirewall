@@ -16,6 +16,13 @@ static Texture2D deBoneRevelationSilhouette;
 static Texture2D deBoneRevelation;
 static Texture2D cybertechShield;
 
+static bool textAnimActive = false;
+static float textAnimProgress = 0.0f;
+static const float TEXT_ANIM_DURATION = 0.65f;
+static bool textPersistent = true;
+static float textScale = 10.0f;
+static const float maxTextScale = 10.0f;
+
 static Sound medal;
 // Timer para controlar o aparecimento do escudo
 static float shieldAppearTimer = 0.0f;
@@ -23,7 +30,7 @@ static bool shieldStartTimer = false; // Controla início da contagem do shield
 // --- ANIMAÇÃO DO SHIELD ---
 static bool shieldAnimActive = false;
 static float shieldAnimProgress = 0.0f;
-static const float SHIELD_ANIM_DURATION = 0.65f; // tempo de aceleração inicial (influencia só início)
+static const float SHIELD_ANIM_DURATION = 0.65f;          // tempo de aceleração inicial (influencia só início)
 static const float SHIELD_DELAY_AFTER_REVELATION = 0.15f; // delay antes de surgir
 // Áudio
 static Music writtenInTheStars;
@@ -50,6 +57,53 @@ static float flashAlpha = 0.0f;
 static bool flashAtivo = false;
 static const float flashDuration = 0.6f;
 static float flashTimer = 0.0f;
+
+void StartTextAnimation(void)
+{
+    textAnimActive = true;
+    textAnimProgress = 0.0f;
+}
+
+// Função para atualizar a animação do texto
+void UpdateTextAnimation(void)
+{
+    if (textAnimActive || textPersistent)
+    {
+        textAnimProgress += GetFrameTime() / TEXT_ANIM_DURATION;
+        if (textAnimProgress >= 1.0f)
+        {
+            textAnimProgress = 1.0f;
+            textPersistent = true;
+        }
+    }
+}
+
+// Função para desenhar o texto com animação
+void DrawTextWithAnimation(const char *text)
+{
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+    // O texto já começa na escala máxima
+    if (textScale > maxTextScale)
+        textScale = maxTextScale;
+    float scale = textScale;
+
+    // Cálculo de easing para movimento de cima para baixo
+    float alongamento = 4.0f;
+    float expoente = 7.0f;
+    float t = textAnimProgress;
+    float ease = 1.0f - powf(1.0f - fminf(t / alongamento, 1.0f), expoente);
+    if (textPersistent)
+        ease += GetFrameTime() * 0.02f;
+
+    int textWidth = screenWidth;
+    static float slowMoveOffset = 0.0f;
+    slowMoveOffset += GetFrameTime() * 10.0f;
+    int posY = -50 * scale + (int)((screenHeight * 0.8) * ease) + (int)slowMoveOffset; // Movimento de cima para baixo
+
+    // Desenhar texto no fundo (atrás de tudo)
+    DrawTextEx(GetFontDefault(), TextToUpper(text), (Vector2){20, posY}, 50 * scale, 2, (Color){255, 255, 255, 150});
+}
 
 void Init_FinalJogo(void)
 {
@@ -89,6 +143,7 @@ void Init_FinalJogo(void)
 }
 void Update_FinalJogo(void)
 {
+    UpdateTextAnimation();
     if (IsKeyPressed(KEY_ENTER)) {
         fase_concluida = true;
     }
@@ -150,6 +205,10 @@ void Update_FinalJogo(void)
             flashAlpha = 0.0f;
         }
     }
+    if (flashAtivo && !textAnimActive)
+    {
+        StartTextAnimation();
+    }
     // Delay entre revelação e princípio da animação do shield
     if (shieldStartTimer && !shieldAnimActive)
     {
@@ -174,6 +233,10 @@ void Draw_FinalJogo(void)
     ClearBackground(BLACK);
     int screenHeight = GetScreenHeight();
     int screenWidth = GetScreenWidth();
+    if (textAnimActive)
+    {
+        DrawTextWithAnimation(gSelectedCharacterName);
+    }
 
     const char *personagemVisivel =  playerStats.isPassouSelecao ? gSelectedCharacterName : "Levi";
 
@@ -276,15 +339,15 @@ void Draw_FinalJogo(void)
     }
     // ------ ANIMAÇÃO DO SHIELD ENTRANDO / NUNCA PARANDO ------
     float scale = 0.35f;
-    int shieldFinalX = 20;    // Canto superior esquerdo (X)
-    int shieldFinalY = 20;    // Canto superior esquerdo (Y) <<< AJUSTADO AQUI
+    int shieldFinalX = 20;                             // Canto superior esquerdo (X)
+    int shieldFinalY = 20;                             // Canto superior esquerdo (Y) <<< AJUSTADO AQUI
     int shieldStartX = -cybertechShield.width * scale; // Começa fora da tela
     int shieldY = shieldFinalY;
     PlaySound(medal);
     if (shieldAnimActive)
     {
-        float alongamento = 4.0f;           // mais alto = mais longa a sensação de movimento
-        float expoente = 7.0f;              // mais alto = desacelera suave/forte no fim
+        float alongamento = 4.0f; // mais alto = mais longa a sensação de movimento
+        float expoente = 7.0f;    // mais alto = desacelera suave/forte no fim
         float t = shieldAnimProgress;
         float ease = 1.0f - powf(1.0f - fminf(t / alongamento, 1.0f), expoente);
 
@@ -294,8 +357,7 @@ void Draw_FinalJogo(void)
             cybertechShield,
             (Rectangle){0, 0, cybertechShield.width, cybertechShield.height},
             (Rectangle){shieldX, shieldY, cybertechShield.width * scale, cybertechShield.height * scale},
-            (Vector2){0, 0}, 0.0f, WHITE
-        );
+            (Vector2){0, 0}, 0.0f, WHITE);
     }
     EndDrawing();
 }

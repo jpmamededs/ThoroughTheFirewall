@@ -1,4 +1,4 @@
-#include "transicao_proxy.h"
+#include "transicao_proxy2.h"
 #include "raylib.h"
 #include "generalFunctions.h"
 #include "playerStats.h"
@@ -7,7 +7,7 @@
 static Model modelo3D;
 static Texture2D pergunta_img;
 static Texture2D telefone_sprite;
-static Texture2D hankFalaSprite; // AJUSTADO NOVO SPRITE
+static Texture2D hankFalaSprite;
 static Sound somFase1;
 static Sound somTelefone;
 static Sound somRadio;
@@ -39,13 +39,13 @@ static bool telefoneAtendido = false;
 static Sound somPersonagem;
 static TypeWriter personagemWriter;
 static bool personagemTypeStarted = false;
-static bool personagemAudioTocado   = false;
+static bool personagemAudioTocado = false;
 static bool unknownDone        = false;
-static float timeAfterUnknown  = -1.0f; 
+static float timeAfterUnknown  = -1.0f;
 static float postUnknownTimer = -1.0f;
 static Sound somChamadaAcabada;
-static bool somChamadaTocado = false; 
-static float gapTimer = -1.0f;        
+static bool somChamadaTocado = false;
+static float gapTimer = -1.0f;
 static bool  gapSoundPlayed = false;
 #define RING_GAP 0.60f
 static bool done = false;
@@ -55,11 +55,7 @@ static float dicaTimer = 0.0f;
 static bool dicaAnimando = false;
 static float posicaoDicaX = -300.0f;
 static const float velocidadeDica = 300.0f;
-static const char *GetCurrentText(TypeWriter *writer)
-{
-    return writer->text;
-}
-// --- "3 dias depois" effect ---
+static const char *GetCurrentText(TypeWriter *writer) { return writer->text; }
 static bool introActive   = true;
 static float introTimer   = 0.0f;
 static float introAlpha   = 0.0f;
@@ -67,12 +63,107 @@ static const float INTRO_FADE = 1.5f;
 static const float INTRO_HOLD = 2.5f;
 static bool fasePrincipalDoProxy = false;
 static float autoProceedTimer = -1.0f;
-void Init_Transicao_Proxy(void)
+static bool transicaoFinalIniciada = false;
+static bool transicaoFinalFadeOut = false;
+static float transicaoFinalStartTime = 0.0f;
+static float transicaoFinalAnimStart = 0.0f;
+static bool transicaoFinalAnimTerminada = false;
+static bool transicaoFinalFadePosAnim = false;
+static float transicaoFinalFadePosAnimStart = 0.0f;
+static bool transicaoFinalEsperaPreDone = false;
+static Texture2D proxyEmpresa1;
+static Texture2D proxyDuplaTex;
+
+static void CarregarDuplaPorPersonagem(void)
+{
+    if (strcasecmp(gSelectedCharacterName, "Alice") == 0)
+        proxyDuplaTex = LoadTexture("src/sprites/dupla.png");
+    else if (strcasecmp(gSelectedCharacterName, "Dante") == 0)
+        proxyDuplaTex = LoadTexture("src/sprites/dupla2.png");
+    else if (strcasecmp(gSelectedCharacterName, "Jade") == 0)
+        proxyDuplaTex = LoadTexture("src/sprites/dupla3.png");
+    else
+        proxyDuplaTex = LoadTexture("src/sprites/dupla4.png");
+}
+static void UnloadDupla(void)
+{
+    if (proxyDuplaTex.id != 0)
+        UnloadTexture(proxyDuplaTex);
+    proxyDuplaTex.id = 0;
+}
+
+// =================== AJUSTE TOP FAIXA ==================
+static void DrawPanningEmpresa1(float tempo, float duracao)
+{
+    float panT = tempo / duracao;
+    if (panT > 1.0f) panT = 1.0f;
+    float panEase = panT * panT * (3.0f - 2.0f * panT);
+
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
+
+    // Calcula area de recorte fonte para SEMPRE preencher tela (letterbox/crop tipo "cover")
+    float texW = proxyEmpresa1.width;
+    float texH = proxyEmpresa1.height;
+    float screenRatio = (float)w / h;
+    float texRatio = texW / texH;
+    float cropW, cropH, cropX, cropY;
+    if (screenRatio > texRatio) {
+        cropW = texW;
+        cropH = texW / screenRatio;
+        cropY = (texH - cropH) * 0.5f;
+        cropX = 0;
+    } else {
+        cropH = texH;
+        cropW = texH * screenRatio;
+        cropX = (texW - cropW) * 0.5f;
+        cropY = 0;
+    }
+
+    // Pan horizontal: move cropX à direita
+    float maxPan = cropW * 0.07f;
+    float pan = maxPan * panEase;
+    DrawTexturePro(
+        proxyEmpresa1,
+        (Rectangle){cropX + pan, cropY, cropW - pan, cropH},
+        (Rectangle){0, 0, w, h},
+        (Vector2){0,0}, 0.0f, WHITE
+    );
+
+    if (proxyDuplaTex.id != 0) {
+        float FADESURG = 1.7f;
+        float fadeT = tempo / FADESURG;
+        if (fadeT > 1.0f) fadeT = 1.0f;
+        float fadeEase = fadeT * fadeT * (3.0f - 2.0f * fadeT);
+        unsigned char duplaAlpha = (unsigned char)(255 * fadeEase);
+        float escBase = 0.65f;
+        float spriteW = proxyDuplaTex.width;
+        float spriteH = proxyDuplaTex.height;
+        float maxW = w * 0.60f, maxH = h * 0.46f;
+        float escW = maxW / spriteW, escH = maxH / spriteH;
+        float escala = escBase;
+        if (escW < escala) escala = escW;
+        if (escH < escala) escala = escH;
+        float dstW = spriteW * escala;
+        float dstH = spriteH * escala;
+        float x = (w / 2.0f - dstW/2.0f) - 500;
+        float y = (h / 2.0f - dstH/2.0f) + 280;
+        DrawTexturePro(
+            proxyDuplaTex,
+            (Rectangle){0, 0, spriteW, spriteH},
+            (Rectangle){x, y, dstW, dstH},
+            (Vector2){0, 0}, 0.0f, (Color){255,255,255,duplaAlpha}
+        );
+    }
+}
+// =======================================================
+
+void Init_Transicao_Proxy2(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
     telefone_sprite = LoadTexture("src/sprites/tel_hank.png");
-    hankFalaSprite = LoadTexture("src/sprites/hankFala.png"); // AJUSTADO CARREGA SPRITE
+    hankFalaSprite = LoadTexture("src/sprites/hankFala.png");
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
     somRadio = LoadSound("src/music/voz-grosa.mp3");
@@ -85,7 +176,7 @@ void Init_Transicao_Proxy(void)
     SetSoundVolume(somFase1, 1.0f);
     SetSoundVolume(somTelefone, 1.0f);
     SetSoundVolume(somRadio, 3.5f);
-    SetSoundVolume(somPersonagem, 1.0f);    
+    SetSoundVolume(somPersonagem, 1.0f);
     SetMasterVolume(1.0f);
     SetSoundVolume(somChamadaAcabada, 2.0f);
     somFase1Tocado = false;
@@ -114,17 +205,27 @@ void Init_Transicao_Proxy(void)
     dicaTimer = 0.0f;
     dicaAnimando = false;
     posicaoDicaX = -300.0f;
-    // 3 dias depois
     introActive = true;
     introTimer = 0.0f;
     introAlpha = 0.0f;
     fasePrincipalDoProxy = false;
     autoProceedTimer = -1.0f;
+    transicaoFinalIniciada = false;
+    transicaoFinalFadeOut = false;
+    transicaoFinalStartTime = 0.0f;
+    transicaoFinalAnimStart = 0.0f;
+    transicaoFinalAnimTerminada = false;
+    transicaoFinalFadePosAnim = false;
+    transicaoFinalFadePosAnimStart = 0.0f;
+    transicaoFinalEsperaPreDone = false;
+    proxyEmpresa1 = LoadTexture("src/sprites/intro/empresa1.jpg");
+    CarregarDuplaPorPersonagem();
 }
-void Update_Transicao_Proxy(void)
+
+void Update_Transicao_Proxy2(void)
 {
     float delta = GetFrameTime();
-    // --- INTRO "3 dias depois" ---
+    if (transicaoFinalIniciada) { return; }
     if (introActive) {
         introTimer += delta;
         if (introTimer <= INTRO_FADE)
@@ -140,8 +241,7 @@ void Update_Transicao_Proxy(void)
         }
         return;
     }
-    if (!fasePrincipalDoProxy)
-        return;
+    if (!fasePrincipalDoProxy) return;
     tempoDesdeInicio += delta;
     if (!fase1FadeInDone)
     {
@@ -166,8 +266,7 @@ void Update_Transicao_Proxy(void)
             PlaySound(somRadio);
             somRadioTocado = true;
             const char *fala =
-                "Aqui é o Hank, você deve imaginar que o processo seletivo não será fácil, precisamos de você disponível a qualquer momento. Acabamos \nde detectar um tráfego incomum nos nossos servidores proxy." 
-                " Acesse da sua residencia e reconfigure o proxy para reforçar nossa \nsegurança. Siga os passos que deixei no post-it na sua mesa.";
+                "Fantástico, você esta indo muito bem. Irei passar agora na sua casa para lhe levar para o proximo desafio, você vai se surpreender \ncom o local. Espero que seu entendimento sobre criptografia esteja em dia, irá por em prática.";
             InitTypeWriter(&fase1Writer, fala, 16.5f);
             typeStarted = true;
         }
@@ -189,7 +288,7 @@ void Update_Transicao_Proxy(void)
         {
             PlaySound(somPersonagem);
             personagemAudioTocado = true;
-            const char *falaP = "Acabei de encontrar o post-it, agora basta configurar tudo.";
+            const char *falaP = "Combinado, já estou arrumando minhas coisas!";
             InitTypeWriter(&personagemWriter, falaP, 18.5f);
             personagemTypeStarted = true;
         }
@@ -214,20 +313,17 @@ void Update_Transicao_Proxy(void)
             fase1Writer.drawnChars = 0;
         }
     }
-    if (personagemTypeStarted && 
-        personagemWriter.drawnChars >= (int)strlen(GetCurrentText(&personagemWriter)))
+    if (personagemTypeStarted && personagemWriter.drawnChars >= (int)strlen(GetCurrentText(&personagemWriter)))
     {
-        if (autoProceedTimer < 0.0f) // se ainda não iniciou o timer
-            autoProceedTimer = 0.0f; // começa a contar
-    }
-    if (autoProceedTimer >= 0.0f && !done) {
-        autoProceedTimer += delta;
-        if (autoProceedTimer >= 2.0f) {
+        if (!transicaoFinalIniciada) {
+            transicaoFinalIniciada = true;
+            transicaoFinalFadeOut = true;
+            transicaoFinalStartTime = GetTime();
             StopSound(somFase1);
             StopSound(somTelefone);
             StopSound(somRadio);
-            done = true;
         }
+        return;
     }
     if (personagemTypeStarted)
         UpdateTypeWriter(&personagemWriter, delta, IsKeyPressed(KEY_SPACE));
@@ -237,7 +333,7 @@ void Update_Transicao_Proxy(void)
         {
             cooldownTelefone = 0.0f;
         }
-        else 
+        else
         {
             cooldownTelefone += delta;
             if (cooldownTelefone >= RING_GAP)
@@ -265,7 +361,7 @@ void Update_Transicao_Proxy(void)
             animacaoFeita       = false;
             animandoTelefone    = false;
             telefoneSubindo     = false;
-            hangUpCooldown   = 0.0f; 
+            hangUpCooldown   = 0.0f;
             cooldownTelefone = -5.0f;
             typeStarted      = false;
         }
@@ -295,28 +391,28 @@ void Update_Transicao_Proxy(void)
         PlaySound(somFase1);
         somFase1Tocado = true;
     }
-    if (tempoDesdeInicio >= 2.0f && !dicaVisivel) 
+    if (tempoDesdeInicio >= 2.0f && !dicaVisivel)
     {
         dicaVisivel = true;
         dicaAnimando = true;
     }
-    if (dicaVisivel) 
+    if (dicaVisivel)
     {
         dicaTimer += delta;
-        if (dicaAnimando && dicaTimer < 1.0f) 
+        if (dicaAnimando && dicaTimer < 1.0f)
         {
             posicaoDicaX += velocidadeDica * delta;
-            if (posicaoDicaX >= 20.0f) 
+            if (posicaoDicaX >= 20.0f)
             {
                 posicaoDicaX = 20.0f;
                 dicaAnimando = false;
             }
         }
-        if (dicaTimer >= 5.0f && dicaTimer < 7.0f) 
+        if (dicaTimer >= 5.0f && dicaTimer < 7.0f)
         {
             dicaAnimando = true;
             posicaoDicaX -= velocidadeDica * delta;
-            if (posicaoDicaX <= -420.0f) 
+            if (posicaoDicaX <= -420.0f)
             {
                 posicaoDicaX = -422.0f;
                 dicaVisivel = false;
@@ -375,17 +471,67 @@ static void DrawDialogueBox(const char *speaker,
         DrawText(tmp, boxX + 20, boxY + 30, fontBody, WHITE);
     }
 }
-void Draw_Transicao_Proxy()
+void Draw_Transicao_Proxy2()
 {
     BeginDrawing();
-    // --- INTRO "3 dias depois" ---
-    if (introActive || introAlpha > 0.0f) {
+    if (transicaoFinalIniciada)
+    {
+        float tempo = GetTime() - transicaoFinalStartTime;
+        const float FADE_DUR = 0.57f;
+        const float PAN_DUR = 4.2f;
+        const float FADE2_DUR = 1.4f; // ou mais lento
+        if (transicaoFinalFadeOut) {
+            float fadeT = tempo / FADE_DUR;
+            if (fadeT > 1.0f) fadeT = 1.0f;
+            ClearBackground(BLACK);
+            unsigned char fadeAlpha = (unsigned char)(255 * fadeT);
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0,0,0, fadeAlpha});
+            if (fadeT >= 1.0f) {
+                transicaoFinalFadeOut = false;
+                transicaoFinalAnimStart = GetTime();
+            }
+            EndDrawing();
+            return;
+        }
+        else if (transicaoFinalFadePosAnim) {
+            DrawPanningEmpresa1(PAN_DUR, PAN_DUR);
+            float tempoFade = GetTime() - transicaoFinalFadePosAnimStart;
+            float fadeT = tempoFade / FADE2_DUR;
+            if(fadeT > 1.0f) fadeT = 1.0f;
+            unsigned char fadeAlpha = (unsigned char)(255 * fadeT);
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0,0,0,fadeAlpha});
+            if (fadeT >= 1.0f && !transicaoFinalEsperaPreDone) {
+                transicaoFinalEsperaPreDone = true;
+            }
+            else if (fadeT >= 1.0f && transicaoFinalEsperaPreDone && !done) {
+                done = true;
+            }
+            EndDrawing();
+            return;
+        }
+        else {
+            float animElapsed = GetTime() - transicaoFinalAnimStart;
+            float animMax = PAN_DUR;
+            if (animElapsed > animMax) animElapsed = animMax;
+            DrawPanningEmpresa1(animElapsed, PAN_DUR);
+            if (animElapsed >= PAN_DUR && !transicaoFinalAnimTerminada) {
+                transicaoFinalAnimTerminada = true;
+                transicaoFinalFadePosAnim = true;
+                transicaoFinalFadePosAnimStart = GetTime();
+                transicaoFinalEsperaPreDone = false;
+            }
+            EndDrawing();
+            return;
+        }
+    }
+    if (introActive || introAlpha > 0.0f)
+    {
         ClearBackground(BLACK);
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, introAlpha));
-        const char *msg = "Na madrugada do mesmo dia";
+        DrawRectangle(0,0,GetScreenWidth(),GetScreenHeight(),Fade(BLACK,introAlpha));
+        const char *msg = "Instantes depois";
         int fSize = 40;
         int txtW = MeasureText(msg, fSize);
-        DrawText(msg, (GetScreenWidth() - txtW) / 2, GetScreenHeight() / 2 - fSize / 2, fSize, Fade(WHITE, introAlpha));
+        DrawText(msg, (GetScreenWidth()-txtW)/2, GetScreenHeight()/2-fSize/2, fSize, Fade(WHITE, introAlpha));
         EndDrawing();
         return;
     }
@@ -401,11 +547,11 @@ void Draw_Transicao_Proxy()
     bool drawUnknownNow = (interromperTelefone && typeStarted && !personagemTypeStarted);
     if (drawUnknownNow)
     {
-        // --- AJUSTADO: Desenha a sprite do Hank logo acima da caixa do dialogue ---
+        //int imgWidth = hankFalaSprite.width;
         int imgHeight = hankFalaSprite.height;
-        int x = 40; // igual a boxX na DrawDialogueBox
-        int y = GetScreenHeight() - 220 - imgHeight + 200; // ajuste para ficar logo acima (marginBottom + pequeno espaço)
-        float hankScale = 0.6f; // ajuste esse valor como quiser (1.0 = original, 2.0 = dobro, 0.5 = metade)
+        int x = 40;
+        int y = GetScreenHeight() - 220 - imgHeight + 200;
+        float hankScale = 0.6f;
         DrawTextureEx(hankFalaSprite, (Vector2){x, y}, 0.0f, hankScale, WHITE);
         DrawDialogueBox("Agente Hank", &fase1Writer, 24, 26);
     }
@@ -433,35 +579,30 @@ void Draw_Transicao_Proxy()
             telefone_sprite,
             (Rectangle){0, 0, spriteW, spriteH * 0.75f},
             telefoneBounds,
-            (Vector2){0, 0},
-            0.0f,
-            WHITE);
+            (Vector2){0, 0}, 0.0f, WHITE);
     }
     if (fadeAlphaFase1 > 0.0f)
     {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                     (Color){0, 0, 0, (unsigned char)(fadeAlphaFase1 * 255)});
     }
-    if (dicaVisivel) 
-    {
+    if (dicaVisivel)
         DrawDica(posicaoDicaX, 20, "Dica: atenda o telefone");
-    }
     EndDrawing();
 }
-bool Transicao_Proxy_Done(void)
-{
-    return done;
-}
-void Unload_Transicao_Proxy(void)
+bool Transicao_Proxy2_Done(void) { return done; }
+void Unload_Transicao_Proxy2(void)
 {
     UnloadModel(modelo3D);
     UnloadTexture(pergunta_img);
     UnloadTexture(telefone_sprite);
-    UnloadTexture(hankFalaSprite); // AJUSTADO: descarrega sprite
+    UnloadTexture(hankFalaSprite);
     UnloadSound(somFase1);
     UnloadSound(somTelefone);
     UnloadSound(somRadio);
     UnloadSound(somPersonagem);
     UnloadSound(somChamadaAcabada);
+    UnloadTexture(proxyEmpresa1);
+    UnloadDupla();
     EnableCursor();
 }

@@ -210,8 +210,8 @@ void Draw_BruteForce(void)
         if (mostrarCaixaDialogo)
         {
             const char *texto = (estadoCaixa == 0)
-                                    ? "Ola, sou a Gemini. Vou te instruir sempre que precisar."
-                                    : "Para continuar sua tarefa. Clique no icone do terminal.";
+                                    ? "Nova tarefa detectada: Brute Force"
+                                    : "Clique na pasta e use as informacoes dela para inserir os dados no terminal.";
 
             int padding = 20;
             int fontSize = 18;
