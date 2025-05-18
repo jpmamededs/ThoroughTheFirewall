@@ -201,8 +201,6 @@ void Update_ProxyUbuntu(void)
         }
     }
 
-    DIR *d = opendir(".");
-    struct dirent *dir;
     if (d)
     {
         while ((dir = readdir(d)) != NULL)
