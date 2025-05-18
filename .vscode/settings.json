@@ -34,7 +34,9 @@
         "terminal_proxy.h": "c",
         "template_ubuntu_01.h": "c",
         "direct.h": "c",
-        "firewall.h": "c"
+        "firewall.h": "c",
+        "shell3d_02.h": "c",
+        "transicao_proxy.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
