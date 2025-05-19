@@ -128,6 +128,12 @@ void Update_BruteForce(void)
 {
     float dt = GetFrameTime();
 
+    if (IsKeyPressed(KEY_A))
+    {
+        fase_concluida = true;
+    }
+    
+
     // Fade inicial
     fadeTimer += dt;
     if (!showBackground && fadeTimer >= (fadeDuration + fadePause))
