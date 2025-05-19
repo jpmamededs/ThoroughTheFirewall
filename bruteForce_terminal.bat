@@ -66,7 +66,7 @@ for /f "usebackq delims=" %%u in ("!usersFile!") do (
             echo.
             echo credentials found: superuser ^& passwd#Su123
             echo [INFO] Atualizando...
-            ping 127.0.0.1 -n 2 >nul
+            ping 127.0.0.1 -n 31 >nul
             goto AskSecretKey
         )
     )
@@ -78,7 +78,7 @@ echo [INFO] Secret Base64 Encrypted ID Key:
 set /p secretKey=Digite a chave secreta: 
 if /i "!secretKey!"=="dGVzdCBwYXNzZWQ=" (
     echo [INFO] Decrypted key: 'test passed'
-    echo test passed > dadosBruteForce.txt
+    echo OK > dadosBruteForce.txt
     ping 127.0.0.1 -n 3 >nul
     exit /b
 ) else (

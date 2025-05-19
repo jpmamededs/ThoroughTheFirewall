@@ -17,6 +17,7 @@ static Font geminiFont;
 static float fadeTimer = 0.0f;
 static float fadeDuration = 3.0f;
 static float fadePause = 1.0f;
+static const float esperaPreta = 2.0f;
 
 static bool showBackground = false;
 static bool bootSoundPlayed = false;
@@ -160,6 +161,19 @@ void Update_BruteForce(void)
                          "start \"\" \"%s\\bruteForce_terminal.bat\"", cwd);
                 system(command);
                 terminalChamado = true;
+            }
+        }
+    }
+
+    if (iniciandoTransicao)
+    {
+        tempoFadeOut += dt;
+        if (tempoFadeOut >= 1.0f)
+        {
+            tempoAposFade += dt;
+            if (tempoAposFade >= esperaPreta)
+            {
+                fase_concluida = true;
             }
         }
     }

