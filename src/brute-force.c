@@ -28,9 +28,6 @@ static bool showBackground = false;
 static bool bootSoundPlayed = false;
 static bool terminalChamado = false;
 static bool fase_concluida = false;
-static bool iniciandoTransicao = false;
-static float tempoFadeOut = 0.0f;
-static float tempoAposFade = 0.0f;
 static float tempoEspera = 0.0f;
 static bool esperaCompleta = false;
 
@@ -75,7 +72,8 @@ static void DrawDialogBox(Font font, const char *texto, Vector2 anchor, int alig
     int largura = (int)textSize.x + padding * 2;
     int altura = (int)textSize.y + padding * 2;
     int x = anchor.x;
-    if (alignRight) x -= largura + 20; // direita
+    if (alignRight)
+        x -= largura + 20; // direita
     int y = anchor.y - altura / 2;
     DrawRectangleRounded((Rectangle){x, y, largura, altura}, 0.3f, 16, bg);
     DrawTextEx(font, texto, (Vector2){x + padding, y + padding}, fontSize, 1, fg);
@@ -125,7 +123,6 @@ void Init_BruteForce(void)
     terminalChamado = false;
     aguardandoMensagemFinal = false;
 }
-
 
 void Update_BruteForce(void)
 {
@@ -214,6 +211,16 @@ void Update_BruteForce(void)
         }
     }
 
+    if (showBackground && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
+        Vector2 mouse = GetMousePosition();
+        Rectangle firefoxIconBounds = {firefoxPos_supesq.x, firefoxPos_supesq.y, firefoxIcon.width * firefoxSideScale_supesq, firefoxIcon.height * firefoxSideScale_supesq};
+        if (CheckCollisionPointRec(mouse, firefoxIconBounds))
+        {
+            system("start https://cybertechinc.vercel.app/");
+        }
+    }
+
     // Final/fase concluída/transição
     if (iniciandoTransicao)
     {
@@ -274,7 +281,6 @@ void Update_BruteForce(void)
     }
 }
 
-
 void Draw_BruteForce(void)
 {
     BeginDrawing();
@@ -323,7 +329,7 @@ void Draw_BruteForce(void)
         if (mostrarCaixaDialogo_infd)
         {
             const char *texto;
-            if      (estadoCaixa_infd == 0)
+            if (estadoCaixa_infd == 0)
                 texto = "Nova tarefa detectada: Brute Force";
             else if (estadoCaixa_infd == 1)
                 texto = "Clique na pasta e use as informacoes dela para inserir os dados no terminal.";
@@ -339,7 +345,7 @@ void Draw_BruteForce(void)
         if (mostrarCaixaDialogo_supesq)
         {
             const char *texto;
-            if      (estadoCaixa_supesq == 0)
+            if (estadoCaixa_supesq == 0)
                 texto = "Sou o Firefox do painel!";
             else
                 texto = "Outra mensagem lateral...";
@@ -361,7 +367,6 @@ void Draw_BruteForce(void)
 
     EndDrawing();
 }
-
 
 bool Fase_BruteForce_Concluida(void)
 {
