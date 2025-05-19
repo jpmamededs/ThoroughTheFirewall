@@ -28,6 +28,16 @@ static TypeWriter personagemWriter;
 static bool personagemTypeStarted = false;
 static bool personagemTypeVisible = false; // <--- CONTROLA VISIBILIDADE DO TEXTO
 
+// ================ DICA ================
+static bool dicaVisivel = false;
+static float dicaTimer = 0.0f;
+static bool dicaAnimando = false;
+static float posicaoDicaX = -300.0f;
+static const float velocidadeDica = 300.0f;
+static Sound steam_som;
+static bool steam_tocando = false;
+// =======================================
+
 // --- FUNÇÃO: DRAW DIALOGUE BOX ---
 static void DrawDialogueBox(const char *speaker, const TypeWriter *writer, int fontTitle, int fontBody)
 {
@@ -76,6 +86,7 @@ void Init_Shell3D_01()
     somBaterPorta = LoadMusicStream("src/music/batida-de-porta.mp3");
     somAbrindoPorta = LoadSound("src/music/doorOpening.mp3");
     SetMusicVolume(somBaterPorta, 3.0f);
+
     camera.position = (Vector3){0.0f, 1.6f, 0.0f};
     camera.target = (Vector3){0.0f, 1.6f, -1.0f};
     camera.up = (Vector3){0.0f, 1.0f, 0.0f};
@@ -99,12 +110,53 @@ void Init_Shell3D_01()
     somParado = false;
     // INICIA O TEXTO IMEDIATO
     InitTypeWriter(&personagemWriter, "Quem esta batendo na porta esta hora??", 17.0f);
+
+    // ==== DICA ====
+    steam_som  = LoadSound("src/music/steam-achievement.mp3");
+    SetSoundVolume(steam_som, 1.0f);
+    dicaVisivel = false;
+    dicaTimer = 0.0f;
+    dicaAnimando = false;
+    posicaoDicaX = -300.0f;
+    steam_tocando = false;
+    // ==============
 }
 
 // --- UPDATE ---
 void Update_Shell3D_01(void)
 {
     float delta = GetFrameTime();
+
+    // ---- DICA ----
+    if (tempoDesdeInicio >= 2.0f && !dicaVisivel) {
+        dicaVisivel = true;
+        dicaAnimando = true;
+    }
+    if (dicaVisivel)
+    {
+        dicaTimer += delta;
+        if (dicaAnimando && dicaTimer < 1.0f)
+        {
+            posicaoDicaX += velocidadeDica * delta;
+            if (posicaoDicaX >= 20.0f)
+            {
+                posicaoDicaX = 20.0f;
+                dicaAnimando = false;
+            }
+        }
+        if (dicaTimer >= 5.0f && dicaTimer < 7.0f)
+        {
+            dicaAnimando = true;
+            posicaoDicaX -= velocidadeDica * delta;
+            if (posicaoDicaX <= -420.0f)
+            {
+                posicaoDicaX = -422.0f;
+                dicaVisivel = false;
+            }
+        }
+    }
+    // --------------
+
     tempoDesdeInicio += delta;
     float mouseDeltaX = GetMouseDelta().x;
     cameraYaw += mouseDeltaX * 0.002f;
@@ -123,6 +175,7 @@ void Update_Shell3D_01(void)
     }
     if (!somParado && somTocado)
         UpdateMusicStream(somBaterPorta);
+
     // Typewriter roda normalmente, VISÍVEL até liberar prompt ao olhar para a porta
     if (personagemTypeStarted)
         UpdateTypeWriter(&personagemWriter, delta, IsKeyPressed(KEY_SPACE));
@@ -184,7 +237,6 @@ void Draw_Shell3D_01(void)
     DrawModel(modelo3D, (Vector3){0.0f, -0.5f, -2.0f}, 0.05f, WHITE);
     DrawModelEx(portaModel, portaPos, portaRotAxis, portaRotAngle, portaScale, WHITE);
     EndMode3D();
-
     // Caixa box de fala visível ENQUANTO personagemTypeVisible
     if (personagemTypeVisible)
     {
@@ -214,6 +266,17 @@ void Draw_Shell3D_01(void)
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                       (Color){0, 0, 0, (unsigned char)(fadeAlpha * 255)});
     }
+    // --- DICA TOPO ESQUERDO ---
+    if (dicaVisivel)
+    {
+        DrawDica(posicaoDicaX, 20, "Dica: atenda a porta");
+        if (!steam_tocando)
+        {
+            PlaySound(steam_som);
+            steam_tocando = true;
+        }
+    }
+    // ---------------------------
     EndDrawing();
 }
 
@@ -230,5 +293,6 @@ void Unload_Shell3D_01(void)
     UnloadTexture(pergunta_img);
     UnloadMusicStream(somBaterPorta);
     UnloadSound(somAbrindoPorta);
+    UnloadSound(steam_som); // dica
     EnableCursor();
 }
