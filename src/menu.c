@@ -141,7 +141,6 @@ void CreateCharacterList(void)
 void InitMenu(void)
 {
     currentScreen = MENU_MAIN;
-    if (!IsAudioDeviceReady()) InitAudioDevice();
     background = LoadTexture("src/sprites/intro/bgFinal.png");
     logo_jogo = LoadTexture("src/sprites/logo_jogo.png");
     hacker1 = LoadTexture("src/sprites/hacker1-unselected.png");

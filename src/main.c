@@ -38,6 +38,7 @@ AppState state = APP_CUTSCENES;
 AppState PFP_Iterrogatorio;
 AppState PFP_Loading;
 AppState PFP_Trasicao;
+AppState PFP_Loading_Iterrogatorio;
 
 PlayerStats playerStats;
 
@@ -74,7 +75,7 @@ int main(void)
     int screenWidth = GetMonitorWidth(0);
     int screenHeight = GetMonitorHeight(0);
 
-    InitWindow(screenWidth, screenHeight, "Blindspot Undercovered");
+    InitWindow(screenWidth, screenHeight, "Through The Firewall");
     SetTargetFPS(800);
     SetWindowPosition(0, 0); 
 
@@ -85,8 +86,6 @@ int main(void)
 
     SelecionarPerguntasAleatorias();
     InitPlayerStats(&playerStats);
-
-    InitCutscenes();
 
     static int perguntaAtual = -1;
     static bool firewall_Initialized = false;
@@ -113,14 +112,17 @@ int main(void)
     static bool transicao_Initialized = false;
     static bool ranking_Initialized = false;
     static bool menu_Initialized = false;
+    static bool intro_Initialized = false;
+    static bool cutscene_Initialized = false;
     static bool debug_Initialized = false;
     static bool transicao_proxy_Initialized = false;
     static bool transicao_proxy2_Initialized = false;
 
     // DEBUG DE SELEÇÃO DO NOME
-    strncpy(gSelectedCharacterName, "Jade", MAX_PLAYER_NAME);
-    playerStats.isPassouSelecao = false;
+    strncpy(gSelectedCharacterName, "Levi", MAX_PLAYER_NAME);
     gSelectedCharacterName[MAX_PLAYER_NAME-1] = '\0';
+    strncpy(gPlayerName, "Carlos Eduardo 22", MAX_PLAYER_NAME);
+    gPlayerName[MAX_PLAYER_NAME-1] = '\0';
 
     while (!WindowShouldClose())
     {
@@ -128,12 +130,17 @@ int main(void)
 
         if (state == APP_CUTSCENES)
         {
+            if (!cutscene_Initialized)
+            {
+                InitCutscenes();
+                cutscene_Initialized = true;
+            }
             UpdateCutscenes();
             DrawCutscenes();
             if (CutscenesEnded())
             {
                 UnloadCutscenes();
-                ResumeMusicStream(music);
+                cutscene_Initialized = false;
                 state = APP_MENU;
             }
         }
@@ -143,24 +150,24 @@ int main(void)
             {
                 InitMenu();
                 menu_Initialized = true;
+                ResumeMusicStream(music);
             }
             UpdateMenu();
             DrawMenu();
             if (MenuShowRanking())
             {
                 UnloadMenu();
-                ranking_Initialized = false;
                 menu_Initialized = false;
+                ranking_Initialized = false;
                 state = APP_RANKING;
             }
             if (MenuStartGame())
             {
                 PauseMusicStream(music);
                 UnloadMenu();
-                float temposIntroShow[3] = {11.0f, 8.0f, 10.0f};
-                float temposIntroEraser[3] = {1.5f, 1.5f, 1.5f};
-                InitIntro(temposIntroShow, temposIntroEraser);
-                state = APP_INTRO;
+                menu_Initialized = false;
+                state = APP_LOADING_SCREEN;
+                PFP_Loading = APP_INTRO;
             }
             // DEBUG KEYS
             if (IsKeyPressed(KEY_ONE))
@@ -290,7 +297,7 @@ int main(void)
                 PauseMusicStream(music);
                 UnloadMenu();
                 transicao_proxy_Initialized = false;
-                state = APP_TRANSICAO_PROXY2;
+                state = APP_TRANSICAO_PROXY;
             }
             if (IsKeyPressed(KEY_F))
             {
@@ -307,24 +314,16 @@ int main(void)
             {
                 Init_Ranking();
                 ranking_Initialized = true;
+                ResumeMusicStream(music);
             }
             Update_Ranking();
             Draw_Ranking();
-            if (Ranking_Concluido()) {
+            if (Ranking_Concluido()) 
+            {
                 Unload_Ranking();
                 ranking_Initialized = false;
+                menu_Initialized = false;
                 state = APP_MENU;
-            }
-        }
-        else if (state == APP_INTRO)
-        {
-            UpdateIntro();
-            DrawIntro();
-            if (IntroEnded())
-            {
-                UnloadIntro();
-                state = APP_LOADING_SCREEN;
-                PFP_Loading = APP_LIGACAO_DESCONHECIDO;
             }
         }
         else if (state == APP_LOADING_SCREEN)
@@ -341,6 +340,24 @@ int main(void)
                 Unload_LoadingScreen();
                 loading_Initialized = false;
                 state = PFP_Loading;
+            }
+        }
+        else if (state == APP_INTRO)
+        {
+            if (!intro_Initialized)
+            {
+                float temposIntroShow[3] = {11.0f, 8.0f, 6.0f};
+                float temposIntroEraser[3] = {1.5f, 1.5f, 2.0f};
+                InitIntro(temposIntroShow, temposIntroEraser);
+                intro_Initialized = true;
+            }
+            UpdateIntro();
+            DrawIntro();
+            if (IntroEnded())
+            {
+                UnloadIntro();
+                intro_Initialized = false;
+                state = APP_LIGACAO_DESCONHECIDO;
             }
         }
         else if (state == APP_LIGACAO_DESCONHECIDO)
@@ -443,23 +460,26 @@ int main(void)
             {
                 Unload_Desafio_01();
                 desafio_01_Initialized = false;
+
                 state = APP_LOADING_SCREEN;
                 PFP_Loading = INTERROGATORIO;
-                PFP_Iterrogatorio = APP_TRANSICAO_PROXY; // <- aqui está certo!
+                PFP_Iterrogatorio = APP_TRANSICAO_PROXY;
             }
         }
         else if (state == APP_TRANSICAO_PROXY)
         {
-            if (!transicao_proxy_Initialized) {
+            if (!transicao_proxy_Initialized) 
+            {
                 Init_Transicao_Proxy();
                 transicao_proxy_Initialized = true;
             }
             Update_Transicao_Proxy();
             Draw_Transicao_Proxy();
-            if (Transicao_Proxy_Done()) {
+            if (Transicao_Proxy_Done()) 
+            {
                 Unload_Transicao_Proxy();
                 transicao_proxy_Initialized = false;
-                state = APP_PROXY_3D;           // Aqui vai para o proxy!
+                state = APP_PROXY_3D;
             }
         }
         else if (state == APP_PROXY_3D)
@@ -686,6 +706,12 @@ int main(void)
             {
                 Unload_Shell3D_02();
                 shell3D_02_Initialized = false;
+
+                // FINALIZA O JOGO INDEPENDENTE DO SHELL                                 
+                SetPlayerGeneralStats(&playerStats);
+                playerStats.isPassouSelecao = false;
+                AppendPlayerToRankingFile(&playerStats, "ranking.txt");
+                RaylibSleep(1.0f);
                 state = APP_SHELL_UBUNTU;
             }
         }
@@ -718,6 +744,8 @@ int main(void)
             {
                 Unload_FinalJogo();
                 finalJogo_Initialized = false;
+
+                InitPlayerStats(&playerStats);
                 state = APP_RANKING;
             }
         }
@@ -742,8 +770,8 @@ int main(void)
         {
             if (!debug_Initialized)
             {
-                SetPlayerGeneralStats(&playerStats); // Carregaga os dados do jogador
-                AppendPlayerToRankingFile(&playerStats, "ranking.txt"); // Set no ranking
+                SetPlayerGeneralStats(&playerStats); 
+                AppendPlayerToRankingFile(&playerStats, "ranking.txt");
                 debug_Initialized = true;
             }
             UpdateDebug();

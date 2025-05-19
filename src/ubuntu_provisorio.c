@@ -157,6 +157,11 @@ void Update_ShellUbuntu(void)
         }
     }
 
+    if (IsKeyPressed(KEY_A))
+    {
+        fase_concluida = true;
+    }
+
     // (fase_concluida = true;)
     // isso define que a fase acabou, quando tiver essa lógica
     // coloque isso, ao inves de trocar o state, Carlos o gay agradeçe!

@@ -154,3 +154,11 @@ void DrawPromptBox(Rectangle rec, Color base, const char *txt, bool pulse)
     DrawText(txt, tp.x,   tp.y,   22, RAYWHITE);
 }
 
+void RaylibSleep(float seconds) {
+    double startTime = GetTime();
+    while ((GetTime() - startTime) < seconds) {
+        BeginDrawing();
+        ClearBackground(BLACK);
+        EndDrawing();
+    }
+}

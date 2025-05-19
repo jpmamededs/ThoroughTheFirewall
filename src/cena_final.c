@@ -167,8 +167,16 @@ void Update_FinalJogo(void)
             meninaTrocaRealizada = false;
             calvoTrocaRealizada  = false;
 
+            const char *personagemVisivel = playerStats.isPassouSelecao
+                    ? gSelectedCharacterName
+                    : (strcmp(gSelectedCharacterName, "Levi") == 0 ? "Alice" : "Levi");
+
             if (!playerStats.isPassouSelecao)
-                calvoTrocaRealizada = true;
+            {
+                if (strcmp(personagemVisivel, "Alice") == 0) 
+                    meninaTrocaRealizada = true; 
+                else calvoTrocaRealizada  = true;
+            }
             else
             {
                 if      (strcmp(gSelectedCharacterName, "Dante") == 0) spriteTrocaRealizada = true;
@@ -231,12 +239,12 @@ void Draw_FinalJogo(void)
     ClearBackground(BLACK);
     int screenHeight = GetScreenHeight();
     int screenWidth = GetScreenWidth();
-    if (textAnimActive)
-    {
-        DrawTextWithAnimation(gSelectedCharacterName);
-    }
 
-    const char *personagemVisivel =  playerStats.isPassouSelecao ? gSelectedCharacterName : "Levi";
+    const char *personagemVisivel = playerStats.isPassouSelecao
+                ? gSelectedCharacterName
+                : (strcmp(gSelectedCharacterName, "Levi") == 0 ? "Alice" : "Levi");
+
+        if (textAnimActive) DrawTextWithAnimation(personagemVisivel);
 
     // Fatores de escala
     const float scaleCarinha = 0.4f;
