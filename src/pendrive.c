@@ -92,7 +92,7 @@ void Init_Pendrive(void)
     dicaVisivel = false;
     dicaTimer = 0.0f;
     dicaAnimando = false;
-    posicaoDicaX = -300.0f;
+    posicaoDicaX = 0.0f;
     steam_tocando = false;
 }
 

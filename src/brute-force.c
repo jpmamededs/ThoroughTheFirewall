@@ -7,38 +7,26 @@
 #include <direct.h>
 #include <unistd.h>
 #include <dirent.h>
+
+// Recursos
 static Texture2D wallpaper;
 static Texture2D background;
 static Texture2D terminalIcon;
 static Texture2D geminiIcon;
+static Texture2D firefoxIcon; // << NOVO!
 static Texture2D folderIcon;
 static Font geminiFont;
 
+// Fade inicial
 static float fadeTimer = 0.0f;
 static float fadeDuration = 3.0f;
 static float fadePause = 1.0f;
 static const float esperaPreta = 2.0f;
 
+// Geral
 static bool showBackground = false;
 static bool bootSoundPlayed = false;
-
 static bool terminalChamado = false;
-
-static Vector2 geminiFinalPos;
-static Vector2 geminiAnimPos;
-static bool geminiAnimDone = false;
-static bool geminiAnimStarted = false;
-static float geminiAnimCooldown = 1.0f;
-static float geminiAnimTimer = 0.0f;
-
-static bool mostrarCaixaDialogo = false;
-static float tempoPosAnimacao = 0.0f;
-static float delayCaixaDialogo = 1.0f;
-
-static int estadoCaixa = 0;
-static float tempoCaixaDialogo = 0.0f;
-static const float trocaMensagemDelay = 3.0f;
-
 static bool fase_concluida = false;
 static bool iniciandoTransicao = false;
 static float tempoFadeOut = 0.0f;
@@ -47,12 +35,51 @@ static float tempoEspera = 0.0f;
 static bool esperaCompleta = false;
 
 static Rectangle folderBounds;
+static bool iniciandoTransicao = false;
+static float tempoFadeOut = 0.0f;
+static float tempoAposFade = 0.0f;
 
 // static bool iniciandoTransicao = false;
 // static float tempoFadeOut = 0.0f;
 // static float tempoAposFade = 0.0f;
+// GEMINI DIREITO INFERIOR (animado)
+static Vector2 geminiFinalPos_infd;
+static Vector2 geminiAnimPos_infd;
+static bool geminiAnimDone_infd = false;
+static bool geminiAnimStarted_infd = false;
+static float geminiAnimCooldown_infd = 1.0f;
+static float geminiAnimTimer_infd = 0.0f;
+static bool mostrarCaixaDialogo_infd = false;
+static float tempoPosAnimacao_infd = 0.0f;
+static float delayCaixaDialogo_infd = 1.0f;
+static int estadoCaixa_infd = 0;
+static float tempoCaixaDialogo_infd = 0.0f;
+static const float trocaMensagemDelay_infd = 3.0f;
+
+// FIREFOX SUPERIOR ESQUERDO (estático)
+static const float firefoxSideScale_supesq = 0.12f;
+static Vector2 firefoxPos_supesq;
+static bool mostrarCaixaDialogo_supesq = false;
+static int estadoCaixa_supesq = 0;
+static float tempoCaixaDialogo_supesq = 0.0f;
+static const float trocaMensagemDelay_supesq = 3.0f;
+
+// Mensagem final
 static float tempoMensagemFinal = 0.0f;
 static bool aguardandoMensagemFinal = false;
+
+// ==== FUNÇÃO AUXILIAR PARA DRAW CAIXA DIALOGO ====
+static void DrawDialogBox(Font font, const char *texto, Vector2 anchor, int alignRight, int fontSize, int padding, Color bg, Color fg)
+{
+    Vector2 textSize = MeasureTextEx(font, texto, fontSize, 1);
+    int largura = (int)textSize.x + padding * 2;
+    int altura = (int)textSize.y + padding * 2;
+    int x = anchor.x;
+    if (alignRight) x -= largura + 20; // direita
+    int y = anchor.y - altura / 2;
+    DrawRectangleRounded((Rectangle){x, y, largura, altura}, 0.3f, 16, bg);
+    DrawTextEx(font, texto, (Vector2){x + padding, y + padding}, fontSize, 1, fg);
+}
 
 void Init_BruteForce(void)
 {
@@ -60,6 +87,7 @@ void Init_BruteForce(void)
     background = LoadTexture("src/sprites/os/background.jpg");
     terminalIcon = LoadTexture("src/sprites/os/terminal_icon.png");
     geminiIcon = LoadTexture("src/sprites/os/gemini.png");
+    firefoxIcon = LoadTexture("src/sprites/os/firefox.png"); // << NOVO!
     folderIcon = LoadTexture("src/sprites/os/folder.png");
     geminiFont = LoadFont("src/fonts/GoogleSansMono.ttf");
 
@@ -67,95 +95,111 @@ void Init_BruteForce(void)
     showBackground = false;
     bootSoundPlayed = true;
 
-    float geminiAnimScale = 1.0f / 13.5f;
-    geminiFinalPos = (Vector2){
-        GetScreenWidth() - geminiIcon.width * geminiAnimScale - 20,
-        GetScreenHeight() - geminiIcon.height * geminiAnimScale - 20};
+    // Gemini inferior direito (animado)
+    float geminiAnimScale_infd = 1.0f / 13.5f;
+    geminiFinalPos_infd = (Vector2){
+        GetScreenWidth() - geminiIcon.width * geminiAnimScale_infd - 20,
+        GetScreenHeight() - (geminiIcon.height * geminiAnimScale_infd - 20) - 100};
+    geminiAnimPos_infd = (Vector2){GetScreenWidth(), geminiFinalPos_infd.y};
+    geminiAnimDone_infd = false;
+    geminiAnimStarted_infd = false;
+    geminiAnimTimer_infd = 0.0f;
+    mostrarCaixaDialogo_infd = false;
+    tempoPosAnimacao_infd = 0.0f;
+    tempoCaixaDialogo_infd = 0.0f;
+    estadoCaixa_infd = 0;
 
-    geminiAnimPos = (Vector2){GetScreenWidth(), geminiFinalPos.y};
-
-    geminiAnimDone = false;
-    geminiAnimStarted = false;
-    geminiAnimTimer = 0.0f;
-    mostrarCaixaDialogo = false;
-    tempoPosAnimacao = 0.0f;
-    tempoCaixaDialogo = 0.0f;
-    estadoCaixa = 0;
+    // Firefox superior esquerdo
+    int iconMargin = 10;
+    float yTerminal = iconMargin;
+    float yFirefox = yTerminal + terminalIcon.height * 1.3f + 8;
+    firefoxPos_supesq = (Vector2){iconMargin + 1, yFirefox};
+    mostrarCaixaDialogo_supesq = false;
+    estadoCaixa_supesq = 0;
+    tempoCaixaDialogo_supesq = 0.0f;
 
     fase_concluida = false;
+    iniciandoTransicao = false;
+    tempoFadeOut = 0.0f;
+    tempoAposFade = 0.0f;
+    terminalChamado = false;
+    aguardandoMensagemFinal = false;
 }
+
 
 void Update_BruteForce(void)
 {
     float dt = GetFrameTime();
-    fadeTimer += dt;
 
+    // Fade inicial
+    fadeTimer += dt;
     if (!showBackground && fadeTimer >= (fadeDuration + fadePause))
         showBackground = true;
 
-    if (bootSoundPlayed && !geminiAnimStarted)
+    // Gemini INFERIOR DIREITO (animado/aparece depois do fade)
+    if (bootSoundPlayed && !geminiAnimStarted_infd)
     {
-        geminiAnimTimer += dt;
-        if (geminiAnimTimer >= geminiAnimCooldown)
-            geminiAnimStarted = true;
+        geminiAnimTimer_infd += dt;
+        if (geminiAnimTimer_infd >= geminiAnimCooldown_infd)
+            geminiAnimStarted_infd = true;
     }
-
-    if (geminiAnimStarted && !geminiAnimDone)
+    if (geminiAnimStarted_infd && !geminiAnimDone_infd)
     {
         float speed = 600.0f * dt;
-        if (geminiAnimPos.x > geminiFinalPos.x)
+        if (geminiAnimPos_infd.x > geminiFinalPos_infd.x)
         {
-            geminiAnimPos.x -= speed;
-            if (geminiAnimPos.x < geminiFinalPos.x)
-                geminiAnimPos.x = geminiFinalPos.x;
+            geminiAnimPos_infd.x -= speed;
+            if (geminiAnimPos_infd.x < geminiFinalPos_infd.x)
+                geminiAnimPos_infd.x = geminiFinalPos_infd.x;
         }
         else
         {
-            geminiAnimDone = true;
-            tempoPosAnimacao = 0.0f;
+            geminiAnimDone_infd = true;
+            tempoPosAnimacao_infd = 0.0f;
         }
     }
-
-    if (geminiAnimDone && !mostrarCaixaDialogo)
+    if (geminiAnimDone_infd && !mostrarCaixaDialogo_infd)
     {
-        tempoPosAnimacao += dt;
-        if (tempoPosAnimacao >= delayCaixaDialogo)
-            mostrarCaixaDialogo = true;
+        tempoPosAnimacao_infd += dt;
+        if (tempoPosAnimacao_infd >= delayCaixaDialogo_infd)
+            mostrarCaixaDialogo_infd = true;
+    }
+    if (mostrarCaixaDialogo_infd && estadoCaixa_infd == 0)
+    {
+        tempoCaixaDialogo_infd += dt;
+        if (tempoCaixaDialogo_infd >= trocaMensagemDelay_infd)
+            estadoCaixa_infd = 1;
     }
 
-    if (mostrarCaixaDialogo && estadoCaixa == 0)
+    // Firefox SUPERIOR ESQUERDO lógica do dialogo (se/quando usar)
+    // Ligar mostrarCaixaDialogo_supesq conforme necessário
+    if (mostrarCaixaDialogo_supesq && estadoCaixa_supesq == 0)
     {
-        tempoCaixaDialogo += dt;
-        if (tempoCaixaDialogo >= trocaMensagemDelay)
-            estadoCaixa = 1;
+        tempoCaixaDialogo_supesq += dt;
+        if (tempoCaixaDialogo_supesq >= trocaMensagemDelay_supesq)
+            estadoCaixa_supesq = 1;
     }
 
+    // Clique Abrir Pasta
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         Vector2 mouse = GetMousePosition();
         if (CheckCollisionPointRec(mouse, folderBounds))
         {
             const char *exeDir = GetApplicationDirectory();
-
-            // Caminho final: [diretório do exe]/../hackingFiles
             char fullPath[512];
             snprintf(fullPath, sizeof(fullPath), "%s..\\hackingFiles", exeDir);
-
-            // Log para debug
-            TraceLog(LOG_INFO, "Abrindo pasta: %s", fullPath);
-
-            // Executar sem verificar, para garantir abertura mesmo com acentos
             char command[600];
             snprintf(command, sizeof(command), "explorer \"%s\"", fullPath);
             system(command);
         }
     }
 
+    // Clique Terminal
     if (showBackground && !terminalChamado && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         Vector2 mouse = GetMousePosition();
         Rectangle terminalIconBounds = {10, 10, terminalIcon.width * 1.5f, terminalIcon.height * 2.0f};
-
         if (CheckCollisionPointRec(mouse, terminalIconBounds))
         {
             char cwd[512];
@@ -170,6 +214,7 @@ void Update_BruteForce(void)
         }
     }
 
+    // Final/fase concluída/transição
     if (iniciandoTransicao)
     {
         tempoFadeOut += dt;
@@ -183,6 +228,7 @@ void Update_BruteForce(void)
         }
     }
 
+    // Checar "dadosBruteForce.txt" e iniciar mensagem final
     DIR *d = opendir(".");
     struct dirent *dir;
     if (d)
@@ -192,7 +238,7 @@ void Update_BruteForce(void)
             if ((strcmp(dir->d_name, "dadosBruteForce.txt") == 0))
             {
                 remove("dadosBruteForce.txt");
-                estadoCaixa = 2;
+                estadoCaixa_infd = 2;
                 tempoMensagemFinal = 0.0f;
                 aguardandoMensagemFinal = true;
                 iniciandoTransicao = true;
@@ -228,11 +274,13 @@ void Update_BruteForce(void)
     }
 }
 
+
 void Draw_BruteForce(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
 
+    // Fundo (fade/wallpaper)
     if (showBackground)
     {
         DrawTexturePro(background, (Rectangle){0, 0, background.width, background.height},
@@ -246,49 +294,61 @@ void Draw_BruteForce(void)
         DrawTextureEx(wallpaper, pos, 0.0f, 0.3f, (Color){255, 255, 255, (unsigned char)(alpha * 255)});
     }
 
+    // Barra lateral (semi-transp)
     DrawRectangle(0, 0, 80, GetScreenHeight(), (Color){0, 0, 0, 76});
 
     if (showBackground)
     {
         int iconMargin = 10;
         float terminalScale = 1.3f;
-        float geminiSideScale = 0.06f;
-
-        float yTerminal = iconMargin;
-        float yGemini = yTerminal + terminalIcon.height * terminalScale + 8;
-        float yFolder = yGemini + geminiIcon.height * geminiSideScale + 8;
-
         float folderScale = 0.12f;
+        // ícones LADO ESQUERDO:
+        float yTerminal = iconMargin;
+        float yFirefox = yTerminal + terminalIcon.height * terminalScale + 8;
+        float yFolder = yFirefox + firefoxIcon.height * firefoxSideScale_supesq + 8;
         float folderWidth = folderIcon.width * folderScale;
         float folderHeight = folderIcon.height * folderScale;
-
         folderBounds = (Rectangle){iconMargin + 1, yFolder, folderWidth, folderHeight};
-
+        // Ícones:
         DrawTextureEx(terminalIcon, (Vector2){iconMargin, yTerminal}, 0.0f, terminalScale, WHITE);
-        DrawTextureEx(geminiIcon, (Vector2){iconMargin + 1, yGemini}, 0.0f, geminiSideScale, WHITE);
+        DrawTextureEx(firefoxIcon, firefoxPos_supesq, 0.0f, firefoxSideScale_supesq, WHITE); // << TROCA PARA FIREFOX!
         DrawTextureEx(folderIcon, (Vector2){folderBounds.x, folderBounds.y}, 0.0f, folderScale, WHITE);
 
-        float geminiAnimScale = 1.0f / 13.5f;
+        // Gemini INFERIOR DIREITO (animado)
+        float geminiAnimScale_infd = 1.0f / 13.5f;
+        if (geminiAnimStarted_infd)
+            DrawTextureEx(geminiIcon, geminiAnimPos_infd, 0.0f, geminiAnimScale_infd, WHITE);
 
-        if (geminiAnimStarted)
-            DrawTextureEx(geminiIcon, geminiAnimPos, 0.0f, geminiAnimScale, WHITE);
-
-        if (mostrarCaixaDialogo)
+        // CAIXA DE DIÁLOGO - GEMINI INFERIOR DIREITO
+        if (mostrarCaixaDialogo_infd)
         {
-            const char *texto = (estadoCaixa == 0)
-                                    ? "Nova tarefa detectada: Brute Force"
-                                    : "Clique na pasta e use as informacoes dela para inserir os dados no terminal.";
-
-            int padding = 20;
+            const char *texto;
+            if      (estadoCaixa_infd == 0)
+                texto = "Nova tarefa detectada: Brute Force";
+            else if (estadoCaixa_infd == 1)
+                texto = "Clique na pasta e use as informacoes dela para inserir os dados no terminal.";
+            else
+                texto = "Missao concluida! :)";
+            Vector2 anchor_infd = (Vector2){geminiFinalPos_infd.x, geminiFinalPos_infd.y + 35};
             int fontSize = 18;
-            Vector2 textSize = MeasureTextEx(geminiFont, texto, fontSize, 1);
-            int largura = (int)textSize.x + padding * 2;
-            int altura = (int)textSize.y + padding * 2;
-            int x = geminiFinalPos.x - largura - 20;
-            int y = geminiFinalPos.y + 5 - altura / 2;
+            int padding = 20;
+            DrawDialogBox(geminiFont, texto, anchor_infd, 1, fontSize, padding, WHITE, DARKGRAY);
+        }
 
-            DrawRectangleRounded((Rectangle){x, y, largura, altura}, 0.3f, 16, WHITE);
-            DrawTextEx(geminiFont, texto, (Vector2){x + padding, y + padding}, fontSize, 1, DARKGRAY);
+        // CAIXA DE DIÁLOGO - FIREFOX SUPERIOR ESQUERDO (se/quando quiser ativar)
+        if (mostrarCaixaDialogo_supesq)
+        {
+            const char *texto;
+            if      (estadoCaixa_supesq == 0)
+                texto = "Sou o Firefox do painel!";
+            else
+                texto = "Outra mensagem lateral...";
+            // Caixinha ao lado do ícone lateral
+            Vector2 anchor_supesq = (Vector2){firefoxPos_supesq.x + firefoxIcon.width * firefoxSideScale_supesq + 12,
+                                              firefoxPos_supesq.y + (firefoxIcon.height * firefoxSideScale_supesq) / 2};
+            int fontSize = 16;
+            int padding = 16;
+            DrawDialogBox(geminiFont, texto, anchor_supesq, 0, fontSize, padding, WHITE, DARKGRAY);
         }
     }
 
@@ -302,6 +362,7 @@ void Draw_BruteForce(void)
     EndDrawing();
 }
 
+
 bool Fase_BruteForce_Concluida(void)
 {
     return fase_concluida;
@@ -313,6 +374,7 @@ void Unload_BruteForce(void)
     UnloadTexture(background);
     UnloadTexture(terminalIcon);
     UnloadTexture(geminiIcon);
+    UnloadTexture(firefoxIcon); // <- NOVO!
     UnloadTexture(folderIcon);
     UnloadFont(geminiFont);
 }
