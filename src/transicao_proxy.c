@@ -11,12 +11,10 @@ static Texture2D telefone_sprite;
 static Texture2D hankFalaSprite;
 static Sound somFase1;
 static Sound somTelefone;
-
 // ========== Novos sons ===================
 static Sound somAudio1;
 static Sound somAudio2;
 // =========================================
-
 static Sound somRadio; // Mantive para backwards compatibility, mas não será usado!
 static Camera3D camera;
 static Model portaModel;
@@ -26,7 +24,6 @@ static const float maxYaw = PI / 4.0f;
 static const float minYaw = -PI / 4.0f;
 static bool somFase1Tocado = false;
 static bool somRadioTocado = false; // Serve só para fluxo: não tocar mais vezes
-
 static bool interromperTelefone = false;
 static bool telefoneVisivel = false;
 static bool animandoTelefone = false;
@@ -71,13 +68,22 @@ static const float INTRO_HOLD = 2.5f;
 static bool fasePrincipalDoProxy = false;
 static float autoProceedTimer = -1.0f;
 
-
 // ====== Controle de fala Hank ============
 static enum {FALA_IDLE, FALA_AUDIO1, FALA_AUDIO2, FALA_DONE} estadoFala = FALA_IDLE;
 static float timerFala = 0.0f;
 static const char *fala1 = "Aqui é o Hank, você deve imaginar que o processo seletivo não será fácil, precisamos de você disponível a qualquer momento. Acabamos \nde detectar um tráfego incomum nos nossos servidores proxy.";
 static const char *fala2 = " Acesse da sua residencia e reconfigure o proxy para reforçar nossa \nsegurança. Siga os passos que deixei no post-it na sua mesa.";
 // =========================================
+
+// ====== Dica no topo esquerdo ==============
+static bool dicaVisivel = false;
+static float dicaTimer = 0.0f;
+static bool dicaAnimando = false;
+static float posicaoDicaX = -300.0f;
+static const float velocidadeDica = 300.0f;
+static Sound steam_som;
+static bool steam_tocando = false;
+// ============================================
 
 void Init_Transicao_Proxy(void)
 {
@@ -87,7 +93,6 @@ void Init_Transicao_Proxy(void)
     hankFalaSprite = LoadTexture("src/sprites/hankFala.png");
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
-
     // ========== Novos sons ================
     somAudio1 = LoadSound("src/music/audio1.mp3");
     somAudio2 = LoadSound("src/music/audio2.mp3");
@@ -96,6 +101,9 @@ void Init_Transicao_Proxy(void)
     somRadio = LoadSound("src/music/voz-grosa.mp3"); // nunca tocado aqui, só para não dar erro no UnloadSound
     somPersonagem = LoadSound("");
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
+    // ---- Dica ----
+    steam_som  = LoadSound("src/music/steam-achievement.mp3");
+    // --------------
     characterName = gSelectedCharacterName;
     portaModel = LoadModel("src/models/DOOR.obj");
     portaTexture = LoadTexture("src/models/Garage_Metalness.png");
@@ -108,6 +116,7 @@ void Init_Transicao_Proxy(void)
     SetSoundVolume(somPersonagem, 1.0f);    
     SetMasterVolume(1.0f);
     SetSoundVolume(somChamadaAcabada, 2.0f);
+    SetSoundVolume(steam_som, 1.0f);
     somFase1Tocado = false;
     somRadioTocado = false;
     interromperTelefone = false;
@@ -139,7 +148,13 @@ void Init_Transicao_Proxy(void)
     // ====== Reset estado de fala ==========
     estadoFala = FALA_IDLE;
     timerFala = 0.0f;
-    // ======================================
+    // ====== Dica =========
+    dicaVisivel = false;
+    dicaTimer = 0.0f;
+    dicaAnimando = false;
+    posicaoDicaX = -300.0f;
+    steam_tocando = false;
+    // =======================
 }
 void Update_Transicao_Proxy(void)
 {
@@ -230,7 +245,6 @@ void Update_Transicao_Proxy(void)
     }
     // ----------- FIM: Novo sistema de fala sincronizada --------------
 
-
     if (estadoFala == FALA_AUDIO1 || estadoFala == FALA_AUDIO2)
     {
         // Enquanto sincronizado pelo código acima, ignora o UpdateTypeWriter normal
@@ -247,7 +261,6 @@ void Update_Transicao_Proxy(void)
     {
         if (typeStarted) UpdateTypeWriter(&fase1Writer, delta, IsKeyPressed(KEY_SPACE));
     }
-
     if (typeStarted && !unknownDone && estadoFala == FALA_DONE && fase1Writer.drawnChars >= strlen(GetCurrentText(&fase1Writer)))
     {
         unknownDone       = true;
@@ -379,6 +392,37 @@ void Update_Transicao_Proxy(void)
         PlaySound(somFase1);
         somFase1Tocado = true;
     }
+
+    // --- DICA ANIMAÇÃO E SOM ---
+    if (tempoDesdeInicio >= 2.0f && !dicaVisivel) {
+        dicaVisivel = true;
+        dicaAnimando = true;
+    }
+    if (dicaVisivel)
+    {
+        dicaTimer += delta;
+        if (dicaAnimando && dicaTimer < 1.0f)
+        {
+            posicaoDicaX += velocidadeDica * delta;
+            if (posicaoDicaX >= 20.0f)
+            {
+                posicaoDicaX = 20.0f;
+                dicaAnimando = false;
+            }
+        }
+        if (dicaTimer >= 5.0f && dicaTimer < 7.0f)
+        {
+            dicaAnimando = true;
+            posicaoDicaX -= velocidadeDica * delta;
+            if (posicaoDicaX <= -420.0f)
+            {
+                posicaoDicaX = -422.0f;
+                dicaVisivel = false;
+            }
+        }
+    }
+    // --------------------------
+
     float mouseDeltaX = GetMouseDelta().x;
     cameraYaw += mouseDeltaX * 0.002f;
     if (cameraYaw > maxYaw) cameraYaw = maxYaw;
@@ -418,7 +462,6 @@ static void DrawDialogueBox(const char *speaker,
         DrawText(tmp, boxX + 20, boxY + 30, fontBody, WHITE);
     }
 }
-
 void Draw_Transicao_Proxy()
 {
     BeginDrawing();
@@ -485,6 +528,17 @@ void Draw_Transicao_Proxy()
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                     (Color){0, 0, 0, (unsigned char)(fadeAlphaFase1 * 255)});
     }
+    // --- DICA TOPO ESQUERDO ---
+    if (dicaVisivel)
+    {
+        DrawDica(posicaoDicaX, 20, "Dica: atenda a ligacao do Hank");
+        if (!steam_tocando)
+        {
+            PlaySound(steam_som);
+            steam_tocando = true;
+        }
+    }
+    // ---------------------------
     EndDrawing();
 }
 bool Transicao_Proxy_Done(void)
@@ -504,5 +558,6 @@ void Unload_Transicao_Proxy(void)
     //UnloadSound(somRadio); // só descarrega, nunca tocamos
     UnloadSound(somPersonagem);
     UnloadSound(somChamadaAcabada);
+    UnloadSound(steam_som); // --- DICA ---
     EnableCursor();
 }
