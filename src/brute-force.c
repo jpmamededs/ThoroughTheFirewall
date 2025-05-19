@@ -43,11 +43,11 @@ static bool fase_concluida = false;
 
 static Rectangle folderBounds;
 
-iniciandoTransicao = false;
-tempoFadeOut = 0.0f;
-tempoAposFade = 0.0f;
-tempoMensagemFinal = 0.0f;
-aguardandoMensagemFinal = false;
+//static bool iniciandoTransicao = false;
+//static float tempoFadeOut = 0.0f;
+//static float tempoAposFade = 0.0f;
+static float tempoMensagemFinal = 0.0f;
+static bool aguardandoMensagemFinal = false;
 
 void Init_BruteForce(void)
 {

@@ -50,11 +50,6 @@ static bool  gapSoundPlayed = false;
 #define RING_GAP 0.60f
 static bool done = false;
 static const char *characterName = "";
-static bool dicaVisivel = false;
-static float dicaTimer = 0.0f;
-static bool dicaAnimando = false;
-static float posicaoDicaX = -300.0f;
-static const float velocidadeDica = 300.0f;
 static const char *GetCurrentText(TypeWriter *writer) { return writer->text; }
 static bool introActive   = true;
 static float introTimer   = 0.0f;
@@ -201,10 +196,6 @@ void Init_Transicao_Proxy2(void)
     camera.projection = CAMERA_PERSPECTIVE;
     SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
     DisableCursor();
-    dicaVisivel = false;
-    dicaTimer = 0.0f;
-    dicaAnimando = false;
-    posicaoDicaX = -300.0f;
     introActive = true;
     introTimer = 0.0f;
     introAlpha = 0.0f;
@@ -391,34 +382,7 @@ void Update_Transicao_Proxy2(void)
         PlaySound(somFase1);
         somFase1Tocado = true;
     }
-    if (tempoDesdeInicio >= 2.0f && !dicaVisivel)
-    {
-        dicaVisivel = true;
-        dicaAnimando = true;
-    }
-    if (dicaVisivel)
-    {
-        dicaTimer += delta;
-        if (dicaAnimando && dicaTimer < 1.0f)
-        {
-            posicaoDicaX += velocidadeDica * delta;
-            if (posicaoDicaX >= 20.0f)
-            {
-                posicaoDicaX = 20.0f;
-                dicaAnimando = false;
-            }
-        }
-        if (dicaTimer >= 5.0f && dicaTimer < 7.0f)
-        {
-            dicaAnimando = true;
-            posicaoDicaX -= velocidadeDica * delta;
-            if (posicaoDicaX <= -420.0f)
-            {
-                posicaoDicaX = -422.0f;
-                dicaVisivel = false;
-            }
-        }
-    }
+    
     float mouseDeltaX = GetMouseDelta().x;
     cameraYaw += mouseDeltaX * 0.002f;
     if (cameraYaw > maxYaw) cameraYaw = maxYaw;
@@ -583,11 +547,9 @@ void Draw_Transicao_Proxy2()
     }
     if (fadeAlphaFase1 > 0.0f)
     {
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
-                    (Color){0, 0, 0, (unsigned char)(fadeAlphaFase1 * 255)});
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0, 0, 0, (unsigned char)(fadeAlphaFase1 * 255)});
     }
-    if (dicaVisivel)
-        DrawDica(posicaoDicaX, 20, "Dica: atenda o telefone");
+
     EndDrawing();
 }
 bool Transicao_Proxy2_Done(void) { return done; }

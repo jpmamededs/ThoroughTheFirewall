@@ -201,13 +201,13 @@ void Update_ProxyUbuntu(void)
         }
     }
 
-    DIR *d = opendir(".");
-    struct dirent *dir;
-    if (d)
+    DIR *d2 = opendir(".");
+    struct dirent *dir2;
+    if (d2)
     {
-        while ((dir = readdir(d)) != NULL)
+        while ((dir2 = readdir(d2)) != NULL)
         {
-            if (strcmp(dir->d_name, "dadosProxy.txt") == 0)
+            if (strcmp(dir2->d_name, "dadosProxy.txt") == 0)
             {
                 remove("dadosProxy.txt");
 
@@ -217,7 +217,7 @@ void Update_ProxyUbuntu(void)
                 break;
             }
         }
-        closedir(d);
+        closedir(d2);
     }
 
     if (IsKeyPressed(KEY_SPACE))

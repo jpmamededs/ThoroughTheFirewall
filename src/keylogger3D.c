@@ -62,8 +62,10 @@ static const char *characterName = "";
 static bool dicaVisivel = false;
 static float dicaTimer = 0.0f;
 static bool dicaAnimando = false;
-static float posicaoDicaX = -300.0f;        // Começa fora da tela
-static const float velocidadeDica = 300.0f; // Pixels por segundo
+static float posicaoDicaX = -300.0f;  
+static const float velocidadeDica = 300.0f; 
+static Sound steam_som;
+static bool steam_tocando = false;
 
 const char *GetCurrentTextFaseKeylogger(TypeWriter *writer)
 {
@@ -81,6 +83,7 @@ void Init_Keylogger3D()
     somRadio = LoadSound("src/music/voz-grosa.mp3");
     somPersonagem = LoadSound(""); // se quiser voz no cara, é so colocar o caminho aqui
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
+    steam_som  = LoadSound("src/music/steam-achievement.mp3");
     characterName = gSelectedCharacterName;
 
     portaModel = LoadModel("src/models/DOOR.obj");
@@ -513,6 +516,11 @@ void Draw_Keylogger3D()
     if (dicaVisivel)
     {
         DrawDica(posicaoDicaX, 20, "Dica: mova o mouse para olhar ao redor");
+        if (!steam_tocando)
+        {
+            PlaySound(steam_som);
+            steam_tocando = true;
+        }
     }
 
     EndDrawing();
@@ -533,5 +541,6 @@ void Unload_Keylogger3D(void)
     UnloadSound(somRadio);
     UnloadSound(somPersonagem);
     UnloadSound(somChamadaAcabada);
+    UnloadSound(steam_som);
     EnableCursor();
 }

