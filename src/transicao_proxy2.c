@@ -68,7 +68,6 @@ static float transicaoFinalFadePosAnimStart = 0.0f;
 static bool transicaoFinalEsperaPreDone = false;
 static Texture2D proxyEmpresa1;
 static Texture2D proxyDuplaTex;
-
 static void CarregarDuplaPorPersonagem(void)
 {
     if (strcasecmp(gSelectedCharacterName, "Alice") == 0)
@@ -86,18 +85,13 @@ static void UnloadDupla(void)
         UnloadTexture(proxyDuplaTex);
     proxyDuplaTex.id = 0;
 }
-
-// =================== AJUSTE TOP FAIXA ==================
 static void DrawPanningEmpresa1(float tempo, float duracao)
 {
     float panT = tempo / duracao;
     if (panT > 1.0f) panT = 1.0f;
     float panEase = panT * panT * (3.0f - 2.0f * panT);
-
     int w = GetScreenWidth();
     int h = GetScreenHeight();
-
-    // Calcula area de recorte fonte para SEMPRE preencher tela (letterbox/crop tipo "cover")
     float texW = proxyEmpresa1.width;
     float texH = proxyEmpresa1.height;
     float screenRatio = (float)w / h;
@@ -114,8 +108,6 @@ static void DrawPanningEmpresa1(float tempo, float duracao)
         cropX = (texW - cropW) * 0.5f;
         cropY = 0;
     }
-
-    // Pan horizontal: move cropX à direita
     float maxPan = cropW * 0.07f;
     float pan = maxPan * panEase;
     DrawTexturePro(
@@ -124,7 +116,6 @@ static void DrawPanningEmpresa1(float tempo, float duracao)
         (Rectangle){0, 0, w, h},
         (Vector2){0,0}, 0.0f, WHITE
     );
-
     if (proxyDuplaTex.id != 0) {
         float FADESURG = 1.7f;
         float fadeT = tempo / FADESURG;
@@ -151,8 +142,6 @@ static void DrawPanningEmpresa1(float tempo, float duracao)
         );
     }
 }
-// =======================================================
-
 void Init_Transicao_Proxy2(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
@@ -212,7 +201,6 @@ void Init_Transicao_Proxy2(void)
     proxyEmpresa1 = LoadTexture("src/sprites/intro/empresa1.jpg");
     CarregarDuplaPorPersonagem();
 }
-
 void Update_Transicao_Proxy2(void)
 {
     float delta = GetFrameTime();
@@ -318,6 +306,7 @@ void Update_Transicao_Proxy2(void)
     }
     if (personagemTypeStarted)
         UpdateTypeWriter(&personagemWriter, delta, IsKeyPressed(KEY_SPACE));
+    // =========== AJUSTE DA ANIMAÇÃO ================
     if (!interromperTelefone && !telefoneAtendido)
     {
         if (IsSoundPlaying(somTelefone))
@@ -341,25 +330,9 @@ void Update_Transicao_Proxy2(void)
             }
         }
     }
-    else
+    // Agora, anima PARA BAIXO em ambos os casos (atende e recusa):
+    if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_A)) // atender
     {
-        if (!telefoneAtendido && IsKeyPressed(KEY_D))
-        {
-            StopSound(somRadio);
-            StopSound(somTelefone);
-            interromperTelefone = false;
-            telefoneVisivel     = false;
-            animacaoFeita       = false;
-            animandoTelefone    = false;
-            telefoneSubindo     = false;
-            hangUpCooldown   = 0.0f;
-            cooldownTelefone = -5.0f;
-            typeStarted      = false;
-        }
-    }
-    if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_A))
-    {
-        telefoneVisivel  = false;
         interromperTelefone = true;
         telefoneAtendido = true;
         if (!typeStarted) delayTexto = 2.3f;
@@ -368,29 +341,14 @@ void Update_Transicao_Proxy2(void)
         telefoneSubindo  = false;
         animacaoTelefoneY = 0.0f;
     }
-    else if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_D))
+    else if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_D)) // recusa/desliga
     {
         StopSound(somTelefone);
-        telefoneVisivel  = false;
-        animacaoFeita    = false;
-        animandoTelefone = false;
-        hangUpCooldown   = 0.0f;
-        cooldownTelefone = -1.0f;
+        animandoTelefone = true;
+        telefoneSubindo  = false;
+        animacaoTelefoneY = 0.0f;
+        interromperTelefone = false;
     }
-    if (tempoDesdeInicio >= 4.0f && !somFase1Tocado)
-    {
-        PlaySound(somFase1);
-        somFase1Tocado = true;
-    }
-    
-    float mouseDeltaX = GetMouseDelta().x;
-    cameraYaw += mouseDeltaX * 0.002f;
-    if (cameraYaw > maxYaw) cameraYaw = maxYaw;
-    if (cameraYaw < minYaw) cameraYaw = minYaw;
-    float distance = 1.0f;
-    camera.target.x = camera.position.x + sinf(cameraYaw) * distance;
-    camera.target.z = camera.position.z - cosf(cameraYaw) * distance;
-    camera.target.y = camera.position.y;
     if (animandoTelefone)
     {
         float speed = 2.5f * delta;
@@ -401,9 +359,29 @@ void Update_Transicao_Proxy2(void)
             animandoTelefone = false;
             animacaoFeita = true;
             if (!telefoneSubindo)
+            {
                 telefoneVisivel = false;
+                if (!telefoneAtendido) // se foi recusa/desliga
+                {
+                    hangUpCooldown = 0.0f;
+                    cooldownTelefone = -1.0f;
+                }
+            }
         }
     }
+    if (tempoDesdeInicio >= 4.0f && !somFase1Tocado)
+    {
+        PlaySound(somFase1);
+        somFase1Tocado = true;
+    }
+    float mouseDeltaX = GetMouseDelta().x;
+    cameraYaw += mouseDeltaX * 0.002f;
+    if (cameraYaw > maxYaw) cameraYaw = maxYaw;
+    if (cameraYaw < minYaw) cameraYaw = minYaw;
+    float distance = 1.0f;
+    camera.target.x = camera.position.x + sinf(cameraYaw) * distance;
+    camera.target.z = camera.position.z - cosf(cameraYaw) * distance;
+    camera.target.y = camera.position.y;
 }
 static void DrawDialogueBox(const char *speaker,
                             const TypeWriter *writer,
@@ -443,7 +421,7 @@ void Draw_Transicao_Proxy2()
         float tempo = GetTime() - transicaoFinalStartTime;
         const float FADE_DUR = 0.57f;
         const float PAN_DUR = 4.2f;
-        const float FADE2_DUR = 1.4f; // ou mais lento
+        const float FADE2_DUR = 1.4f;
         if (transicaoFinalFadeOut) {
             float fadeT = tempo / FADE_DUR;
             if (fadeT > 1.0f) fadeT = 1.0f;
@@ -511,7 +489,6 @@ void Draw_Transicao_Proxy2()
     bool drawUnknownNow = (interromperTelefone && typeStarted && !personagemTypeStarted);
     if (drawUnknownNow)
     {
-        //int imgWidth = hankFalaSprite.width;
         int imgHeight = hankFalaSprite.height;
         int x = 40;
         int y = GetScreenHeight() - 220 - imgHeight + 200;
@@ -549,7 +526,6 @@ void Draw_Transicao_Proxy2()
     {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0, 0, 0, (unsigned char)(fadeAlphaFase1 * 255)});
     }
-
     EndDrawing();
 }
 bool Transicao_Proxy2_Done(void) { return done; }

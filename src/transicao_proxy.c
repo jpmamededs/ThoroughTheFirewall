@@ -7,7 +7,7 @@
 static Model modelo3D;
 static Texture2D pergunta_img;
 static Texture2D telefone_sprite;
-static Texture2D hankFalaSprite; // AJUSTADO NOVO SPRITE
+static Texture2D hankFalaSprite;
 static Sound somFase1;
 static Sound somTelefone;
 static Sound somRadio;
@@ -72,7 +72,7 @@ void Init_Transicao_Proxy(void)
     modelo3D = LoadModel("src/models/old-computer.obj");
     pergunta_img = LoadTexture("src/sprites/pergunta3.png");
     telefone_sprite = LoadTexture("src/sprites/tel_hank.png");
-    hankFalaSprite = LoadTexture("src/sprites/hankFala.png"); // AJUSTADO CARREGA SPRITE
+    hankFalaSprite = LoadTexture("src/sprites/hankFala.png");
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
     somRadio = LoadSound("src/music/voz-grosa.mp3");
@@ -217,8 +217,8 @@ void Update_Transicao_Proxy(void)
     if (personagemTypeStarted && 
         personagemWriter.drawnChars >= (int)strlen(GetCurrentText(&personagemWriter)))
     {
-        if (autoProceedTimer < 0.0f) // se ainda não iniciou o timer
-            autoProceedTimer = 0.0f; // começa a contar
+        if (autoProceedTimer < 0.0f)
+            autoProceedTimer = 0.0f;
     }
     if (autoProceedTimer >= 0.0f && !done) {
         autoProceedTimer += delta;
@@ -231,13 +231,15 @@ void Update_Transicao_Proxy(void)
     }
     if (personagemTypeStarted)
         UpdateTypeWriter(&personagemWriter, delta, IsKeyPressed(KEY_SPACE));
+
+    // --- TELEFONE: lógica e animações ajustadas ---
     if (!interromperTelefone && !telefoneAtendido)
     {
         if (IsSoundPlaying(somTelefone))
         {
             cooldownTelefone = 0.0f;
         }
-        else 
+        else
         {
             cooldownTelefone += delta;
             if (cooldownTelefone >= RING_GAP)
@@ -254,25 +256,12 @@ void Update_Transicao_Proxy(void)
             }
         }
     }
-    else
-    {
-        if (!telefoneAtendido && IsKeyPressed(KEY_D))
-        {
-            StopSound(somRadio);
-            StopSound(somTelefone);
-            interromperTelefone = false;
-            telefoneVisivel     = false;
-            animacaoFeita       = false;
-            animandoTelefone    = false;
-            telefoneSubindo     = false;
-            hangUpCooldown   = 0.0f; 
-            cooldownTelefone = -5.0f;
-            typeStarted      = false;
-        }
-    }
+    // NÃO DESLIGA MAIS TELEFONE AQUI - só via animação ao atender/recusar
+
+    // ----------- ANIMAÇÃO DESCENDO ao atender (A) OU recusar (D)  -----------
+    // ATENDER:
     if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_A))
     {
-        telefoneVisivel  = false;
         interromperTelefone = true;
         telefoneAtendido = true;
         if (!typeStarted) delayTexto = 2.3f;
@@ -281,15 +270,37 @@ void Update_Transicao_Proxy(void)
         telefoneSubindo  = false;
         animacaoTelefoneY = 0.0f;
     }
+    // RECUSAR:
     else if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_D))
     {
         StopSound(somTelefone);
-        telefoneVisivel  = false;
-        animacaoFeita    = false;
-        animandoTelefone = false;
-        hangUpCooldown   = 0.0f;
-        cooldownTelefone = -1.0f;
+        animandoTelefone = true;
+        telefoneSubindo  = false;
+        animacaoTelefoneY = 0.0f;
+        interromperTelefone = false;
     }
+
+    if (animandoTelefone)
+    {
+        float speed = 2.5f * delta;
+        animacaoTelefoneY += (telefoneSubindo ? -speed : speed);
+        if ((telefoneSubindo && animacaoTelefoneY <= 0.0f) || (!telefoneSubindo && animacaoTelefoneY >= 1.0f))
+        {
+            animacaoTelefoneY = telefoneSubindo ? 0.0f : 1.0f;
+            animandoTelefone = false;
+            animacaoFeita = true;
+            if (!telefoneSubindo)
+            {
+                telefoneVisivel = false;
+                if (!telefoneAtendido) // se foi recusa/desliga
+                {
+                    hangUpCooldown = 0.0f;
+                    cooldownTelefone = -1.0f;
+                }
+            }
+        }
+    }
+
     if (tempoDesdeInicio >= 4.0f && !somFase1Tocado)
     {
         PlaySound(somFase1);
@@ -331,20 +342,8 @@ void Update_Transicao_Proxy(void)
     camera.target.x = camera.position.x + sinf(cameraYaw) * distance;
     camera.target.z = camera.position.z - cosf(cameraYaw) * distance;
     camera.target.y = camera.position.y;
-    if (animandoTelefone)
-    {
-        float speed = 2.5f * delta;
-        animacaoTelefoneY += (telefoneSubindo ? -speed : speed);
-        if ((telefoneSubindo && animacaoTelefoneY <= 0.0f) || (!telefoneSubindo && animacaoTelefoneY >= 1.0f))
-        {
-            animacaoTelefoneY = telefoneSubindo ? 0.0f : 1.0f;
-            animandoTelefone = false;
-            animacaoFeita = true;
-            if (!telefoneSubindo)
-                telefoneVisivel = false;
-        }
-    }
 }
+
 static void DrawDialogueBox(const char *speaker,
                             const TypeWriter *writer,
                             int fontTitle,
@@ -401,11 +400,10 @@ void Draw_Transicao_Proxy()
     bool drawUnknownNow = (interromperTelefone && typeStarted && !personagemTypeStarted);
     if (drawUnknownNow)
     {
-        // --- AJUSTADO: Desenha a sprite do Hank logo acima da caixa do dialogue ---
         int imgHeight = hankFalaSprite.height;
-        int x = 40; // igual a boxX na DrawDialogueBox
-        int y = GetScreenHeight() - 220 - imgHeight + 200; // ajuste para ficar logo acima (marginBottom + pequeno espaço)
-        float hankScale = 0.6f; // ajuste esse valor como quiser (1.0 = original, 2.0 = dobro, 0.5 = metade)
+        int x = 40;
+        int y = GetScreenHeight() - 220 - imgHeight + 200;
+        float hankScale = 0.6f;
         DrawTextureEx(hankFalaSprite, (Vector2){x, y}, 0.0f, hankScale, WHITE);
         DrawDialogueBox("Agente Hank", &fase1Writer, 24, 26);
     }
@@ -457,7 +455,7 @@ void Unload_Transicao_Proxy(void)
     UnloadModel(modelo3D);
     UnloadTexture(pergunta_img);
     UnloadTexture(telefone_sprite);
-    UnloadTexture(hankFalaSprite); // AJUSTADO: descarrega sprite
+    UnloadTexture(hankFalaSprite);
     UnloadSound(somFase1);
     UnloadSound(somTelefone);
     UnloadSound(somRadio);
