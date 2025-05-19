@@ -220,7 +220,7 @@ void Update_Transicao_Proxy(void)
             PlaySound(somAudio2);
             timerFala = 0.0f;
             snprintf(falaComposta, sizeof(falaComposta), "%s%s", fala1, fala2);
-            int len2 = strlen(fala2);
+            //int len2 = strlen(fala2);
             // É necessário manter drawnChars cravado no fim do texto1 no início para fazer progressivo só em texto2
             InitTypeWriter(&fase1Writer, falaComposta, 9999.0f);
             fase1Writer.drawnChars = len1; // já com texto1 inteiro fixo, avança apenas texto2 agora

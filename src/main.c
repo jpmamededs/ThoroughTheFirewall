@@ -297,7 +297,7 @@ int main(void)
                 PauseMusicStream(music);
                 UnloadMenu();
                 transicao_proxy_Initialized = false;
-                state = APP_TRANSICAO_PROXY2;
+                state = APP_TRANSICAO_PROXY;
             }
             if (IsKeyPressed(KEY_F))
             {
