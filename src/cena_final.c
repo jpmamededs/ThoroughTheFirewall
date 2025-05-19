@@ -3,6 +3,8 @@
 #include "generalFunctions.h"
 #include "playerStats.h"
 #include <math.h>
+#include <string.h>
+#include <stdio.h>
 
 // --- UMA SEMANA DEPOIS ---
 static bool introActive = true;
@@ -102,9 +104,80 @@ static bool deuBomPlayed = false;
 static Sound paperSound;
 static bool paperSoundPlayed = false;
 
+static void DrawTextWrapped(Font font,
+                            const char *text,
+                            Rectangle rec,
+                            float fontSize,
+                            float spacing,
+                            Color tint)
+{
+    const float lineHeight = (fontSize + spacing) * 1.55f;
+    float y = rec.y;
+
+    char line[1024] = {0};
+    int  lineLen    = 0;
+
+    for (const char *p = text; *p; )
+    {
+        // 1) Trata quebra de linha explícita
+        if (*p == '\n') {
+            line[lineLen] = '\0';
+            DrawTextEx(font, line, (Vector2){rec.x, y}, fontSize, spacing, tint);
+            lineLen = 0;
+            y += lineHeight;
+            if (y + lineHeight > rec.y + rec.height) return;
+            ++p;
+            continue;
+        }
+
+        // 2) Copia a próxima palavra
+        char word[256];
+        int  wLen = 0;
+        while (*p && *p != ' ' && *p != '\n') {
+            word[wLen++] = *p++;
+            if (wLen >= 255) break;
+        }
+        word[wLen] = '\0';
+
+        // 3) Avança o ponteiro se havia espaço depois da palavra
+        bool hadSpace = (*p == ' ');
+        if (hadSpace) ++p;
+
+        // 4) Constrói uma linha “teste” com a palavra adicionada
+        char testLine[1024];
+        strcpy(testLine, line);
+        if (lineLen) strcat(testLine, " ");
+        strcat(testLine, word);
+
+        float testWidth = MeasureTextEx(font, testLine, fontSize, spacing).x;
+
+        if (testWidth > rec.width && lineLen > 0) {
+            // A palavra não cabe: desenha a linha atual e inicia outra
+            line[lineLen] = '\0';
+            DrawTextEx(font, line, (Vector2){rec.x, y}, fontSize, spacing, tint);
+            y += lineHeight;
+            if (y + lineHeight > rec.y + rec.height) return;
+
+            // reinicia a linha com a palavra que estourou
+            strcpy(line, word);
+            lineLen = wLen;
+        } else {
+            // Cabe: concatena (com espaço se não for a primeira)
+            if (lineLen) line[lineLen++] = ' ';
+            strcpy(line + lineLen, word);
+            lineLen += wLen;
+        }
+    }
+
+    // Desenha a última linha restante
+    if (lineLen && y + lineHeight <= rec.y + rec.height) {
+        line[lineLen] = '\0';
+        DrawTextEx(font, line, (Vector2){rec.x, y}, fontSize, spacing, tint);
+    }
+}
+
 void DrawResultadoSelecao(void) {
     int screenWidth = GetScreenWidth();
-    int screenHeight = GetScreenHeight();
     const char *resultadoTexto = playerStats.isPassouSelecao ? "APROVADO" : "REPROVADO";
     Color resultadoCor = playerStats.isPassouSelecao ? GREEN : RED;
 
@@ -578,9 +651,27 @@ void Draw_FinalJogo(void)
         int yCaderneta = yStart - (int)((yStart - yFinal) * ease);
         DrawResultadoSelecao();
         DrawTexture(caderneta, screenWidth / 2 - caderneta.width / 2, yCaderneta, WHITE);
-        int textYOffset = -20; // Para que o texto fique um pouco à frente da caderneta
-        int yTexto = yCaderneta + textYOffset;
-        DrawTextEx(fonteEscritaAMao, playerStats.relatorioGeral, (Vector2){screenWidth / 2 - MeasureTextEx(fonteEscritaAMao, playerStats.relatorioGeral, 20, 1).x / 2, yTexto}, 20, 1, WHITE);
+
+        const int marginL = 420;   // esquerda
+        const int marginT = 150;   // topo
+        const int marginR = 480;   // direita
+        const int marginB = 120;   // base
+
+        Rectangle folhaRec = {
+            screenWidth / 2 - caderneta.width / 2 + marginL,   // X
+            yCaderneta              + marginT,                 // Y
+            caderneta.width  - marginL - marginR,              // Largura disponível
+            caderneta.height - marginT - marginB               // Altura disponível
+        };
+
+        // Escreve o relatório dentro da folha
+        DrawTextWrapped(fonteEscritaAMao,
+                        playerStats.relatorioGeral,
+                        folhaRec,
+                        26.0f,   // tamanho da fonte
+                        1.0f,    // espaçamento entre chars
+                        BLACK
+        );
     }
 
     EndDrawing();

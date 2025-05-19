@@ -58,27 +58,25 @@ static void SetPlayerAndCharacter(PlayerStats *stats, const char *playerName, co
 
 static void GerarRelatorioGeralIA(char *relatorioGeral, size_t tamanho, bool aprovado)
 {
-    const char *statusStr = aprovado ? "APROVADO" : "REPROVADO";
-
     char prompt[4096];
     snprintf(prompt, sizeof(prompt),
-        "Você é o agente Hank e seu papel é decidir se um candidato usará suas habilidades cibernéticas **para o bem ou para o mal**.\n"
-        "Status final do candidato após os desafios: **%s**.\n\n"
+        "Você é o agente Hank e seu papel é decidir se um candidato usará suas habilidades cibernéticas **para o bem ou para o mal**.\n\n"
 
         "⚠️  Diretrizes (NÃO seja excessivamente rigoroso):\n"
         "• Os relatórios podem ser breves; não penalize pela falta de detalhes.\n"
         "• Se não houver indícios claros de má conduta, presuma boa fé.\n"
         "• Reserve críticas severas apenas quando houver evidência explícita de intenção maliciosa.\n\n"
 
-        "Com base nos relatórios individuais a seguir, gere um *RELATÓRIO_GERAL* coerente com o status **%s**.\n"
-        "Se **APROVADO**, destaque elogios e recomendações leves.\n"
-        "Se **REPROVADO**, apresente pontos de melhoria objetivos, mantendo tom profissional.\n\n"
+        "🔄 Restrições de formato:\n"
+        "• O relatório gerado deve conter apenas caracteres dentro do padrão ASCII (códigos de 0 a 127).\n"
+        "• O relatório deve ser uma única linha de texto, sem quebras de linha.\n\n"
+
+        "Com base nos relatórios individuais a seguir, gere um *RELATÓRIO_GERAL* coerente.\n"
         "Critérios de síntese:\n"
         "- Intenção Ética (Bem x Mal)\n"
         "- Responsabilidade Profissional\n"
         "- Gestão de Informações Sensíveis\n\n"
-        "Relatórios individuais:\n",
-        statusStr, statusStr
+        "Relatórios individuais:\n"
     );
 
     for (int i = 0; i < 4; i++) {
@@ -89,7 +87,7 @@ static void GerarRelatorioGeralIA(char *relatorioGeral, size_t tamanho, bool apr
 
     strcat(prompt,
         "\nFormato da resposta:\n"
-        "RELATORIO_GERAL=<relatório consolidado, objetivo e compatível com o status final>"
+        "RELATORIO_GERAL=<relatório consolidado e objetivo>"
     );
 
     char retorno[1024] = {0};
