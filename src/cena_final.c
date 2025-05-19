@@ -3,6 +3,7 @@
 #include "generalFunctions.h"
 #include "playerStats.h"
 #include <math.h>
+
 // ESSA É A TELA DO RESULTADO DO PROCESSO SELETIVO
 static bool fase_concluida = false;
 // Texturas
@@ -22,36 +23,57 @@ static const float TEXT_ANIM_DURATION = 0.65f;
 static bool textPersistent = true;
 static float textScale = 10.0f;
 static const float maxTextScale = 10.0f;
-
 static Sound medal;
+
 // Timer para controlar o aparecimento do escudo
 static float shieldAppearTimer = 0.0f;
-static bool shieldStartTimer = false; // Controla início da contagem do shield
-// --- ANIMAÇÃO DO SHIELD ---
+static bool shieldStartTimer = false;
+
+// --- ANIMAÇÃO DO SHIELD ENTRANDO ---
 static bool shieldAnimActive = false;
 static float shieldAnimProgress = 0.0f;
-static const float SHIELD_ANIM_DURATION = 0.65f;          // tempo de aceleração inicial (influencia só início)
-static const float SHIELD_DELAY_AFTER_REVELATION = 0.15f; // delay antes de surgir
+static const float SHIELD_ANIM_DURATION = 0.65f;
+static const float SHIELD_DELAY_AFTER_REVELATION = 0.15f;
+
+// --- ANIMAÇÃO DE SAÍDA DO SHIELD ---
+static bool shieldExitAnimActive = false;
+static float shieldExitAnimProgress = 0.0f;
+static const float SHIELD_EXIT_ANIM_DURATION = 0.7f;
+static float shieldExitTimer = 0.0f; // conta os 4s até o início da saída
+static bool shieldShouldExit = false;
+
+// --- ANIMAÇÃO DE SAÍDA DO TEXTO ---
+static bool textExitAnimActive = false;
+static float textExitAnimProgress = 0.0f;
+
+// --- ANIMAÇÃO DE SAÍDA DOS SPRITES ---
+static bool spritesExitAnimActive = false;
+static float spritesExitAnimProgress = 0.0f;
+
 // Áudio
 static Music writtenInTheStars;
-static Sound surpriseSound; // Novo som para o efeito de flash
+static Sound surpriseSound;
 static Sound congrats;
+
 // Variáveis de controle
 static float parallaxTimer = 0.0f;
 static const float parallaxDuration = 13.0f;
 static bool movimentoFinalizado = false;
 static float parallaxProgress = 0.0f;
-static bool surprisePlayed = false; // Para controlar se o som já foi tocado
+static bool surprisePlayed = false;
+
 // Posições finais
 static const int initialPos = 700;
 static const int finalPosMenina = 800;
 static const int finalPosCalvo = 900;
 static const int finalPosDeBone = 1000;
+
 // Variáveis para animação
 static bool spriteTrocaRealizada = false;
 static bool deBoneTrocaRealizada = false;
 static bool meninaTrocaRealizada = false;
 static bool calvoTrocaRealizada = false;
+
 // Variáveis para efeito de flash
 static float flashAlpha = 0.0f;
 static bool flashAtivo = false;
@@ -64,7 +86,6 @@ void StartTextAnimation(void)
     textAnimProgress = 0.0f;
 }
 
-// Função para atualizar a animação do texto
 void UpdateTextAnimation(void)
 {
     if (textAnimActive || textPersistent)
@@ -78,35 +99,28 @@ void UpdateTextAnimation(void)
     }
 }
 
-// Função para desenhar o texto com animação
-void DrawTextWithAnimation(const char *text)
+void DrawTextWithAnimationFadeOut(const char *text, float fadeOutAlpha)
 {
     int screenHeight = GetScreenHeight();
-    // O texto já começa na escala máxima
     if (textScale > maxTextScale)
         textScale = maxTextScale;
     float scale = textScale;
-
-    // Cálculo de easing para movimento de cima para baixo
     float alongamento = 4.0f;
     float expoente = 7.0f;
     float t = textAnimProgress;
     float ease = 1.0f - powf(1.0f - fminf(t / alongamento, 1.0f), expoente);
     if (textPersistent)
         ease += GetFrameTime() * 0.02f;
-
     static float slowMoveOffset = 0.0f;
     slowMoveOffset += GetFrameTime() * 10.0f;
-    int posY = -50 * scale + (int)((screenHeight * 0.8) * ease) + (int)slowMoveOffset; // Movimento de cima para baixo
-
-    // Desenhar texto no fundo (atrás de tudo)
-    DrawTextEx(GetFontDefault(), TextToUpper(text), (Vector2){20, posY}, 50 * scale, 2, (Color){255, 255, 255, 150});
+    int posY = -50 * scale + (int)((screenHeight * 0.8) * ease) + (int)slowMoveOffset;
+    unsigned char alpha = (unsigned char)(150 * fadeOutAlpha);
+    DrawTextEx(GetFontDefault(), TextToUpper(text), (Vector2){20, posY}, 50 * scale, 2, (Color){255, 255, 255, alpha});
 }
 
 void Init_FinalJogo(void)
 {
     fase_concluida = false;
-    // Carregar texturas
     carinhaRevelationSilhouette = LoadTexture("src/sprites/revelation/carinhaRevelationSilhouette.png");
     carinhaRevelation = LoadTexture("src/sprites/revelation/carinhaRevelation.png");
     meninaRevelationSilhouette = LoadTexture("src/sprites/revelation/meninaRevelationSilhouette.png");
@@ -118,13 +132,11 @@ void Init_FinalJogo(void)
     cybertechShield = LoadTexture("src/sprites/revelation/cybertechShield.png");
     congrats = LoadSound("src/music/congrats.wav");
     medal = LoadSound("src/music/medal.mp3");
-    // Carregar áudio
     writtenInTheStars = LoadMusicStream("src/music/writtenInTheStars.mp3");
-    surpriseSound = LoadSound("src/music/surprise.mp3"); // Carregar o som de surpresa
+    surpriseSound = LoadSound("src/music/surprise.mp3");
     PlayMusicStream(writtenInTheStars);
     SetMusicVolume(writtenInTheStars, 0.5f);
     PlaySound(congrats);
-    // Inicializar variáveis
     parallaxTimer = 0.0f;
     parallaxProgress = 0.0f;
     movimentoFinalizado = false;
@@ -135,46 +147,47 @@ void Init_FinalJogo(void)
     surprisePlayed = false;
     shieldAppearTimer = 0.0f;
     shieldStartTimer = false;
-    // ANIMAÇÃO SHIELD
     shieldAnimActive = false;
     shieldAnimProgress = 0.0f;
+    shieldExitAnimActive = false;
+    shieldExitAnimProgress = 0.0f;
+    shieldExitTimer = 0.0f;
+    shieldShouldExit = false;
+    textExitAnimActive = false;
+    textExitAnimProgress = 0.0f;
+    spritesExitAnimActive = false;
+    spritesExitAnimProgress = 0.0f;
 }
+
 void Update_FinalJogo(void)
 {
     UpdateTextAnimation();
     if (IsKeyPressed(KEY_ENTER)) {
         fase_concluida = true;
     }
-
     UpdateMusicStream(writtenInTheStars);
-    
-    // Atualizar movimento parallax
     if (!movimentoFinalizado)
     {
         parallaxTimer += GetFrameTime();
         parallaxProgress = parallaxTimer / parallaxDuration;
-
         if (parallaxProgress >= 1.0f)
         {
             parallaxProgress = 1.0f;
             movimentoFinalizado = true;
-            flashAtivo = true;  
+            flashAtivo = true;
             flashTimer = 0.0f;
             surprisePlayed = false;
-
             spriteTrocaRealizada = false;
             deBoneTrocaRealizada = false;
             meninaTrocaRealizada = false;
             calvoTrocaRealizada  = false;
-
             const char *personagemVisivel = playerStats.isPassouSelecao
                     ? gSelectedCharacterName
                     : (strcmp(gSelectedCharacterName, "Levi") == 0 ? "Alice" : "Levi");
-
             if (!playerStats.isPassouSelecao)
             {
-                if (strcmp(personagemVisivel, "Alice") == 0) 
-                    meninaTrocaRealizada = true; 
+                if (strcmp(personagemVisivel, "Alice") == 0)
+                    meninaTrocaRealizada = true;
                 else calvoTrocaRealizada  = true;
             }
             else
@@ -184,23 +197,19 @@ void Update_FinalJogo(void)
                 else if (strcmp(gSelectedCharacterName, "Alice") == 0) meninaTrocaRealizada = true;
                 else if (strcmp(gSelectedCharacterName, "Levi")  == 0) calvoTrocaRealizada  = true;
             }
-
             shieldStartTimer = true;
             shieldAppearTimer = 0.0f;
         }
     }
-    // Efeito de flash
     if (flashAtivo)
     {
-        // Tocar o som de surpresa apenas uma vez quando o flash começar
         if (!surprisePlayed)
         {
             PlaySound(surpriseSound);
-            flashAlpha = 1.0f; // Começa imediatamente com flash total
+            flashAlpha = 1.0f;
             surprisePlayed = true;
         }
         flashTimer += GetFrameTime();
-        // Apenas fade out na segunda metade da duração
         if (flashTimer >= flashDuration / 2)
         {
             flashAlpha = 1.0f - (flashTimer - flashDuration / 2) * 2.0f / flashDuration;
@@ -215,7 +224,6 @@ void Update_FinalJogo(void)
     {
         StartTextAnimation();
     }
-    // Delay entre revelação e princípio da animação do shield
     if (shieldStartTimer && !shieldAnimActive)
     {
         shieldAppearTimer += GetFrameTime();
@@ -223,50 +231,117 @@ void Update_FinalJogo(void)
         {
             shieldAnimActive = true;
             shieldAnimProgress = 0.0f;
-            shieldStartTimer = false; // Agora quem controla é a animação
+            shieldStartTimer = false;
         }
     }
-    // Animação do shield entrando (ease-out, nunca para)
     if (shieldAnimActive)
     {
         shieldAnimProgress += GetFrameTime() / SHIELD_ANIM_DURATION;
-        // Agora nunca para, shieldAnimProgress só cresce!
+    }
+    if (shieldAnimActive && !shieldShouldExit && shieldAnimProgress >= 1.0f)
+    {
+        shieldShouldExit = true;
+        shieldExitTimer = 0.0f;
+    }
+    if (shieldShouldExit && !shieldExitAnimActive)
+    {
+        shieldExitTimer += GetFrameTime();
+        if (shieldExitTimer >= 10.0f)
+        {
+            shieldExitAnimActive = true;
+            shieldExitAnimProgress = 0.0f;
+            shieldShouldExit = false;
+            textExitAnimActive = true;
+            textExitAnimProgress = 0.0f;
+            spritesExitAnimActive = true;
+            spritesExitAnimProgress = 0.0f;
+        }
+    }
+    if (shieldExitAnimActive)
+    {
+        shieldExitAnimProgress += GetFrameTime() / SHIELD_EXIT_ANIM_DURATION;
+        if (shieldExitAnimProgress >= 1.0f) shieldExitAnimProgress = 1.0f;
+    }
+    if (textExitAnimActive)
+    {
+        textExitAnimProgress += GetFrameTime() / SHIELD_EXIT_ANIM_DURATION;
+        if (textExitAnimProgress >= 1.0f)
+        {
+            textExitAnimProgress = 1.0f;
+            textExitAnimActive = false;
+        }
+    }
+    if (spritesExitAnimActive)
+    {
+        spritesExitAnimProgress += GetFrameTime() / SHIELD_EXIT_ANIM_DURATION;
+        if (spritesExitAnimProgress >= 1.0f)
+        {
+            spritesExitAnimProgress = 1.0f;
+            spritesExitAnimActive = false;
+        }
     }
 }
+
 void Draw_FinalJogo(void)
 {
     BeginDrawing();
     ClearBackground(BLACK);
     int screenHeight = GetScreenHeight();
     int screenWidth = GetScreenWidth();
-
     const char *personagemVisivel = playerStats.isPassouSelecao
                 ? gSelectedCharacterName
                 : (strcmp(gSelectedCharacterName, "Levi") == 0 ? "Alice" : "Levi");
 
-        if (textAnimActive) DrawTextWithAnimation(personagemVisivel);
+    float textAlpha = 1.0f;
+    if (textExitAnimActive || shieldExitAnimActive)
+    {
+        float t = (shieldExitAnimActive ? shieldExitAnimProgress : 0.0f);
+        if (textExitAnimActive) t = textExitAnimProgress;
+        textAlpha = 1.0f - powf(fminf(t, 1.0f), 2.0f);
+        if (textAlpha < 0.0f) textAlpha = 0.0f;
+    }
+    if (textAnimActive)
+        DrawTextWithAnimationFadeOut(personagemVisivel, textAlpha);
 
     // Fatores de escala
     const float scaleCarinha = 0.4f;
     const float scaleMenina = 0.6f;
     const float scaleCalvo = 0.8f;
     const float scaleDeBone = 1.0f;
-    // Calcular posições atuais com base no progresso
-    int xMenina = initialPos + (finalPosMenina - initialPos) * parallaxProgress;
-    int xCalvo = initialPos + (finalPosCalvo - initialPos) * parallaxProgress;
-    int xDeBone = initialPos + (finalPosDeBone - initialPos) * parallaxProgress;
-    // Posições Y (altura)
+
+    // --- ANIMAÇÃO DE SAÍDA SPRITES ---
+    float spritesExitF = 0.0f;
+    if (spritesExitAnimActive || shieldExitAnimActive)
+    {
+        float t = (spritesExitAnimActive ? spritesExitAnimProgress : 0.0f);
+        if (shieldExitAnimActive) t = shieldExitAnimProgress;
+        spritesExitF = powf(fminf(t, 1.0f), 2.5f); // ease-in
+    }
+
+    int xMeninaBase = initialPos + (finalPosMenina - initialPos) * parallaxProgress;
+    int xCalvoBase = initialPos + (finalPosCalvo - initialPos) * parallaxProgress;
+    int xDeBoneBase = initialPos + (finalPosDeBone - initialPos) * parallaxProgress;
+    int xCarinhaBase = initialPos;
+    int outMenina = screenWidth + 50;
+    int outCalvo = screenWidth + 50;
+    int outDeBone = screenWidth + 50;
+    int outCarinha = screenWidth + 50;
+
+    int xCarinha = xCarinhaBase + (outCarinha - xCarinhaBase) * spritesExitF;
+    int xMenina  = xMeninaBase  + (outMenina  - xMeninaBase)  * spritesExitF;
+    int xCalvo   = xCalvoBase   + (outCalvo   - xCalvoBase)   * spritesExitF;
+    int xDeBone  = xDeBoneBase  + (outDeBone  - xDeBoneBase)  * spritesExitF;
+
     int yCarinha = screenHeight - carinhaRevelationSilhouette.height * scaleCarinha;
     int yMenina = screenHeight - meninaRevelationSilhouette.height * scaleMenina;
     int yCalvo = screenHeight - calvoRevelationSilhouette.height * scaleCalvo;
     int yDeBone = screenHeight - deBoneRevelationSilhouette.height * scaleDeBone;
 
-    // DESENHAR OS SPRITES NA ORDEM CORRETA:
     if (strcmp(personagemVisivel, "Dante") == 0 && spriteTrocaRealizada)
     {
         DrawTexturePro(carinhaRevelation,
                        (Rectangle){0, 0, carinhaRevelation.width, carinhaRevelation.height},
-                       (Rectangle){initialPos, yCarinha,
+                       (Rectangle){xCarinha, yCarinha,
                                    carinhaRevelation.width * scaleCarinha,
                                    carinhaRevelation.height * scaleCarinha},
                        (Vector2){0, 0}, 0.0f, WHITE);
@@ -275,12 +350,11 @@ void Draw_FinalJogo(void)
     {
         DrawTexturePro(carinhaRevelationSilhouette,
                        (Rectangle){0, 0, carinhaRevelationSilhouette.width, carinhaRevelationSilhouette.height},
-                       (Rectangle){initialPos, yCarinha,
+                       (Rectangle){xCarinha, yCarinha,
                                    carinhaRevelationSilhouette.width * scaleCarinha,
                                    carinhaRevelationSilhouette.height * scaleCarinha},
                        (Vector2){0, 0}, 0.0f, WHITE);
     }
-    // 2. Alice (silhueta ou revelada)
     if (strcmp(personagemVisivel, "Alice") == 0 && meninaTrocaRealizada)
     {
         DrawTexturePro(meninaRevelation,
@@ -299,7 +373,6 @@ void Draw_FinalJogo(void)
                                    meninaRevelationSilhouette.height * scaleMenina},
                        (Vector2){0, 0}, 0.0f, WHITE);
     }
-
     if (strcmp(personagemVisivel, "Levi") == 0 && calvoTrocaRealizada)
     {
         DrawTexturePro(calvoRevelation, (Rectangle){0, 0, calvoRevelation.width, calvoRevelation.height}, (Rectangle){xCalvo, yCalvo,
@@ -316,7 +389,6 @@ void Draw_FinalJogo(void)
                                    calvoRevelationSilhouette.height * scaleCalvo},
                        (Vector2){0, 0}, 0.0f, WHITE);
     }
-
     if (strcmp(personagemVisivel, "Jade") == 0 && deBoneTrocaRealizada)
     {
         DrawTexturePro(deBoneRevelation,
@@ -335,42 +407,48 @@ void Draw_FinalJogo(void)
                                    deBoneRevelationSilhouette.height * scaleDeBone},
                        (Vector2){0, 0}, 0.0f, WHITE);
     }
-
-
-    // Efeito de flash
     if (flashAlpha > 0.0f)
     {
         DrawRectangle(0, 0, screenWidth, screenHeight,
                       (Color){255, 255, 255, (unsigned char)(flashAlpha * 255)});
     }
-    // ------ ANIMAÇÃO DO SHIELD ENTRANDO / NUNCA PARANDO ------
     float scale = 0.35f;
-    int shieldFinalX = 20;                             // Canto superior esquerdo (X)
-    int shieldFinalY = 20;                             // Canto superior esquerdo (Y) <<< AJUSTADO AQUI
-    int shieldStartX = -cybertechShield.width * scale; // Começa fora da tela
-    int shieldY = shieldFinalY;
+    int shieldFinalX = 20;
+    int shieldFinalY = 20;
+    int shieldStartX = -cybertechShield.width * scale;
     PlaySound(medal);
-    if (shieldAnimActive)
+    if (shieldAnimActive && !shieldExitAnimActive)
     {
-        float alongamento = 4.0f; // mais alto = mais longa a sensação de movimento
-        float expoente = 7.0f;    // mais alto = desacelera suave/forte no fim
+        float alongamento = 4.0f;
+        float expoente = 7.0f;
         float t = shieldAnimProgress;
         float ease = 1.0f - powf(1.0f - fminf(t / alongamento, 1.0f), expoente);
-
         int shieldX = (int)(shieldStartX + (shieldFinalX - shieldStartX) * ease);
-
         DrawTexturePro(
             cybertechShield,
             (Rectangle){0, 0, cybertechShield.width, cybertechShield.height},
-            (Rectangle){shieldX, shieldY, cybertechShield.width * scale, cybertechShield.height * scale},
+            (Rectangle){shieldX, shieldFinalY, cybertechShield.width * scale, cybertechShield.height * scale},
+            (Vector2){0, 0}, 0.0f, WHITE);
+    }
+    else if (shieldExitAnimActive)
+    {
+        float t = shieldExitAnimProgress;
+        float ease = powf(fminf(t, 1.0f), 2.5f);
+        int shieldOutX = (int)(shieldFinalX + (shieldStartX - shieldFinalX) * ease);
+        DrawTexturePro(
+            cybertechShield,
+            (Rectangle){0, 0, cybertechShield.width, cybertechShield.height},
+            (Rectangle){shieldOutX, shieldFinalY, cybertechShield.width * scale, cybertechShield.height * scale},
             (Vector2){0, 0}, 0.0f, WHITE);
     }
     EndDrawing();
 }
+
 bool Fase_FinalJogo_Concluida(void)
 {
     return fase_concluida;
 }
+
 void Unload_FinalJogo(void)
 {
     UnloadTexture(carinhaRevelationSilhouette);
