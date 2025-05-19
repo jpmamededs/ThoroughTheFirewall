@@ -48,7 +48,7 @@ static float cdMoveTimer = 0.0f;
 static float fadeOutBoxAlpha = 1.0f;
 static bool surprisePlayed = false;
 // TEXTOBOX ANIMADA
-static const char* typingText =
+static const char *typingText =
     "Você deve esta se perguntando, oque tem nessa caixa, certo? Dentro tem um cd contendo um malware reverse shell.Para sua tarefa \nfinal, você tem que infectar nosso PC com esse malware para controlá-lo remotamente. Vamos ver se você consegue cumprir isso...";
 static int typingIndex = 0;
 static float typingTimer = 0.0f;
@@ -158,7 +158,8 @@ void Update_ShellBox(void)
     if (startedTextboxDelay && !textboxActive)
     {
         textboxDelayTimer += GetFrameTime();
-        if (textboxDelayTimer >= 0.1f) {
+        if (textboxDelayTimer >= 0.1f)
+        {
             textboxActive = true;
             typingIndex = 0;
             typingTimer = 0.0f;
@@ -168,24 +169,29 @@ void Update_ShellBox(void)
     if (textboxActive && typingIndex < (int)strlen(typingText))
     {
         typingTimer += GetFrameTime();
-        if (typingTimer >= 0.056f) {
+        if (typingTimer >= 0.056f)
+        {
             typingIndex++;
             typingTimer = 0.0f;
         }
     }
     if (!dialogFadingOut && !IsSoundPlaying(sinalDesligadoSound) && sinalDesligadoPlayed)
     {
-        if (textboxActive) dialogFadingOut = true;
+        if (textboxActive)
+            dialogFadingOut = true;
     }
     if (dialogFadingOut)
     {
         dialogAlpha -= GetFrameTime() * 4.1f;
-        if (dialogAlpha < 0.0f) dialogAlpha = 0.0f;
-        if (!hankStartedOnce && dialogAlpha < hankStartAlpha) {
+        if (dialogAlpha < 0.0f)
+            dialogAlpha = 0.0f;
+        if (!hankStartedOnce && dialogAlpha < hankStartAlpha)
+        {
             cardHankActive = true;
             hankStartedOnce = true;
         }
-        if(dialogAlpha == 0.0f) textboxActive = false;
+        if (dialogAlpha == 0.0f)
+            textboxActive = false;
     }
     // ---- animação do hank...
     if (cardHankActive)
@@ -194,14 +200,17 @@ void Update_ShellBox(void)
         float dx = cardHankPosX - targetX;
         if (fabsf(dx) > 2.0f)
         {
-            float force = fmaxf(0.22f, fabsf(dx/12.0f));
+            float force = fmaxf(0.22f, fabsf(dx / 12.0f));
             cardHankVel *= 0.940f;
-            if(cardHankVel < HANK_MIN_VEL) cardHankVel = HANK_MIN_VEL;
+            if (cardHankVel < HANK_MIN_VEL)
+                cardHankVel = HANK_MIN_VEL;
             cardHankPosX -= cardHankVel * GetFrameTime() * force;
-            if(cardHankPosX < targetX) cardHankPosX = targetX;
+            if (cardHankPosX < targetX)
+                cardHankPosX = targetX;
         }
         // Quando Hank estiver na posição final, mostramos o botão (uma só vez)
-        if(!showEnterButton && fabsf(cardHankPosX - targetX) <= 2.0f) {
+        if (!showEnterButton && fabsf(cardHankPosX - targetX) <= 2.0f)
+        {
             showEnterButton = true;
         }
     }
@@ -216,23 +225,26 @@ void Update_ShellBox(void)
         float btnH = sprEnterButton.height * btnScale;
 
         // Centro menos 200 px (mais à esquerda)
-        float btnX = GetScreenWidth()/2 - btnW/2 - 200;
-        float btnY = GetScreenHeight()/2 - btnH/2;
+        float btnX = GetScreenWidth() / 2 - btnW / 2 - 200;
+        float btnY = GetScreenHeight() / 2 - btnH / 2;
 
         Vector2 mouse = GetMousePosition();
-        Rectangle btnRect = { btnX, btnY, btnW, btnH };
+        Rectangle btnRect = {btnX, btnY, btnW, btnH};
         bool hover = CheckCollisionPointRec(mouse, btnRect);
 
         // Clique/click
-        if ((hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) {
+        if ((hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER))
+        {
             shellbox_fadeout = true;
             shellbox_fadeout_time = 0.0f;
         }
     }
     // --- Fade de saída ao clicar enter
-    if (shellbox_fadeout) {
+    if (shellbox_fadeout)
+    {
         shellbox_fadeout_time += GetFrameTime();
-        if (shellbox_fadeout_time >= SHELLBOX_FADEOUT_DURACAO) {
+        if (shellbox_fadeout_time >= SHELLBOX_FADEOUT_DURACAO)
+        {
             fase_concluida = true;
         }
     }
@@ -370,12 +382,12 @@ void Draw_ShellBox(void)
         int verticalMargin = 16;
         int maxLineWidth = boxWidth - 2 * horizontalMargin;
         int maxLines = 2;
-        Color boxCol0 = (Color){0,0,0,(unsigned char)(100*dialogAlpha)};
-        Color boxCol1 = (Color){32,42,56,(unsigned char)(215*dialogAlpha)};
-        Color boxCol2 = (Color){220,220,255,(unsigned char)(130*dialogAlpha)};
-        DrawRectangleRounded((Rectangle){boxPosX+6, boxPosY+8, boxWidth, boxHeight}, 0.19f, 16, boxCol0);
+        Color boxCol0 = (Color){0, 0, 0, (unsigned char)(100 * dialogAlpha)};
+        Color boxCol1 = (Color){32, 42, 56, (unsigned char)(215 * dialogAlpha)};
+        Color boxCol2 = (Color){220, 220, 255, (unsigned char)(130 * dialogAlpha)};
+        DrawRectangleRounded((Rectangle){boxPosX + 6, boxPosY + 8, boxWidth, boxHeight}, 0.19f, 16, boxCol0);
         DrawRectangleRounded((Rectangle){boxPosX, boxPosY, boxWidth, boxHeight}, 0.19f, 16, boxCol1);
-        DrawRectangleRoundedLines((Rectangle){boxPosX, boxPosY, boxWidth, boxHeight}, 0.19f, 16, boxCol2);
+        DrawRectangleRoundedLines((Rectangle){boxPosX, boxPosY, boxWidth, boxHeight}, 0.19f, 16, 2.0f, boxCol2);
         Vector2 textPos = {boxPosX + horizontalMargin, boxPosY + verticalMargin};
         char displayText[600];
         int displayLen = 0;
@@ -391,7 +403,8 @@ void Draw_ShellBox(void)
                 currLineCount++;
                 currLineWidth = 0;
                 lastSpaceDisplayIdx = -1;
-                if (currLineCount > maxLines) break;
+                if (currLineCount > maxLines)
+                    break;
                 continue;
             }
             char onechar[2] = {c, 0};
@@ -423,7 +436,8 @@ void Draw_ShellBox(void)
                     currLineWidth = 0;
                 }
             }
-            if (currLineCount > maxLines) break;
+            if (currLineCount > maxLines)
+                break;
         }
         displayText[displayLen] = '\0';
         if (currLineCount > maxLines || (thisIdx < typingIndex && typingIndex - typingTextOffset > 8))
@@ -437,11 +451,12 @@ void Draw_ShellBox(void)
             {
                 typingTextOffset++;
             }
-            if (typingTextOffset > typingIndex-1) typingTextOffset = typingIndex-1;
+            if (typingTextOffset > typingIndex - 1)
+                typingTextOffset = typingIndex - 1;
         }
-        Color txtShadow = (Color){0,0,0,(unsigned char)(96*dialogAlpha)};
-        Color txtColor = (Color){255,255,255,(unsigned char)(255*dialogAlpha)};
-        DrawTextEx(GetFontDefault(), displayText, (Vector2){textPos.x+1.5f, textPos.y+2.5f}, fontSize, 1, txtShadow);
+        Color txtShadow = (Color){0, 0, 0, (unsigned char)(96 * dialogAlpha)};
+        Color txtColor = (Color){255, 255, 255, (unsigned char)(255 * dialogAlpha)};
+        DrawTextEx(GetFontDefault(), displayText, (Vector2){textPos.x + 1.5f, textPos.y + 2.5f}, fontSize, 1, txtShadow);
         DrawTextEx(GetFontDefault(), displayText, textPos, fontSize, 1, txtColor);
         float arrowAlpha = 100 + 80 * sinf(GetTime() * 4);
         if (typingIndex >= (int)strlen(typingText))
@@ -449,17 +464,16 @@ void Draw_ShellBox(void)
             int arrowW = 34;
             int arrowH = 30;
             DrawTextEx(GetFontDefault(), ">>",
-                (Vector2){
-                    boxPosX + boxWidth - arrowW,
-                    boxPosY + boxHeight - arrowH
-                },
-                fontSize, 1, (Color){180,200,230, (unsigned char)(arrowAlpha * dialogAlpha)});
+                       (Vector2){
+                           boxPosX + boxWidth - arrowW,
+                           boxPosY + boxHeight - arrowH},
+                       fontSize, 1, (Color){180, 200, 230, (unsigned char)(arrowAlpha * dialogAlpha)});
         }
     }
     // Hank chegando (aparece junto do fade)
     if (cardHankActive)
     {
-        int centerY = GetScreenHeight()/2 - cardHank.height/2;
+        int centerY = GetScreenHeight() / 2 - cardHank.height / 2;
         DrawTexture(cardHank, (int)cardHankPosX, centerY, WHITE);
     }
     // ------ BOTÃO ENTER ------
@@ -472,21 +486,22 @@ void Draw_ShellBox(void)
         float btnW = sprEnterButton.width * btnScale;
         float btnH = sprEnterButton.height * btnScale;
 
-        float btnX = GetScreenWidth()/2 - btnW/2 - 200;
-        float btnY = GetScreenHeight()/2 - btnH/2;
+        float btnX = GetScreenWidth() / 2 - btnW / 2 - 200;
+        float btnY = GetScreenHeight() / 2 - btnH / 2;
 
         Color sombra = (Color){0, 0, 0, 90};
         DrawRectangleRounded((Rectangle){btnX + 8, btnY + 8, btnW, btnH}, 0.25f, 10, sombra);
-        Color brilho = (pulse > 0.04f) ? (Color){255,255,255,75} : WHITE;
+        Color brilho = (pulse > 0.04f) ? (Color){255, 255, 255, 75} : WHITE;
         DrawTextureEx(sprEnterButton, (Vector2){btnX, btnY}, 0.0f, btnScale, brilho);
     }
     // ------ FADE OUT final ------
     if (shellbox_fadeout)
     {
         float perc = shellbox_fadeout_time / SHELLBOX_FADEOUT_DURACAO;
-        if (perc > 1.0f) perc = 1.0f;
+        if (perc > 1.0f)
+            perc = 1.0f;
         int alpha = (int)(255 * perc);
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0,0,0, alpha});
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0, 0, 0, alpha});
     }
     EndDrawing();
 }

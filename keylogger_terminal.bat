@@ -8,11 +8,14 @@ cls
 :: ASCII Art Inicial
 echo Keylogger
 echo.
-echo ██████  ███████  ██████  ██████   ██████ ███████ ██████ .
-echo ██   ██ ██      ██    ██ ██   ██ ██      ██      ██   ██ .
-echo ██████  █████   ██    ██ ██████  ██      █████   ██████  .
-echo ██   ██ ██      ██    ██ ██   ██ ██      ██   ██ ██   ██.
-echo ██████  ██       ██████  ██   ██  ██████ ███████ ██   ██ .
+echo .s5SSSs.  .s    s.  .s5SSSs.  .s    s.  .s5SSSSs.  
+echo       SS.       SS.       SS.       SS.    SSS     
+echo sS    `:; sSs.  SSS sS    SSS sS    SSS    S%S    
+echo `:;;;;.   SS `S.SSS SS    SSS SS    SSS    S%S    
+echo       ;;. SS  `sSSS SS    SSS SS    SSS    S%S    
+echo       `:; SS    `:; SS    `:; SS    `:;    `:;    
+echo. ,;   ;,. SS    ;,. SS    ;,. SS    ;,.    ;,.    
+echo `:;;;;;:' :;    ;:' `:;;;;;:' `:;;;;;:'    ;:'    
 echo.
 
 :: Solicita e valida o IP antes de prosseguir

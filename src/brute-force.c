@@ -40,12 +40,17 @@ static float tempoCaixaDialogo = 0.0f;
 static const float trocaMensagemDelay = 3.0f;
 
 static bool fase_concluida = false;
+static bool iniciandoTransicao = false;
+static float tempoFadeOut = 0.0f;
+static float tempoAposFade = 0.0f;
+static float tempoEspera = 0.0f;
+static bool esperaCompleta = false;
 
 static Rectangle folderBounds;
 
-//static bool iniciandoTransicao = false;
-//static float tempoFadeOut = 0.0f;
-//static float tempoAposFade = 0.0f;
+// static bool iniciandoTransicao = false;
+// static float tempoFadeOut = 0.0f;
+// static float tempoAposFade = 0.0f;
 static float tempoMensagemFinal = 0.0f;
 static bool aguardandoMensagemFinal = false;
 
@@ -184,22 +189,43 @@ void Update_BruteForce(void)
     {
         while ((dir = readdir(d)) != NULL)
         {
-            if (strcmp(dir->d_name, "dadosBruteForce.txt") == 0)
+            if ((strcmp(dir->d_name, "dadosBruteForce.txt") == 0))
             {
                 remove("dadosBruteForce.txt");
-
                 estadoCaixa = 2;
                 tempoMensagemFinal = 0.0f;
                 aguardandoMensagemFinal = true;
+                iniciandoTransicao = true;
+                tempoFadeOut = 0.0f;
                 break;
             }
         }
         closedir(d);
     }
 
-    // (fase_concluida = true;)
-    // isso define que a fase acabou, quando tiver essa lógica
-    // coloque isso, ao inves de trocar o state, Carlos agradeçe!
+    if (iniciandoTransicao)
+    {
+        // Verificar se a espera já terminou
+        if (!esperaCompleta)
+        {
+            // Incrementa o tempo de espera
+            tempoEspera += GetFrameTime();
+
+            // Verifica se os 4 segundos já passaram
+            if (tempoEspera >= 4.0f)
+            {
+                esperaCompleta = true;
+            }
+        }
+        else
+        {
+            // Após a espera, inicia o fade-out
+            tempoFadeOut += GetFrameTime();
+            float alpha = (tempoFadeOut < 1.0f) ? tempoFadeOut / 1.0f : 1.0f;
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                          (Color){0, 0, 0, (unsigned char)(alpha * 255)});
+        }
+    }
 }
 
 void Draw_BruteForce(void)
@@ -264,6 +290,13 @@ void Draw_BruteForce(void)
             DrawRectangleRounded((Rectangle){x, y, largura, altura}, 0.3f, 16, WHITE);
             DrawTextEx(geminiFont, texto, (Vector2){x + padding, y + padding}, fontSize, 1, DARKGRAY);
         }
+    }
+
+    if (iniciandoTransicao)
+    {
+        float alpha = (tempoFadeOut < 1.0f) ? tempoFadeOut / 1.0f : 1.0f;
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                      (Color){0, 0, 0, (unsigned char)(alpha * 255)});
     }
 
     EndDrawing();
