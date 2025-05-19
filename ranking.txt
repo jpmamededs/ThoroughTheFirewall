@@ -30,9 +30,3 @@ João Batista, Alice, 999.4, 1
 Mateus Andrade, Dante, 999.3, 1
 Carlos Santana, Jade, 999.2, 1
 Mamede Silva, Levi, 999.1, 1
-Sem Nome, Alice, 0.00, 0
-Sem Nome, Alice, 0.00, 0
-Sem Nome, Alice, 0.00, 0
-Sem Nome, Alice, 0.00, 0
-Sem Nome, Alice, 0.00, 0
-Sem Nome, Alice, 0.00, 0

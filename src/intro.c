@@ -88,7 +88,7 @@ void InitIntro(const float temposShow[], const float temposErase[])
     const char *templates[INTRO_PARTS] = {
         "Você, %s, é um jovem talento da cibersegurança e foi selecionado para participar de um processo seletivo ultra secreto do FBI. A missão é simples: provar que você é o melhor entre os quatro candidatos, completando uma série de desafios práticos relacionados à área de cibersegurança.\n",
         "O responsável pela seleção é o Agente Hank Miccuci, um especialista rigoroso e exigente, que avaliará não só suas habilidades técnicas, mas também sua ética e responsabilidade durante as provas.\n",
-        "Para conquistar a vaga, você precisará ser rápido, preciso e manter a integridade, pois qualquer atitude antiética pode custar sua chance. Mostre que você é capaz de defender sistemas críticos e se torne o próximo agente cibernético do FBI\n"
+        "Mostre que você é capaz de defender sistemas críticos e se torne o próximo agente cibernético do FBI\n"
     };
     // libera strings antigas
     for (int i = 0; i < INTRO_PARTS; i++) {

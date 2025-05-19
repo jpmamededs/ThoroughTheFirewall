@@ -75,8 +75,8 @@ Question perguntas[TOTAL_PERGUNTAS] =
     { "Você encontra, sem querer, registros detalhados de performance e feedbacks confidenciais sobre seus colegas em uma pasta aberta no servidor.\nVocê lê para saber o que dizem sobre você, reporta o acesso indevido ou fecha a pasta sem analisar nada?" },
     { "Durante uma manutenção de rotina, você descobre mensagens internas trocadas entre diretores sobre uma possível demissão em massa.\nVocê compartilha com os colegas que podem ser impactados, relata ao setor responsável pelo vazamento ou ignora completamente a descoberta?" },
     { "Seu superior diz para ignorar uma falha pequena e focar em outro problema. Você aceita ou insiste em corrigir mesmo assim?" },
-    { "Em uma investigação de rotina, descobre que há vídeos gravados por câmeras de segurança em locais sensíveis da empresa sem o conhecimento dos\nfuncionários. Você assiste aos vídeos, alerta quem está gravando ou ignora para não se envolver?" },
-    { "Você recebe um e-mail direcionado a outro funcionário, contendo anexos com documentos jurídicos confidenciais.Você lê o conteúdo para entender \ndo que se trata, avisa o remetente sobre o erro ou simplesmente apaga o e-mail?" },
+    { "Em uma investigação de rotina, descobre que há vídeos gravados por câmeras de segurança em locais sensíveis da empresa sem o conhecimento\n dos funcionários. Você assiste aos vídeos, alerta quem está gravando ou ignora para não se envolver?" },
+    { "Você recebe um e-mail direcionado a outro funcionário, contendo anexos com documentos jurídicos confidenciais.Você lê o conteúdo para entender\ndo que se trata, avisa o remetente sobre o erro ou simplesmente apaga o e-mail?" },
     { "Durante uma entrevista de desligamento, um ex-funcionário pede para transferir arquivos pessoais de sua estação. Ao acessar a máquina, você \npercebe que há documentos da empresa nos mesmos diretórios. Você revisa o conteúdo, transfere tudo sem olhar, ou separa e reporta os documentos da empresa antes de transferir?" },
     { "Você sabe que outro candidato está tentando sabotar seu progresso. Usaria suas habilidades para retaliar ou manteria seu foco na vaga?" }
 };
