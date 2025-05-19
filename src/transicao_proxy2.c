@@ -150,7 +150,9 @@ void Init_Transicao_Proxy2(void)
     hankFalaSprite = LoadTexture("src/sprites/hankFala.png");
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
-    somRadio = LoadSound("src/music/voz-grosa.mp3");
+    // ==== LINHA MODIFICADA ABAIXO:
+    somRadio = LoadSound("src/music/audio3.mp3");
+    // ==== FIM LINHA MODIFICADA
     somPersonagem = LoadSound("");
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
     characterName = gSelectedCharacterName;
@@ -246,7 +248,9 @@ void Update_Transicao_Proxy2(void)
             somRadioTocado = true;
             const char *fala =
                 "Fantástico, você esta indo muito bem. Irei passar agora na sua casa para lhe levar para o proximo desafio, você vai se surpreender \ncom o local. Espero que seu entendimento sobre criptografia esteja em dia, irá por em prática.";
-            InitTypeWriter(&fase1Writer, fala, 16.5f);
+            // ==== LINHA MODIFICADA ABAIXO:
+            InitTypeWriter(&fase1Writer, fala, 16.0f); // 192 caracteres dividido por 12 segundos = 16.0f
+            // ==== FIM LINHA MODIFICADA
             typeStarted = true;
         }
     }
