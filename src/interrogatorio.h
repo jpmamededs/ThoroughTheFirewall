@@ -17,6 +17,12 @@ typedef enum {
     ETAPA_TOTAL 
 } InterrogatorioStage;
 
+typedef struct Node {
+    InterrogatorioStage stage;
+    struct Node *prev;
+    struct Node *next;
+} Node;
+
 void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto);
 void Update_Interrogatorio(void);
 void Draw_Interrogatorio(void);
@@ -24,7 +30,12 @@ void Unload_Interrogatorio(void);
 void SelecionarPerguntasAleatorias(void);
 bool Fase_Interrogatorio_Concluida(void);
 
+void AddNode(InterrogatorioStage st); 
+void NextStage(void);
+void ClearStages(void);
+
 #define TOTAL_PERGUNTAS 10
 extern int perguntasSelecionadas[MAX_PERGUNTAS];
+extern Node *atual;
 
 #endif

@@ -32,7 +32,6 @@ static struct
     bool        usandoExtra; 
 
     // Controle geral
-    InterrogatorioStage stage;
     float fadeWhiteAlpha;
     bool  fadeWhiteIn, fadeWhiteOut;
 
@@ -96,6 +95,41 @@ int perguntasSelecionadas[MAX_PERGUNTAS];
 static bool semPergunta = false; 
 static bool fase_concluida = false;
 
+Node *atual = NULL;
+Node *tail = NULL;
+Node *head = NULL;
+
+void AddNode(InterrogatorioStage st)
+{
+    Node *novo = malloc(sizeof(Node));
+    if (novo) {
+        novo->stage = st;
+        novo->prev = novo->next = NULL;
+        if (head == NULL) head = tail = novo;
+        else {
+            tail->next = novo;
+            novo->prev = tail;
+            tail = novo;
+        }
+    }
+}
+
+void NextStage(void)
+{
+    if (atual != NULL && atual->next != NULL) atual = atual->next;
+}
+
+void ClearStages(void)
+{
+    Node *p = head;
+    while (p) {
+        Node *next = p->next;
+        free(p);
+        p = next;
+    }
+    head = tail = atual = NULL;
+}
+
 void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto)
 {
     // Carregar recursos --------------------------------------------------
@@ -112,7 +146,6 @@ void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto
     PlayMusicStream(ctx.interrogationMusic);
 
     // Estado geral -------------------------------------------------------
-    ctx.stage = APRESENTACAO;
     ctx.fadeWhiteAlpha = 0.0f;
     ctx.fadeWhiteIn = ctx.fadeWhiteOut = false;
     semPergunta = (perguntaIndex < 0);
@@ -129,6 +162,20 @@ void Init_Interrogatorio(int perguntaIndex, const char *audio, const char *texto
     }
     ctx.usandoExtra   = false;
     ctx.falaSomTocado = false;
+
+    // Inicia a Lista Duplamente Encadeada ---------------------------------
+    ClearStages();
+
+    if (semPergunta) {
+        AddNode(APRESENTACAO);
+        AddNode(FALA_HANK);
+    } else {
+        AddNode(APRESENTACAO);
+        AddNode(FALA_HANK);
+        AddNode(TRANSICAO_PRE_PERGUNTA);
+        AddNode(PERGUNTA_INTERROGATORIO);
+    }
+    atual = head;
 
     // ETAPA 1 ------------------------------------------------------------
     ctx.posNome   = (Vector2){ GetScreenWidth(), GetScreenHeight() - ctx.spriteNome.height - 50 };
@@ -165,7 +212,7 @@ void Update_Interrogatorio(void)
 {
     UpdateMusicStream(ctx.interrogationMusic);
     float dt = GetFrameTime();
-    stageUpdates[ctx.stage](dt);
+    stageUpdates[atual->stage](dt);
 }
 
 void Draw_Interrogatorio(void)
@@ -177,7 +224,7 @@ void Draw_Interrogatorio(void)
     Rectangle dst = {0,0,(float)GetScreenWidth(),(float)GetScreenHeight()};
     DrawTexturePro(ctx.background, src, dst, (Vector2){0,0}, 0, WHITE);
 
-    stageDraws[ctx.stage]();
+    stageDraws[atual->stage]();
     DrawFade();
 
     EndDrawing();
@@ -207,7 +254,7 @@ static void UpdateApresentacao(float dt)
         ctx.fadeWhiteAlpha += dt * 1.5f;
         if (ctx.fadeWhiteAlpha >= 1.f) {
             ctx.fadeWhiteAlpha = 1.f; ctx.fadeWhiteIn = false; ctx.fadeWhiteOut = true;
-            ctx.stage = FALA_HANK;
+            NextStage();
             ctx.mostrarConfiante = true;
         }
     }
@@ -231,7 +278,6 @@ static void UpdateFalaHank(float dt)
 
         if (semPergunta)
         {
-            /* 1ª vez: ainda vamos mostrar o texto extra */
             if (!ctx.usandoExtra && ctx.falaTextoExtra)
             {
                 ctx.usandoExtra = true;
@@ -240,15 +286,14 @@ static void UpdateFalaHank(float dt)
                 ctx.falaAudio = LoadSound("src/music/fala_apresentacao_2.mp3");
                 SetSoundVolume(ctx.falaAudio, 4.0f);
                 ctx.falaSomTocado = false;
-                return;                 /* ← exibe texto extra e sai */
+                return;
             }
 
-            /* 2ª vez: já mostrou o extra → termina a fase */
             fase_concluida = true;
-            return;                     /* ← sai imediatamente */
+            return;
         }
 
-        ctx.stage       = TRANSICAO_PRE_PERGUNTA;
+        NextStage();
         PauseMusicStream(ctx.interrogationMusic);
         PlaySound(ctx.sfxHolofote);
         ctx.transPhase  = 0;
@@ -264,7 +309,7 @@ static void UpdateFalaHank(float dt)
             return;
         } else {
             PlaySound(ctx.somFalaDetetive2);
-            ctx.stage = PERGUNTA_INTERROGATORIO;
+            NextStage();
             ctx.respostaLen = 0;
             ctx.respostaBuf[0] = '\0';
             ctx.aguardandoInput = true;
@@ -480,7 +525,7 @@ static void UpdateTransicaoPrePergunta(float dt)
         case 2:
             ctx.revealProg = fminf(ctx.transTimer / ctx.transDur, 1.0f);
             if (ctx.revealProg >= 1.0f) {
-                ctx.stage = PERGUNTA_INTERROGATORIO;
+                NextStage();
                 ctx.aguardandoInput = true;      // permite digitar
                 ctx.respostaLen     = 0;         // zera buffer
                 ctx.respostaBuf[0]  = '\0';
