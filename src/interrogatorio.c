@@ -75,9 +75,9 @@ Question perguntas[TOTAL_PERGUNTAS] =
     { "Você encontra, sem querer, registros detalhados de performance e feedbacks confidenciais sobre seus colegas em uma pasta aberta no servidor.\nVocê lê para saber o que dizem sobre você, reporta o acesso indevido ou fecha a pasta sem analisar nada?" },
     { "Durante uma manutenção de rotina, você descobre mensagens internas trocadas entre diretores sobre uma possível demissão em massa.\nVocê compartilha com os colegas que podem ser impactados, relata ao setor responsável pelo vazamento ou ignora completamente a descoberta?" },
     { "Seu superior diz para ignorar uma falha pequena e focar em outro problema. Você aceita ou insiste em corrigir mesmo assim?" },
-    { "Em uma investigação de rotina, descobre que há vídeos gravados por câmeras de segurança em locais sensíveis da empresa sem o conhecimento\n dos funcionários. Você assiste aos vídeos, alerta quem está gravando ou ignora para não se envolver?" },
-    { "Você recebe um e-mail direcionado a outro funcionário, contendo anexos com documentos jurídicos confidenciais.Você lê o conteúdo para entender\ndo que se trata, avisa o remetente sobre o erro ou simplesmente apaga o e-mail?" },
-    { "Durante uma entrevista de desligamento, um ex-funcionário pede para transferir arquivos pessoais de sua estação. Ao acessar a máquina, você \npercebe que há documentos da empresa nos mesmos diretórios. Você revisa o conteúdo, transfere tudo sem olhar, ou separa e reporta os documentos da empresa antes de transferir?" },
+    { "Em uma investigação de rotina, descobre que há vídeos gravados por câmeras de segurança em locais sensíveis da empresa sem o conhecimento\ndos funcionários. Você assiste aos vídeos, alerta quem está gravando ou ignora para não se envolver?" },
+    { "Você recebe um e-mail direcionado a outro funcionário, contendo anexos com documentos jurídicos confidenciais. Você lê o conteúdo para entender\ndo que se trata, avisa o remetente sobre o erro ou simplesmente apaga o e-mail?" },
+    { "Durante uma entrevista de desligamento, um ex-funcionário pede para transferir arquivos pessoais de sua estação. Ao acessar a máquina, você \npercebe que há documentos da empresa nos mesmos diretórios. Você revisa o conteúdo, transfere tudo sem olhar, ou separa e reporta\nos documentos da empresa antes de transferir?" },
     { "Você sabe que outro candidato está tentando sabotar seu progresso. Usaria suas habilidades para retaliar ou manteria seu foco na vaga?" }
 };
 
@@ -554,18 +554,18 @@ static void AvaliarRespostaComIA(int indicePergunta, const char *pergunta, const
         "• As respostas podem ser breves; **não penalize** pela falta de detalhes.\n"
         "• Se a resposta não indicar claramente má conduta, **presuma boa fé** e dê pelo menos metade da pontuação da categoria.\n"
         "• Reserve notas muito baixas (≤ 2 em qualquer categoria) apenas quando houver indícios explícitos de uso mal-intencionado dos poderes.\n"
-        "• **Se a resposta estiver fora de contexto, incoerente ou não responder à pergunta**, dê no máximo **5/20** no total.\n\n"
+        "• **Se a resposta estiver fora de contexto, incoerente ou não responder à pergunta**, dê no máximo **6/25** no total.\n\n"
 
-        "Avalie a resposta do candidato nos seguintes critérios (total máximo = 20):\n"
-        "- Intenção Ética (Bem x Mal): Demonstra uso das habilidades para benefício legítimo? (0-10)\n"
-        "- Responsabilidade Profissional: Reconhece riscos e age com prudência? (0-5)\n"
-        "- Gestão de Informações Sensíveis: Respeita privacidade e sigilo? (0-5)\n\n"
+        "Avalie a resposta do candidato nos seguintes critérios (total máximo = 25):\n"
+        "- Intenção Ética (Bem x Mal): Demonstra uso das habilidades para benefício legítimo? (0-12)\n"
+        "- Responsabilidade Profissional: Reconhece riscos e age com prudência? (0-7)\n"
+        "- Gestão de Informações Sensíveis: Respeita privacidade e sigilo? (0-6)\n\n"
 
         "Pergunta: \"%s\"\n"
         "Resposta: \"%s\"\n\n"
 
         "Formato da resposta:\n"
-        "NOTA=<inteiro de 0 a 20>\n"
+        "NOTA=<inteiro de 0 a 25>\n"
         "RELATORIO=<breve análise da resposta>",
         pergunta, respostaJogador
     );

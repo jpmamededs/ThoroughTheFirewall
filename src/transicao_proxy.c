@@ -4,13 +4,18 @@
 #include "playerStats.h"
 #include <string.h>
 #include <math.h>
+#include <stdio.h>
 static Model modelo3D;
 static Texture2D pergunta_img;
 static Texture2D telefone_sprite;
 static Texture2D hankFalaSprite;
 static Sound somFase1;
 static Sound somTelefone;
-static Sound somRadio;
+// ========== Novos sons ===================
+static Sound somAudio1;
+static Sound somAudio2;
+// =========================================
+static Sound somRadio; // Mantive para backwards compatibility, mas não será usado!
 static Camera3D camera;
 static Model portaModel;
 static Texture2D portaTexture;
@@ -18,7 +23,7 @@ static float cameraYaw = 0.0f;
 static const float maxYaw = PI / 4.0f;
 static const float minYaw = -PI / 4.0f;
 static bool somFase1Tocado = false;
-static bool somRadioTocado = false;
+static bool somRadioTocado = false; // Serve só para fluxo: não tocar mais vezes
 static bool interromperTelefone = false;
 static bool telefoneVisivel = false;
 static bool animandoTelefone = false;
@@ -62,6 +67,24 @@ static const float INTRO_FADE = 1.5f;
 static const float INTRO_HOLD = 2.5f;
 static bool fasePrincipalDoProxy = false;
 static float autoProceedTimer = -1.0f;
+
+// ====== Controle de fala Hank ============
+static enum {FALA_IDLE, FALA_AUDIO1, FALA_AUDIO2, FALA_DONE} estadoFala = FALA_IDLE;
+static float timerFala = 0.0f;
+static const char *fala1 = "Aqui é o Hank, você deve imaginar que o processo seletivo não será fácil, precisamos de você disponível a qualquer momento. Acabamos \nde detectar um tráfego incomum nos nossos servidores proxy.";
+static const char *fala2 = " Acesse da sua residencia e reconfigure o proxy para reforçar nossa \nsegurança. Siga os passos que deixei no post-it na sua mesa.";
+// =========================================
+
+// ====== Dica no topo esquerdo ==============
+static bool dicaVisivel = false;
+static float dicaTimer = 0.0f;
+static bool dicaAnimando = false;
+static float posicaoDicaX = -300.0f;
+static const float velocidadeDica = 300.0f;
+static Sound steam_som;
+static bool steam_tocando = false;
+// ============================================
+
 void Init_Transicao_Proxy(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
@@ -70,19 +93,30 @@ void Init_Transicao_Proxy(void)
     hankFalaSprite = LoadTexture("src/sprites/hankFala.png");
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
-    somRadio = LoadSound("src/music/voz-grosa.mp3");
+    // ========== Novos sons ================
+    somAudio1 = LoadSound("src/music/audio1.mp3");
+    somAudio2 = LoadSound("src/music/audio2.mp3");
+    // ======================================
+    
+    somRadio = LoadSound("src/music/voz-grosa.mp3"); // nunca tocado aqui, só para não dar erro no UnloadSound
     somPersonagem = LoadSound("");
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
+    // ---- Dica ----
+    steam_som  = LoadSound("src/music/steam-achievement.mp3");
+    // --------------
     characterName = gSelectedCharacterName;
     portaModel = LoadModel("src/models/DOOR.obj");
     portaTexture = LoadTexture("src/models/Garage_Metalness.png");
     portaModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = portaTexture;
     SetSoundVolume(somFase1, 1.0f);
     SetSoundVolume(somTelefone, 1.0f);
-    SetSoundVolume(somRadio, 3.5f);
+    //SetSoundVolume(somRadio, 3.5f);
+    SetSoundVolume(somAudio1, 2.5f); // ajuste de volume se necessário
+    SetSoundVolume(somAudio2, 2.5f);
     SetSoundVolume(somPersonagem, 1.0f);    
     SetMasterVolume(1.0f);
     SetSoundVolume(somChamadaAcabada, 2.0f);
+    SetSoundVolume(steam_som, 1.0f);
     somFase1Tocado = false;
     somRadioTocado = false;
     interromperTelefone = false;
@@ -111,6 +145,16 @@ void Init_Transicao_Proxy(void)
     introAlpha = 0.0f;
     fasePrincipalDoProxy = false;
     autoProceedTimer = -1.0f;
+    // ====== Reset estado de fala ==========
+    estadoFala = FALA_IDLE;
+    timerFala = 0.0f;
+    // ====== Dica =========
+    dicaVisivel = false;
+    dicaTimer = 0.0f;
+    dicaAnimando = false;
+    posicaoDicaX = -300.0f;
+    steam_tocando = false;
+    // =======================
 }
 void Update_Transicao_Proxy(void)
 {
@@ -149,22 +193,75 @@ void Update_Transicao_Proxy(void)
             cooldownTelefone = 0.0f;
         }
     }
-    if (delayTexto > 0.0f)
+    // ----------- INÍCIO: Novo sistema de fala sincronizada -----------
+    static char falaComposta[1024] = {0};
+    if (telefoneAtendido && estadoFala == FALA_IDLE && !typeStarted)
     {
-        delayTexto -= delta;
-        if (delayTexto <= 0.0f && !somRadioTocado)
+        // INICIA 1ª parte: primeiro áudio e texto cronometrado (10s)
+        PlaySound(somAudio1);
+        timerFala = 0.0f;
+        strncpy(falaComposta, fala1, sizeof(falaComposta));
+        falaComposta[sizeof(falaComposta)-1] = 0;
+        InitTypeWriter(&fase1Writer, falaComposta, 9999.0f); // speed não importa, controlaremos drawnChars manualmente
+        typeStarted = true;
+        estadoFala = FALA_AUDIO1;
+    }
+    if (estadoFala == FALA_AUDIO1)
+    {
+        timerFala += delta;
+        int len1 = strlen(fala1);
+        // Sincroniza conforme tempo do áudio
+        int targetDrawn = (int)((timerFala / 10.0f) * len1);
+        if (targetDrawn > len1) targetDrawn = len1;
+        fase1Writer.drawnChars = targetDrawn;
+        if (timerFala >= 10.0f)
         {
-            PlaySound(somRadio);
-            somRadioTocado = true;
-            const char *fala =
-                "Aqui é o Hank, você deve imaginar que o processo seletivo não será fácil, precisamos de você disponível a qualquer momento. Acabamos \nde detectar um tráfego incomum nos nossos servidores proxy." 
-                " Acesse da sua residencia e reconfigure o proxy para reforçar nossa \nsegurança. Siga os passos que deixei no post-it na sua mesa.";
-            InitTypeWriter(&fase1Writer, fala, 16.5f);
+            // Fim do áudio1: inicia áudio2 + texto2 (concat)
+            PlaySound(somAudio2);
+            timerFala = 0.0f;
+            snprintf(falaComposta, sizeof(falaComposta), "%s%s", fala1, fala2);
+            //int len2 = strlen(fala2);
+            // É necessário manter drawnChars cravado no fim do texto1 no início para fazer progressivo só em texto2
+            InitTypeWriter(&fase1Writer, falaComposta, 9999.0f);
+            fase1Writer.drawnChars = len1; // já com texto1 inteiro fixo, avança apenas texto2 agora
             typeStarted = true;
+            estadoFala = FALA_AUDIO2;
         }
     }
-    if (typeStarted) UpdateTypeWriter(&fase1Writer, delta, IsKeyPressed(KEY_SPACE));
-    if (typeStarted && !unknownDone && fase1Writer.drawnChars >= strlen(GetCurrentText(&fase1Writer)))
+    if (estadoFala == FALA_AUDIO2)
+    {
+        timerFala += delta;
+        int len1 = strlen(fala1);
+        int len2 = strlen(fala2);
+        int targetDrawn = len1 + (int)((timerFala / 8.0f) * len2);
+        if (targetDrawn > len1 + len2) targetDrawn = len1 + len2;
+        fase1Writer.drawnChars = targetDrawn;
+        if (timerFala >= 8.0f)
+        {
+            // Fim total do texto de Hank
+            fase1Writer.drawnChars = len1 + len2;
+            estadoFala = FALA_DONE;
+        }
+    }
+    // ----------- FIM: Novo sistema de fala sincronizada --------------
+
+    if (estadoFala == FALA_AUDIO1 || estadoFala == FALA_AUDIO2)
+    {
+        // Enquanto sincronizado pelo código acima, ignora o UpdateTypeWriter normal
+        // Só acelera se pressionar espaço para pular rápido (deixa barra pular imediato)
+        if (IsKeyPressed(KEY_SPACE)) {
+            if (estadoFala == FALA_AUDIO1) {
+                timerFala = 10.0f;
+            } else if (estadoFala == FALA_AUDIO2) {
+                timerFala = 8.0f;
+            }
+        }
+    }
+    else
+    {
+        if (typeStarted) UpdateTypeWriter(&fase1Writer, delta, IsKeyPressed(KEY_SPACE));
+    }
+    if (typeStarted && !unknownDone && estadoFala == FALA_DONE && fase1Writer.drawnChars >= strlen(GetCurrentText(&fase1Writer)))
     {
         unknownDone       = true;
         timeAfterUnknown  = 0.0f;
@@ -186,6 +283,7 @@ void Update_Transicao_Proxy(void)
         }
     }
     if (typeStarted && !unknownDone &&
+        estadoFala == FALA_DONE &&
         fase1Writer.drawnChars >= (int)strlen(GetCurrentText(&fase1Writer)))
     {
         unknownDone       = true;
@@ -216,13 +314,13 @@ void Update_Transicao_Proxy(void)
         if (autoProceedTimer >= 2.0f) {
             StopSound(somFase1);
             StopSound(somTelefone);
-            StopSound(somRadio);
+            StopSound(somAudio1);
+            StopSound(somAudio2);
             done = true;
         }
     }
     if (personagemTypeStarted)
         UpdateTypeWriter(&personagemWriter, delta, IsKeyPressed(KEY_SPACE));
-
     // --- TELEFONE: lógica e animações ajustadas ---
     if (!interromperTelefone && !telefoneAtendido)
     {
@@ -248,7 +346,6 @@ void Update_Transicao_Proxy(void)
         }
     }
     // NÃO DESLIGA MAIS TELEFONE AQUI - só via animação ao atender/recusar
-
     // ----------- ANIMAÇÃO DESCENDO ao atender (A) OU recusar (D)  -----------
     // ATENDER:
     if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_A))
@@ -270,7 +367,6 @@ void Update_Transicao_Proxy(void)
         animacaoTelefoneY = 0.0f;
         interromperTelefone = false;
     }
-
     if (animandoTelefone)
     {
         float speed = 2.5f * delta;
@@ -291,12 +387,41 @@ void Update_Transicao_Proxy(void)
             }
         }
     }
-
     if (tempoDesdeInicio >= 4.0f && !somFase1Tocado)
     {
         PlaySound(somFase1);
         somFase1Tocado = true;
     }
+
+    // --- DICA ANIMAÇÃO E SOM ---
+    if (tempoDesdeInicio >= 2.0f && !dicaVisivel) {
+        dicaVisivel = true;
+        dicaAnimando = true;
+    }
+    if (dicaVisivel)
+    {
+        dicaTimer += delta;
+        if (dicaAnimando && dicaTimer < 1.0f)
+        {
+            posicaoDicaX += velocidadeDica * delta;
+            if (posicaoDicaX >= 20.0f)
+            {
+                posicaoDicaX = 20.0f;
+                dicaAnimando = false;
+            }
+        }
+        if (dicaTimer >= 5.0f && dicaTimer < 7.0f)
+        {
+            dicaAnimando = true;
+            posicaoDicaX -= velocidadeDica * delta;
+            if (posicaoDicaX <= -420.0f)
+            {
+                posicaoDicaX = -422.0f;
+                dicaVisivel = false;
+            }
+        }
+    }
+    // --------------------------
 
     float mouseDeltaX = GetMouseDelta().x;
     cameraYaw += mouseDeltaX * 0.002f;
@@ -307,7 +432,6 @@ void Update_Transicao_Proxy(void)
     camera.target.z = camera.position.z - cosf(cameraYaw) * distance;
     camera.target.y = camera.position.y;
 }
-
 static void DrawDialogueBox(const char *speaker,
                             const TypeWriter *writer,
                             int fontTitle,
@@ -404,7 +528,17 @@ void Draw_Transicao_Proxy()
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                     (Color){0, 0, 0, (unsigned char)(fadeAlphaFase1 * 255)});
     }
-
+    // --- DICA TOPO ESQUERDO ---
+    if (dicaVisivel)
+    {
+        DrawDica(posicaoDicaX, 20, "Dica: atenda a ligacao do Hank");
+        if (!steam_tocando)
+        {
+            PlaySound(steam_som);
+            steam_tocando = true;
+        }
+    }
+    // ---------------------------
     EndDrawing();
 }
 bool Transicao_Proxy_Done(void)
@@ -419,8 +553,11 @@ void Unload_Transicao_Proxy(void)
     UnloadTexture(hankFalaSprite);
     UnloadSound(somFase1);
     UnloadSound(somTelefone);
-    UnloadSound(somRadio);
+    UnloadSound(somAudio1);
+    UnloadSound(somAudio2);
+    //UnloadSound(somRadio); // só descarrega, nunca tocamos
     UnloadSound(somPersonagem);
     UnloadSound(somChamadaAcabada);
+    UnloadSound(steam_som); // --- DICA ---
     EnableCursor();
 }

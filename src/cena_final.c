@@ -4,6 +4,14 @@
 #include "playerStats.h"
 #include <math.h>
 
+// --- UMA SEMANA DEPOIS ---
+static bool introActive = true;
+static float introTimer = 0.0f;
+static float introAlpha = 0.0f;
+static const float INTRO_FADE = 1.5f;
+static const float INTRO_HOLD = 2.5f;
+static bool faseFinalPrincipal = false;
+
 // ESSA É A TELA DO RESULTADO DO PROCESSO SELETIVO
 static bool fase_concluida = false;
 // Texturas
@@ -16,7 +24,6 @@ static Texture2D calvoRevelation;
 static Texture2D deBoneRevelationSilhouette;
 static Texture2D deBoneRevelation;
 static Texture2D cybertechShield;
-
 static bool textAnimActive = false;
 static float textAnimProgress = 0.0f;
 static const float TEXT_ANIM_DURATION = 0.65f;
@@ -32,52 +39,43 @@ static const float RESULTADO_ANIM_DURATION = 0.7f;
 // Timer para controlar o aparecimento do escudo
 static float shieldAppearTimer = 0.0f;
 static bool shieldStartTimer = false;
-
 // --- ANIMAÇÃO DO SHIELD ENTRANDO ---
 static bool shieldAnimActive = false;
 static float shieldAnimProgress = 0.0f;
 static const float SHIELD_ANIM_DURATION = 0.65f;
 static const float SHIELD_DELAY_AFTER_REVELATION = 0.15f;
-
 // --- ANIMAÇÃO DE SAÍDA DO SHIELD ---
 static bool shieldExitAnimActive = false;
 static float shieldExitAnimProgress = 0.0f;
 static const float SHIELD_EXIT_ANIM_DURATION = 0.7f;
 static float shieldExitTimer = 0.0f; // conta os 4s até o início da saída
 static bool shieldShouldExit = false;
-
 // --- ANIMAÇÃO DE SAÍDA DO TEXTO ---
 static bool textExitAnimActive = false;
 static float textExitAnimProgress = 0.0f;
-
 // --- ANIMAÇÃO DE SAÍDA DOS SPRITES ---
 static bool spritesExitAnimActive = false;
 static float spritesExitAnimProgress = 0.0f;
-
 // Áudio
 static Music writtenInTheStars;
 static Sound surpriseSound;
 static Sound congrats;
-
 // Variáveis de controle
 static float parallaxTimer = 0.0f;
 static const float parallaxDuration = 13.0f;
 static bool movimentoFinalizado = false;
 static float parallaxProgress = 0.0f;
 static bool surprisePlayed = false;
-
 // Posições finais
 static const int initialPos = 700;
 static const int finalPosMenina = 800;
 static const int finalPosCalvo = 900;
 static const int finalPosDeBone = 1000;
-
 // Variáveis para animação
 static bool spriteTrocaRealizada = false;
 static bool deBoneTrocaRealizada = false;
 static bool meninaTrocaRealizada = false;
 static bool calvoTrocaRealizada = false;
-
 // Variáveis para efeito de flash
 static float flashAlpha = 0.0f;
 static bool flashAtivo = false;
@@ -140,7 +138,6 @@ void StartTextAnimation(void)
     textAnimActive = true;
     textAnimProgress = 0.0f;
 }
-
 void UpdateTextAnimation(void)
 {
     if (textAnimActive || textPersistent)
@@ -153,7 +150,6 @@ void UpdateTextAnimation(void)
         }
     }
 }
-
 void DrawTextWithAnimationFadeOut(const char *text, float fadeOutAlpha)
 {
     int screenHeight = GetScreenHeight();
@@ -172,7 +168,6 @@ void DrawTextWithAnimationFadeOut(const char *text, float fadeOutAlpha)
     unsigned char alpha = (unsigned char)(150 * fadeOutAlpha);
     DrawTextEx(GetFontDefault(), TextToUpper(text), (Vector2){20, posY}, 50 * scale, 2, (Color){255, 255, 255, alpha});
 }
-
 void Init_FinalJogo(void)
 {
     fase_concluida = false;
@@ -220,10 +215,36 @@ void Init_FinalJogo(void)
     textExitAnimProgress = 0.0f;
     spritesExitAnimActive = false;
     spritesExitAnimProgress = 0.0f;
-}
 
+    // --- UMA SEMANA DEPOIS ---
+    introActive = true;
+    introTimer = 0.0f;
+    introAlpha = 0.0f;
+    faseFinalPrincipal = false;
+}
 void Update_FinalJogo(void)
 {
+    float delta = GetFrameTime();
+
+    // --- UMA SEMANA DEPOIS ---
+    if (introActive) {
+        introTimer += delta;
+        if (introTimer <= INTRO_FADE)
+            introAlpha = introTimer / INTRO_FADE;
+        else if (introTimer <= INTRO_FADE + INTRO_HOLD)
+            introAlpha = 1.0f;
+        else if (introTimer <= INTRO_FADE*2 + INTRO_HOLD)
+            introAlpha = 1.0f - (introTimer - INTRO_FADE - INTRO_HOLD) / INTRO_FADE;
+        else {
+            introActive = false;
+            introAlpha  = 0.0f;
+            faseFinalPrincipal = true;
+        }
+        return;
+    }
+    if (!faseFinalPrincipal)
+        return;
+
     UpdateTextAnimation();
     if (IsKeyPressed(KEY_ENTER))
     {
@@ -380,17 +401,28 @@ void Update_FinalJogo(void)
         }
     }
 }
-
 void Draw_FinalJogo(void)
 {
     BeginDrawing();
+
+    // --- UMA SEMANA DEPOIS ---
+    if (introActive || introAlpha > 0.0f) {
+        ClearBackground(BLACK);
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, introAlpha));
+        const char *msg = "Uma semana depois";
+        int fSize = 48;
+        int txtW = MeasureText(msg, fSize);
+        DrawText(msg, (GetScreenWidth() - txtW) / 2, GetScreenHeight() / 2 - fSize / 2, fSize, Fade(WHITE, introAlpha));
+        EndDrawing();
+        return;
+    }
+
     ClearBackground(BLACK);
     int screenHeight = GetScreenHeight();
     int screenWidth = GetScreenWidth();
     const char *personagemVisivel = playerStats.isPassouSelecao
-                                        ? gSelectedCharacterName
-                                        : (strcmp(gSelectedCharacterName, "Levi") == 0 ? "Alice" : "Levi");
-
+                ? gSelectedCharacterName
+                : (strcmp(gSelectedCharacterName, "Levi") == 0 ? "Alice" : "Levi");
     float textAlpha = 1.0f;
     if (textExitAnimActive || shieldExitAnimActive)
     {
@@ -403,13 +435,11 @@ void Draw_FinalJogo(void)
     }
     if (textAnimActive)
         DrawTextWithAnimationFadeOut(personagemVisivel, textAlpha);
-
     // Fatores de escala
     const float scaleCarinha = 0.4f;
     const float scaleMenina = 0.6f;
     const float scaleCalvo = 0.8f;
     const float scaleDeBone = 1.0f;
-
     // --- ANIMAÇÃO DE SAÍDA SPRITES ---
     float spritesExitF = 0.0f;
     if (spritesExitAnimActive || shieldExitAnimActive)
@@ -419,7 +449,6 @@ void Draw_FinalJogo(void)
             t = shieldExitAnimProgress;
         spritesExitF = powf(fminf(t, 1.0f), 2.5f); // ease-in
     }
-
     int xMeninaBase = initialPos + (finalPosMenina - initialPos) * parallaxProgress;
     int xCalvoBase = initialPos + (finalPosCalvo - initialPos) * parallaxProgress;
     int xDeBoneBase = initialPos + (finalPosDeBone - initialPos) * parallaxProgress;
@@ -428,7 +457,6 @@ void Draw_FinalJogo(void)
     int outCalvo = screenWidth + 50;
     int outDeBone = screenWidth + 50;
     int outCarinha = screenWidth + 50;
-
     int xCarinha = xCarinhaBase + (outCarinha - xCarinhaBase) * spritesExitF;
     int xMenina = xMeninaBase + (outMenina - xMeninaBase) * spritesExitF;
     int xCalvo = xCalvoBase + (outCalvo - xCalvoBase) * spritesExitF;
@@ -438,7 +466,6 @@ void Draw_FinalJogo(void)
     int yMenina = screenHeight - meninaRevelationSilhouette.height * scaleMenina;
     int yCalvo = screenHeight - calvoRevelationSilhouette.height * scaleCalvo;
     int yDeBone = screenHeight - deBoneRevelationSilhouette.height * scaleDeBone;
-
     if (strcmp(personagemVisivel, "Dante") == 0 && spriteTrocaRealizada)
     {
         DrawTexturePro(carinhaRevelation,
@@ -558,12 +585,10 @@ void Draw_FinalJogo(void)
 
     EndDrawing();
 }
-
 bool Fase_FinalJogo_Concluida(void)
 {
     return fase_concluida;
 }
-
 void Unload_FinalJogo(void)
 {
     UnloadTexture(carinhaRevelationSilhouette);

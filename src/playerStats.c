@@ -140,7 +140,7 @@ static float CalculatePlayerScore(PlayerStats *ps)
         (ps->isPassed_D03 ? 1 : 0) +
         (ps->isPassed_D04 ? 1 : 0);
 
-    ps->isPassouSelecao = (ps->aiOverallScore >= 50.0f && desafiosAprovados >= 3);
+    ps->isPassouSelecao = (ps->aiOverallScore >= 60.0f && desafiosAprovados >= 3);
 
     return notaGeral;
 }

@@ -36,7 +36,7 @@ void DrawDebug(void)
     snprintf(info, sizeof(info), "Personagem: %s", playerStats.characterName);
     DrawText(info, 50, y, 20, GREEN);               y += lh;
 
-    snprintf(info, sizeof(info), "Nota IA (0-80): %d", playerStats.aiOverallScore);
+    snprintf(info, sizeof(info), "Nota IA (0-100): %d", playerStats.aiOverallScore);
     DrawText(info, 50, y, 20, YELLOW);              y += lh;
 
     snprintf(info, sizeof(info), "Nota Geral: %.1f", playerStats.notalGeral);

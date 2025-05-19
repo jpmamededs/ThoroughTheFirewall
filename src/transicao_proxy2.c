@@ -4,6 +4,7 @@
 #include "playerStats.h"
 #include <string.h>
 #include <math.h>
+
 static Model modelo3D;
 static Texture2D pergunta_img;
 static Texture2D telefone_sprite;
@@ -142,6 +143,17 @@ static void DrawPanningEmpresa1(float tempo, float duracao)
         );
     }
 }
+
+// ====== Dica no topo esquerdo ==============
+static bool dicaVisivel = false;
+static float dicaTimer = 0.0f;
+static bool dicaAnimando = false;
+static float posicaoDicaX = -300.0f;
+static const float velocidadeDica = 300.0f;
+static Sound steam_som;
+static bool steam_tocando = false;
+// ============================================
+
 void Init_Transicao_Proxy2(void)
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
@@ -150,9 +162,11 @@ void Init_Transicao_Proxy2(void)
     hankFalaSprite = LoadTexture("src/sprites/hankFala.png");
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
-    somRadio = LoadSound("src/music/voz-grosa.mp3");
+    somRadio = LoadSound("src/music/audio3.mp3");
     somPersonagem = LoadSound("");
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
+    steam_som  = LoadSound("src/music/steam-achievement.mp3");
+    SetSoundVolume(steam_som, 1.0f);
     characterName = gSelectedCharacterName;
     portaModel = LoadModel("src/models/DOOR.obj");
     portaTexture = LoadTexture("src/models/Garage_Metalness.png");
@@ -200,6 +214,13 @@ void Init_Transicao_Proxy2(void)
     transicaoFinalEsperaPreDone = false;
     proxyEmpresa1 = LoadTexture("src/sprites/intro/empresa1.jpg");
     CarregarDuplaPorPersonagem();
+    // ====== Reset estado de dica =========
+    dicaVisivel = false;
+    dicaTimer = 0.0f;
+    dicaAnimando = false;
+    posicaoDicaX = -300.0f;
+    steam_tocando = false;
+    // ===========================
 }
 void Update_Transicao_Proxy2(void)
 {
@@ -246,7 +267,7 @@ void Update_Transicao_Proxy2(void)
             somRadioTocado = true;
             const char *fala =
                 "Fantástico, você esta indo muito bem. Irei passar agora na sua casa para lhe levar para o proximo desafio, você vai se surpreender \ncom o local. Espero que seu entendimento sobre criptografia esteja em dia, irá por em prática.";
-            InitTypeWriter(&fase1Writer, fala, 16.5f);
+            InitTypeWriter(&fase1Writer, fala, 16.0f);
             typeStarted = true;
         }
     }
@@ -374,6 +395,35 @@ void Update_Transicao_Proxy2(void)
         PlaySound(somFase1);
         somFase1Tocado = true;
     }
+    // --- DICA ANIMAÇÃO E SOM ---
+    if (tempoDesdeInicio >= 2.0f && !dicaVisivel) {
+        dicaVisivel = true;
+        dicaAnimando = true;
+    }
+    if (dicaVisivel)
+    {
+        dicaTimer += delta;
+        if (dicaAnimando && dicaTimer < 1.0f)
+        {
+            posicaoDicaX += velocidadeDica * delta;
+            if (posicaoDicaX >= 20.0f)
+            {
+                posicaoDicaX = 20.0f;
+                dicaAnimando = false;
+            }
+        }
+        if (dicaTimer >= 5.0f && dicaTimer < 7.0f)
+        {
+            dicaAnimando = true;
+            posicaoDicaX -= velocidadeDica * delta;
+            if (posicaoDicaX <= -420.0f)
+            {
+                posicaoDicaX = -422.0f;
+                dicaVisivel = false;
+            }
+        }
+    }
+    // --------------------------
     float mouseDeltaX = GetMouseDelta().x;
     cameraYaw += mouseDeltaX * 0.002f;
     if (cameraYaw > maxYaw) cameraYaw = maxYaw;
@@ -526,6 +576,17 @@ void Draw_Transicao_Proxy2()
     {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0, 0, 0, (unsigned char)(fadeAlphaFase1 * 255)});
     }
+    // --- DICA TOPO ESQUERDO ---
+    if (dicaVisivel)
+    {
+        DrawDica(posicaoDicaX, 20, "Dica: atenda a ligacao do Hank");
+        if (!steam_tocando)
+        {
+            PlaySound(steam_som);
+            steam_tocando = true;
+        }
+    }
+    // ---------------------------
     EndDrawing();
 }
 bool Transicao_Proxy2_Done(void) { return done; }
@@ -542,5 +603,6 @@ void Unload_Transicao_Proxy2(void)
     UnloadSound(somChamadaAcabada);
     UnloadTexture(proxyEmpresa1);
     UnloadDupla();
+    UnloadSound(steam_som); // Dica (Achievement)
     EnableCursor();
 }

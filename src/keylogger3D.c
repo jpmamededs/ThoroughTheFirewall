@@ -58,12 +58,10 @@ static float posicaoDicaX = -300.0f;
 static const float velocidadeDica = 300.0f;
 static Sound steam_som;
 static bool steam_tocando = false;
-
 const char *GetCurrentTextFaseKeylogger(TypeWriter *writer)
 {
     return writer->text;
 }
-
 void Init_Keylogger3D()
 {
     modelo3D = LoadModel("src/models/old-computer.obj");
@@ -72,7 +70,7 @@ void Init_Keylogger3D()
     hankFalaSprite  = LoadTexture("src/sprites/hankFala.png");
     somFase1 = LoadSound("src/music/fase1-mateus.wav");
     somTelefone = LoadSound("src/music/telefone.mp3");
-    somRadio = LoadSound("src/music/voz-grosa.mp3");
+    somRadio = LoadSound("src/music/audio4.mp3"); // <-- ALTERADO
     somPersonagem = LoadSound("");
     somChamadaAcabada = LoadSound("src/music/som_telefone_sinal_desligado_ou_ocupado_caio_audio.mp3");
     steam_som  = LoadSound("src/music/steam-achievement.mp3");
@@ -116,7 +114,6 @@ void Init_Keylogger3D()
     dicaAnimando = false;
     posicaoDicaX = -300.0f;
 }
-
 void Update_Keylogger3D(void)
 {
     float delta = GetFrameTime();
@@ -152,7 +149,7 @@ void Update_Keylogger3D(void)
                 "Ele está ciente de que os participantes do\nprocesso têm de interceptar "
                 "as informações de seu computador. Para isso, use um keylogger - um vírus que intercepta "
                 "teclas digitadas\nde um computador remoto, pegando o IP da máquina para realizar o ataque.";
-            InitTypeWriter(&fase1Writer, fala, 16.5f);
+            InitTypeWriter(&fase1Writer, fala, 21.0f); // <-- ALTERADO
             typeStarted = true;
         }
     }
@@ -207,7 +204,6 @@ void Update_Keylogger3D(void)
     }
     if (personagemTypeStarted)
         UpdateTypeWriter(&personagemWriter, delta, IsKeyPressed(KEY_SPACE));
-
     // TELEFONE - lógica idêntica fase Hank/Proxy
     if (!interromperTelefone && !telefoneAtendido)
     {
@@ -234,7 +230,6 @@ void Update_Keylogger3D(void)
     {
         // NADA aqui: recusa/desliga é só por tecla agora, trata abaixo!
     }
-
     // ---- ANIMAÇÃO DESCENDO TANTO PARA ATENDER (A) QUANTO PARA RECUSAR (D) ----
     if (telefoneVisivel && !telefoneAtendido && IsKeyPressed(KEY_A)) // atender
     {
@@ -282,7 +277,6 @@ void Update_Keylogger3D(void)
             }
         }
     }
-
     if (tempoDesdeInicio >= 4.0f && !somFase1Tocado)
     {
         PlaySound(somFase1);
@@ -327,7 +321,6 @@ void Update_Keylogger3D(void)
     camera.target.z = camera.position.z - cosf(cameraYaw) * distance;
     camera.target.y = camera.position.y;
 }
-
 static void DrawDialogueBox(const char *speaker,
                             const TypeWriter *writer,
                             int fontTitle,
@@ -358,7 +351,6 @@ static void DrawDialogueBox(const char *speaker,
         DrawText(tmp, boxX + 20, boxY + 30, fontBody, WHITE);
     }
 }
-
 void Draw_Keylogger3D()
 {
     BeginDrawing();
@@ -371,7 +363,6 @@ void Draw_Keylogger3D()
     Vector3 portaScale = {0.05f, 0.05f, 0.05f};
     DrawModelEx(portaModel, portaPos, portaRotAxis, portaRotAngle, portaScale, WHITE);
     EndMode3D();
-
     bool drawUnknownNow = (interromperTelefone && typeStarted && !personagemTypeStarted);
     if (drawUnknownNow)
     {
@@ -386,7 +377,6 @@ void Draw_Keylogger3D()
     {
         DrawDialogueBox(characterName, &personagemWriter, 24, 26);
     }
-
     // TELEFONE: Hank/proxy style
     if (telefoneVisivel)
     {
@@ -441,7 +431,7 @@ void Draw_Keylogger3D()
     }
     if (dicaVisivel)
     {
-        DrawDica(posicaoDicaX, 20, "Dica: mova o mouse para olhar ao redor");
+        DrawDica(posicaoDicaX, 20, "Dica: atenda o telefonema de Hank");
         if (!steam_tocando)
         {
             PlaySound(steam_som);
@@ -450,7 +440,6 @@ void Draw_Keylogger3D()
     }
     EndDrawing();
 }
-
 bool Fase_Keylogger3D_Concluida(void)
 {
     return fase_concluida;
