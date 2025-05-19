@@ -10,11 +10,15 @@ Essa é uma explicação de como executar o Shell Reverso para concluir o proces
 
 5. Escreva 'cd ..' até que seu diretório esteja em /Desktop.
 
-6. Em /Desktop, digite o comando mkdir 'infectando'.
+6. Em /Desktop, digite o comando 'enviar malware'.
 
-7. Dê 'cd infectando' para entrar nessa nova pasta que você criou.
+7. Ao digitar esse comando, o outro computador será infectado com um arquivo batch.
 
-8. Agora, crie o arquivo 'data.txt', com o comando echo. > data.txt
+8. Para executar esse arquivo na máquina remota, digite start 'nome_do_arquivo.bat'.
+
+9. Após isso, o arquivo retornará um arquivo de texto com os dados que ele encontrou do CEO.
+
+10. Use esses dados para completar a fase.
 
 
 / CHEATSHEET /
@@ -30,5 +34,11 @@ cd .. (Voltar o diretório)
 cd nome_do_diretorio (Ir para um diretório)
 
 type nome_do_arquivo.txt (ler o que está escrito dentro de um arquivo de texto)
+
+enviar malware (mandar um arquivo malicioso para o outro computador)
+
+start nome_do_arquivo.bat (executar o arquivo malicioso)
+
+
 
 

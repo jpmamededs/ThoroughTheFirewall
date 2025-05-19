@@ -31,6 +31,11 @@ static bool textPersistent = true;
 static float textScale = 10.0f;
 static const float maxTextScale = 10.0f;
 static Sound medal;
+
+static bool resultadoAnimActive = false;
+static float resultadoAnimProgress = 0.0f;
+static const float RESULTADO_ANIM_DURATION = 0.7f;
+
 // Timer para controlar o aparecimento do escudo
 static float shieldAppearTimer = 0.0f;
 static bool shieldStartTimer = false;
@@ -76,6 +81,58 @@ static float flashAlpha = 0.0f;
 static bool flashAtivo = false;
 static const float flashDuration = 0.6f;
 static float flashTimer = 0.0f;
+
+static Texture2D caderneta;
+
+static Font fonteEscritaAMao;
+
+static Font resultadoFont;
+
+// Variáveis da animação da caderneta
+static bool cadernetaAnimActive = false;
+static float cadernetaAnimProgress = 0.0f;
+static const float CADERNETA_ANIM_DURATION = 0.7f;
+
+static Sound booSound;
+static bool booPlayed = false;
+
+static Sound deuBomSound;
+static bool deuBomPlayed = false;
+
+static Sound paperSound;
+static bool paperSoundPlayed = false;
+
+void DrawResultadoSelecao(void) {
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+    const char *resultadoTexto = playerStats.isPassouSelecao ? "APROVADO" : "REPROVADO";
+    Color resultadoCor = playerStats.isPassouSelecao ? GREEN : RED;
+
+    if (!playerStats.isPassouSelecao && !booPlayed) {
+        PlaySound(booSound);
+        booPlayed = true;
+    }
+    else if(playerStats.isPassouSelecao && !booPlayed){
+        PlaySound(deuBomSound);
+        booPlayed = true;
+    }
+
+    // Tamanho grande para o texto
+    float fontSize = 400.0f;
+
+    // Medir o texto usando a fonte especificada
+    Vector2 textSize = MeasureTextEx(resultadoFont, resultadoTexto, fontSize, 5);
+    
+    // Centralizar horizontalmente e alinhar no topo
+    int textX = (screenWidth - textSize.x) / 2;
+    int textY = textSize.y / 4;  // Ajuste para manter parte do texto visível na tela
+
+    // Desenhar o texto com a fonte resultadoFont
+    DrawTextEx(resultadoFont, resultadoTexto, (Vector2){textX, textY}, fontSize, 5, resultadoCor);
+}
+
+
+
 void StartTextAnimation(void)
 {
     textAnimActive = true;
@@ -123,10 +180,18 @@ void Init_FinalJogo(void)
     deBoneRevelationSilhouette = LoadTexture("src/sprites/revelation/deBoneRevelationSilhouette.png");
     deBoneRevelation = LoadTexture("src/sprites/revelation/deBoneRevelation.png");
     cybertechShield = LoadTexture("src/sprites/revelation/cybertechShield.png");
+    caderneta = LoadTexture("src/sprites/revelation/caderneta.png");
     congrats = LoadSound("src/music/congrats.wav");
     medal = LoadSound("src/music/medal.mp3");
     writtenInTheStars = LoadMusicStream("src/music/writtenInTheStars.mp3");
     surpriseSound = LoadSound("src/music/surprise.mp3");
+    paperSound = LoadSound("src/music/paperSound.mp3");
+    fonteEscritaAMao = LoadFont("src/fonts/Manuscrito.ttf");
+    resultadoFont = LoadFont("src/fonts/Schluber.ttf");
+    booSound = LoadSound("src/sprites/revelation/boo.mp3");
+    deuBomSound = LoadSound("src/sprites/revelation/deubom.mp3");
+    booPlayed = false;
+    deuBomPlayed = false;
     PlayMusicStream(writtenInTheStars);
     SetMusicVolume(writtenInTheStars, 0.5f);
     PlaySound(congrats);
@@ -181,7 +246,8 @@ void Update_FinalJogo(void)
         return;
 
     UpdateTextAnimation();
-    if (IsKeyPressed(KEY_ENTER)) {
+    if (IsKeyPressed(KEY_ENTER))
+    {
         fase_concluida = true;
     }
     UpdateMusicStream(writtenInTheStars);
@@ -199,22 +265,27 @@ void Update_FinalJogo(void)
             spriteTrocaRealizada = false;
             deBoneTrocaRealizada = false;
             meninaTrocaRealizada = false;
-            calvoTrocaRealizada  = false;
+            calvoTrocaRealizada = false;
             const char *personagemVisivel = playerStats.isPassouSelecao
-                    ? gSelectedCharacterName
-                    : (strcmp(gSelectedCharacterName, "Levi") == 0 ? "Alice" : "Levi");
+                                                ? gSelectedCharacterName
+                                                : (strcmp(gSelectedCharacterName, "Levi") == 0 ? "Alice" : "Levi");
             if (!playerStats.isPassouSelecao)
             {
                 if (strcmp(personagemVisivel, "Alice") == 0)
                     meninaTrocaRealizada = true;
-                else calvoTrocaRealizada  = true;
+                else
+                    calvoTrocaRealizada = true;
             }
             else
             {
-                if      (strcmp(gSelectedCharacterName, "Dante") == 0) spriteTrocaRealizada = true;
-                else if (strcmp(gSelectedCharacterName, "Jade")  == 0) deBoneTrocaRealizada = true;
-                else if (strcmp(gSelectedCharacterName, "Alice") == 0) meninaTrocaRealizada = true;
-                else if (strcmp(gSelectedCharacterName, "Levi")  == 0) calvoTrocaRealizada  = true;
+                if (strcmp(gSelectedCharacterName, "Dante") == 0)
+                    spriteTrocaRealizada = true;
+                else if (strcmp(gSelectedCharacterName, "Jade") == 0)
+                    deBoneTrocaRealizada = true;
+                else if (strcmp(gSelectedCharacterName, "Alice") == 0)
+                    meninaTrocaRealizada = true;
+                else if (strcmp(gSelectedCharacterName, "Levi") == 0)
+                    calvoTrocaRealizada = true;
             }
             shieldStartTimer = true;
             shieldAppearTimer = 0.0f;
@@ -279,7 +350,8 @@ void Update_FinalJogo(void)
     if (shieldExitAnimActive)
     {
         shieldExitAnimProgress += GetFrameTime() / SHIELD_EXIT_ANIM_DURATION;
-        if (shieldExitAnimProgress >= 1.0f) shieldExitAnimProgress = 1.0f;
+        if (shieldExitAnimProgress >= 1.0f)
+            shieldExitAnimProgress = 1.0f;
     }
     if (textExitAnimActive)
     {
@@ -297,6 +369,35 @@ void Update_FinalJogo(void)
         {
             spritesExitAnimProgress = 1.0f;
             spritesExitAnimActive = false;
+        }
+    }
+    if (shieldExitAnimActive && shieldExitAnimProgress >= 1.0f && !cadernetaAnimActive)
+    {
+        cadernetaAnimActive = true;
+        cadernetaAnimProgress = 0.0f;
+        if (!paperSoundPlayed)
+        {
+            PlaySound(paperSound);
+            paperSoundPlayed = true;
+        }
+    }
+    if (cadernetaAnimActive)
+    {
+        cadernetaAnimProgress += GetFrameTime() / CADERNETA_ANIM_DURATION;
+        if (cadernetaAnimProgress >= 1.0f)
+            cadernetaAnimProgress = 1.0f;
+    }
+    if (cadernetaAnimActive && !resultadoAnimActive)
+    {
+        resultadoAnimActive = true;
+        resultadoAnimProgress = 0.0f;
+    }
+    if (resultadoAnimActive)
+    {
+        resultadoAnimProgress += GetFrameTime() / RESULTADO_ANIM_DURATION;
+        if (resultadoAnimProgress >= 1.0f)
+        {
+            resultadoAnimProgress = 1.0f;
         }
     }
 }
@@ -326,9 +427,11 @@ void Draw_FinalJogo(void)
     if (textExitAnimActive || shieldExitAnimActive)
     {
         float t = (shieldExitAnimActive ? shieldExitAnimProgress : 0.0f);
-        if (textExitAnimActive) t = textExitAnimProgress;
+        if (textExitAnimActive)
+            t = textExitAnimProgress;
         textAlpha = 1.0f - powf(fminf(t, 1.0f), 2.0f);
-        if (textAlpha < 0.0f) textAlpha = 0.0f;
+        if (textAlpha < 0.0f)
+            textAlpha = 0.0f;
     }
     if (textAnimActive)
         DrawTextWithAnimationFadeOut(personagemVisivel, textAlpha);
@@ -342,7 +445,8 @@ void Draw_FinalJogo(void)
     if (spritesExitAnimActive || shieldExitAnimActive)
     {
         float t = (spritesExitAnimActive ? spritesExitAnimProgress : 0.0f);
-        if (shieldExitAnimActive) t = shieldExitAnimProgress;
+        if (shieldExitAnimActive)
+            t = shieldExitAnimProgress;
         spritesExitF = powf(fminf(t, 1.0f), 2.5f); // ease-in
     }
     int xMeninaBase = initialPos + (finalPosMenina - initialPos) * parallaxProgress;
@@ -354,9 +458,10 @@ void Draw_FinalJogo(void)
     int outDeBone = screenWidth + 50;
     int outCarinha = screenWidth + 50;
     int xCarinha = xCarinhaBase + (outCarinha - xCarinhaBase) * spritesExitF;
-    int xMenina  = xMeninaBase  + (outMenina  - xMeninaBase)  * spritesExitF;
-    int xCalvo   = xCalvoBase   + (outCalvo   - xCalvoBase)   * spritesExitF;
-    int xDeBone  = xDeBoneBase  + (outDeBone  - xDeBoneBase)  * spritesExitF;
+    int xMenina = xMeninaBase + (outMenina - xMeninaBase) * spritesExitF;
+    int xCalvo = xCalvoBase + (outCalvo - xCalvoBase) * spritesExitF;
+    int xDeBone = xDeBoneBase + (outDeBone - xDeBoneBase) * spritesExitF;
+
     int yCarinha = screenHeight - carinhaRevelationSilhouette.height * scaleCarinha;
     int yMenina = screenHeight - meninaRevelationSilhouette.height * scaleMenina;
     int yCalvo = screenHeight - calvoRevelationSilhouette.height * scaleCalvo;
@@ -399,9 +504,7 @@ void Draw_FinalJogo(void)
     }
     if (strcmp(personagemVisivel, "Levi") == 0 && calvoTrocaRealizada)
     {
-        DrawTexturePro(calvoRevelation, (Rectangle){0, 0, calvoRevelation.width, calvoRevelation.height}, (Rectangle){xCalvo, yCalvo,
-                        calvoRevelation.width * scaleCalvo,
-                        calvoRevelation.height * scaleCalvo},
+        DrawTexturePro(calvoRevelation, (Rectangle){0, 0, calvoRevelation.width, calvoRevelation.height}, (Rectangle){xCalvo, yCalvo, calvoRevelation.width * scaleCalvo, calvoRevelation.height * scaleCalvo},
                        (Vector2){0, 0}, 0.0f, WHITE);
     }
     else
@@ -465,6 +568,21 @@ void Draw_FinalJogo(void)
             (Rectangle){shieldOutX, shieldFinalY, cybertechShield.width * scale, cybertechShield.height * scale},
             (Vector2){0, 0}, 0.0f, WHITE);
     }
+
+    if (cadernetaAnimActive)
+    {
+        float t = cadernetaAnimProgress;
+        float ease = 1.0f - powf(1.0f - t, 2.0f); // Ease-out para suavidade
+        int yFinal = screenHeight / 2 - caderneta.height / 2;
+        int yStart = screenHeight;
+        int yCaderneta = yStart - (int)((yStart - yFinal) * ease);
+        DrawResultadoSelecao();
+        DrawTexture(caderneta, screenWidth / 2 - caderneta.width / 2, yCaderneta, WHITE);
+        int textYOffset = -20; // Para que o texto fique um pouco à frente da caderneta
+        int yTexto = yCaderneta + textYOffset;
+        DrawTextEx(fonteEscritaAMao, playerStats.relatorioGeral, (Vector2){screenWidth / 2 - MeasureTextEx(fonteEscritaAMao, playerStats.relatorioGeral, 20, 1).x / 2, yTexto}, 20, 1, WHITE);
+    }
+
     EndDrawing();
 }
 bool Fase_FinalJogo_Concluida(void)
@@ -487,4 +605,5 @@ void Unload_FinalJogo(void)
     UnloadSound(surpriseSound);
     UnloadSound(congrats);
     UnloadSound(medal);
+    UnloadSound(booSound);
 }
