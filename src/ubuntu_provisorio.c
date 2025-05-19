@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <direct.h>
 #include <unistd.h>
+#include <dirent.h>
 static Texture2D wallpaper;
 static Texture2D background;
 static Texture2D terminalIcon;
@@ -37,7 +38,16 @@ static int estadoCaixa = 0;
 static float tempoCaixaDialogo = 0.0f;
 static const float trocaMensagemDelay = 3.0f;
 
-static bool fase_concluida = false; 
+static bool iniciandoTransicao = false;
+static float tempoFadeOut = 0.0f;
+static float tempoAposFade = 0.0f;
+
+static float tempoMensagemFinal = 0.0f;
+static bool aguardandoMensagemFinal = false;
+static float esperaPreta = 2.0f;
+static float tempoMensagemFinalDelay = 2.0f;
+
+static bool fase_concluida = false;
 
 static Rectangle folderBounds;
 
@@ -68,6 +78,15 @@ void Init_ShellUbuntu(void)
     tempoPosAnimacao = 0.0f;
     tempoCaixaDialogo = 0.0f;
     estadoCaixa = 0;
+
+    iniciandoTransicao = false;
+    tempoFadeOut = 0.0f;
+    tempoAposFade = 0.0f;
+
+    tempoMensagemFinal = 0.0f;
+    aguardandoMensagemFinal = false;
+    esperaPreta = 2.0f;
+    tempoMensagemFinalDelay = 2.0f;
 
     fase_concluida = false;
 }
@@ -117,6 +136,41 @@ void Update_ShellUbuntu(void)
             estadoCaixa = 1;
     }
 
+    DIR *d = opendir(".");
+    struct dirent *dir;
+    if (d)
+    {
+        while ((dir = readdir(d)) != NULL)
+        {
+            if ((strcmp(dir->d_name, "dadosShell.txt") == 0))
+            {
+                remove("dadosShell.txt");
+                estadoCaixa = 2;
+                tempoMensagemFinal = 0.0f;
+                aguardandoMensagemFinal = true;
+
+                // Iniciar a transição para o fade out
+                iniciandoTransicao = true;
+                tempoFadeOut = 0.0f;
+                break;
+            }
+        }
+        closedir(d);
+    }
+
+    if (iniciandoTransicao)
+    {
+        tempoFadeOut += dt;
+        if (tempoFadeOut >= 1.0f)
+        {
+            tempoAposFade += dt;
+            if (tempoAposFade >= esperaPreta)
+            {
+                fase_concluida = true;
+            }
+        }
+    }
+
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         Vector2 mouse = GetMousePosition();
@@ -150,7 +204,7 @@ void Update_ShellUbuntu(void)
             {
                 char command[1024];
                 snprintf(command, sizeof(command),
-                         "start \"\" \"%s\\bruteForce_terminal.bat\"", cwd);
+                         "start \"\" \"%s\\shell.bat\"", cwd);
                 system(command);
                 terminalChamado = true;
             }
@@ -229,6 +283,15 @@ void Draw_ShellUbuntu(void)
             DrawRectangleRounded((Rectangle){x, y, largura, altura}, 0.3f, 16, WHITE);
             DrawTextEx(geminiFont, texto, (Vector2){x + padding, y + padding}, fontSize, 1, DARKGRAY);
         }
+    }
+
+    if (iniciandoTransicao)
+    {
+        float alpha = tempoFadeOut / 1.0f; // Normaliza o valor para obter o alpha (0.0 a 1.0)
+        if (alpha > 1.0f)
+            alpha = 1.0f; // Garante que o alpha não passe de 1.0
+
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0, 0, 0, (unsigned char)(alpha * 255)});
     }
 
     EndDrawing();

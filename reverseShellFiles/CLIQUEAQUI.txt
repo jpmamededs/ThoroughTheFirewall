@@ -29,4 +29,6 @@ cd .. (Voltar o diretório)
 
 cd nome_do_diretorio (Ir para um diretório)
 
+type nome_do_arquivo.txt (ler o que está escrito dentro de um arquivo de texto)
+
 

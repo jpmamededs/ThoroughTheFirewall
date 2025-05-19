@@ -5,14 +5,11 @@ color 0a
 title Terminal de Teste - FBI
 cls
 
-:: ASCII Art Inicial
-echo Terminal de Teste - FBI.
 echo.
-echo ██████  ███████  ██████  ██████   ██████ ███████ ██████ .
-echo ██   ██ ██      ██    ██ ██   ██ ██      ██      ██   ██ .
-echo ██████  █████   ██    ██ ██████  ██      █████   ██████  .
-echo ██   ██ ██      ██    ██ ██   ██ ██      ██      ██   ██.
-echo ██████  ██       ██████  ██   ██  ██████ ███████ ██   ██ .
+echo  88""Yb 888888  dP"Yb  88""Yb  dP""b8 888888 88""Yb      
+echo  88__dP 88__   dP   Yb 88__dP dP   `" 88__   88__dP     
+echo  88""Yb 88""   Yb   dP 88"Yb  Yb      88""   88"Yb     
+echo  88oodP 88      YbodP  88  Yb  YboodP 888888 88  Yb    
 echo.
 
 :: Solicita e valida URL do site antes de prosseguir
@@ -65,9 +62,9 @@ for /f "usebackq delims=" %%u in ("!usersFile!") do (
         if /i "%%u"=="superuser" if "%%p"=="passwd#Su123" (
             echo.
             echo credentials found: superuser ^& passwd#Su123
+            ping 127.0.0.1 -n 61 >nul
             echo [INFO] Atualizando...
-            ping 127.0.0.1 -n 2 >nul
-            goto AskSecretKey
+            ping 127.0.0.1 -n 6 >nul
         )
     )
 )
@@ -78,9 +75,9 @@ echo [INFO] Secret Base64 Encrypted ID Key:
 set /p secretKey=Digite a chave secreta: 
 if /i "!secretKey!"=="dGVzdCBwYXNzZWQ=" (
     echo [INFO] Decrypted key: 'test passed'
-    echo test passed > dadosBruteForce.txt
+    echo OK > dadosBruteForce.txt
     ping 127.0.0.1 -n 3 >nul
-    exit /b
+    exit
 ) else (
     echo [ERRO] Chave incorreta. Tente novamente.
     goto AskSecretKey

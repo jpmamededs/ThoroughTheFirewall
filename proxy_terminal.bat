@@ -38,10 +38,6 @@ if /i not "!passFile!"=="allow localnet" (
 echo.
 echo Servidor proxy configurado com sucesso! Fechando processo...
 echo OK > "%~dp0dadosProxy.txt"
-ping -n 4 127.0.0.1 > nul  :: Pausa por 3 segundos
-
-:: *** CRIA O ARQUIVO SENTINELA PARA O JOGO ***
-echo tarefa_concluida > proxy_tarefa_finalizada.txt
 
 ping -n 4 127.0.0.1 > nul  :: Pausa por 3 segundos
 :: Fecha o terminal
