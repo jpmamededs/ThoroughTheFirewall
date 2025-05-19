@@ -55,3 +55,12 @@ Acesse o site oficial da Raylib:
 
 ```bash
 make run
+```
+---
+
+### ⚠️ Aviso Importante ⚠️
+
+O executável do jogo deve estar no mesmo diretório que o arquivo **libcurl-x64.dll** para funcionar corretamente.  
+
+- Para garantir isso, coloque o executável na pasta **/bin**.  
+- Isso já é feito automaticamente ao utilizar o comando **make run**.
