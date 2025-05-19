@@ -387,7 +387,7 @@ void Draw_ShellBox(void)
         Color boxCol2 = (Color){220, 220, 255, (unsigned char)(130 * dialogAlpha)};
         DrawRectangleRounded((Rectangle){boxPosX + 6, boxPosY + 8, boxWidth, boxHeight}, 0.19f, 16, boxCol0);
         DrawRectangleRounded((Rectangle){boxPosX, boxPosY, boxWidth, boxHeight}, 0.19f, 16, boxCol1);
-        DrawRectangleRoundedLines((Rectangle){boxPosX, boxPosY, boxWidth, boxHeight}, 0.19f, 16, 2.0f, boxCol2);
+        DrawRectangleRoundedLines((Rectangle){boxPosX, boxPosY, boxWidth, boxHeight}, 0.19f, 16, boxCol2);
         Vector2 textPos = {boxPosX + horizontalMargin, boxPosY + verticalMargin};
         char displayText[600];
         int displayLen = 0;
