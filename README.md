@@ -2,6 +2,10 @@
   <img src="https://github.com/Carlosesposito22/JogoAED/blob/main/src/sprites/logo_jogo.png?raw=true" alt="Logo do Jogo" width="800">
 </p>
 
+
+https://github.com/user-attachments/assets/b0eaf4c6-e71d-4837-95b8-e3179a23b9eb
+
+
 Este projeto é um jogo desenvolvido em C utilizando a biblioteca [Raylib](https://www.raylib.com/) e integração com a [API Gemini](https://ai.google.dev/). O jogo simula um processo seletivo em um braço do **FBI** voltado para cibersegurança chamado **Cybertech**, onde o jogador precisa provar suas habilidades técnicas e éticas para conquistar uma vaga.
 
 ---
